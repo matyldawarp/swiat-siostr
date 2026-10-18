@@ -69,6 +69,11 @@ class TerrariumScene extends Phaser.Scene {
 
         this.createWheel();
 
+        // Tapping the house sends the hamster to bed, or wakes it up.
+        const { x: hx, y: hy, w: hw, h: hh } = this.house;
+        const houseZone = this.add.zone(hx + hw / 2, hy + hh / 2 - S(5), hw, hh + S(10)).setInteractive({ useHandCursor: true });
+        houseZone.on('pointerdown', () => (this.state === 'sleeping' ? this.wakeUp() : this.goToSleep()));
+
         this.createHamster(tank, layout);
 
         PixelUI.createButton(this, width - S(40), height - S(14), 'Ziarno', () => {
@@ -162,6 +167,7 @@ class TerrariumScene extends Phaser.Scene {
         g.fillStyle(C.door, 1);
         g.fillRect(hx + hw / 2 - S(5), hy + hh - S(15), S(10), S(15));
         g.fillRect(hx + hw / 2 - S(6), hy + hh - S(13), S(12), S(13));
+        this.house = { x: hx, y: hy, w: hw, h: hh, doorX: Math.round(hx + hw / 2), doorBottom: hy + hh };
 
         // Water bottle hanging on the right wall.
         const bx = x + w - S(11);
@@ -328,6 +334,105 @@ class TerrariumScene extends Phaser.Scene {
         return this.state === 'entering' || this.state === 'running' || this.state === 'exiting';
     }
 
+    // --- Sleeping in the house -----------------------------------------------
+
+    goToSleep() {
+        if (this.state !== 'idle' || this.seeds.some((s) => s.landed)) {
+            return;
+        }
+        this.state = 'goingToSleep';
+        this.walkTo(this.house.doorX, () => this.enterHouse(), 14);
+    }
+
+    // Shrinks in steps into the doorway, as if walking deeper inside.
+    enterHouse() {
+        this.state = 'enteringHouse';
+        const { doorX, doorBottom } = this.house;
+
+        this.tweens.add({ targets: this.hamster, x: doorX, y: doorBottom - 9, duration: 600 });
+        this.tweens.add({
+            targets: this.hamsterImage,
+            scale: 1,
+            duration: 600,
+            ease: 'Stepped',
+            easeParams: [3],
+            onComplete: () => {
+                if (this.seeds.some((s) => s.landed)) {
+                    this.wakeUp();
+                    return;
+                }
+                this.sleep();
+            }
+        });
+    }
+
+    sleep() {
+        this.state = 'sleeping';
+        this.hamsterImage.setTexture(`${this.character.id}-blink`);
+
+        let count = 0;
+        this.zzzTimer = this.time.addEvent({
+            delay: 900,
+            loop: true,
+            callback: () => this.floatZ(count++)
+        });
+        this.sleepTimer = this.time.delayedCall(Phaser.Math.Between(6000, 10000), () => this.wakeUp());
+    }
+
+    // One "z" drifting up from the roof; every third is a capital Z.
+    floatZ(index) {
+        const { x, y, w } = this.house;
+        const big = index % 3 === 2;
+        const z = PixelUI.addText(this, x + w / 2 + S(6), y - S(8), big ? 'Z' : 'z', {
+            fontFamily: FONT,
+            fontStyle: '700',
+            fontSize: `${big ? S(12) : S(9)}px`,
+            color: TEXT_COLORS.title
+        }).setOrigin(0.5);
+
+        playSnore(this);
+
+        this.tweens.add({
+            targets: z,
+            x: z.x + S(14),
+            y: z.y - S(24),
+            alpha: 0,
+            duration: 1800,
+            ease: 'Stepped',
+            easeParams: [6],
+            onComplete: () => z.destroy()
+        });
+    }
+
+    wakeUp() {
+        if (this.zzzTimer) {
+            this.zzzTimer.remove();
+        }
+        if (this.sleepTimer) {
+            this.sleepTimer.remove();
+        }
+
+        this.state = 'leavingHouse';
+        this.hamsterImage.setTexture(this.character.id);
+
+        this.tweens.add({ targets: this.hamster, y: this.hamsterGroundY, duration: 600 });
+        this.tweens.add({
+            targets: this.hamsterImage,
+            scale: TERRARIUM_HAMSTER_SCALE,
+            duration: 600,
+            ease: 'Stepped',
+            easeParams: [3],
+            onComplete: () => {
+                this.state = 'idle';
+                this.goEat();
+            }
+        });
+    }
+
+    isInHouse() {
+        return this.state === 'enteringHouse' || this.state === 'sleeping' || this.state === 'leavingHouse';
+    }
+
     // --- Hamster -------------------------------------------------------------
 
     createHamster(tank, { minX, maxX }) {
@@ -397,9 +502,14 @@ class TerrariumScene extends Phaser.Scene {
         if (this.state !== 'idle') {
             return;
         }
-        // Now and then go for a run in the wheel instead of a stroll.
-        if (Math.random() < 0.3) {
+        // Now and then go for a run in the wheel or a nap instead of a stroll.
+        const roll = Math.random();
+        if (roll < 0.3) {
             this.goToWheel();
+            return;
+        }
+        if (roll < 0.45) {
+            this.goToSleep();
             return;
         }
         const { minX, maxX } = this.walkArea;
@@ -444,7 +554,12 @@ class TerrariumScene extends Phaser.Scene {
             this.leaveWheel();
             return;
         }
-        if (this.state === 'entering' || this.state === 'exiting') {
+        if (this.state === 'sleeping') {
+            this.wakeUp();
+            return;
+        }
+        if (this.state === 'entering' || this.state === 'exiting'
+            || this.state === 'enteringHouse' || this.state === 'leavingHouse') {
             return;
         }
 
@@ -501,6 +616,14 @@ class TerrariumScene extends Phaser.Scene {
 
     poke() {
         playCharacterSound(this, this.character.sound);
+
+        if (this.state === 'sleeping') {
+            this.wakeUp();
+            return;
+        }
+        if (this.isInHouse()) {
+            return;
+        }
 
         // In the wheel the hamster is off the ground, so no jump there.
         if (this.isInWheel()) {

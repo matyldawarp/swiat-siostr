@@ -41,6 +41,30 @@ function playCrunch(scene) {
     source.start();
 }
 
+// Soft, low breath for each floating "z" while sleeping.
+function playSnore(scene) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    const t = ctx.currentTime + 0.01;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.exponentialRampToValueAtTime(150, t + 0.5);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.06, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(t);
+    osc.stop(t + 0.55);
+}
+
 // Quiet click of the spinning wheel.
 function playWheelTick(scene) {
     const audio = getAudio(scene);
