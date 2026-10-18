@@ -1,5 +1,8 @@
-# Copyrighted music kept only on this computer (private use, not for GitHub).
-assets/music/descendants-cast-rotten-to-the-core.mp3
+# Music stays only on this computer: the tracks are copyrighted (private use, not for
+# GitHub), and so are their YouTube thumbnails. Add "!assets/music/<file>" lines for a
+# freely licensed track.
+assets/music/*.mp3
+assets/music/*.jpg
 
 # Logs
 logs

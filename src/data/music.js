@@ -1,13 +1,27 @@
-// Background music, played in order and looped. Files live in assets/music/.
+// Songs the girls can pick with the note button. Files live in assets/music/;
+// `youtubeUrl` is the original YouTube link each song was downloaded from.
 // Copyrighted tracks are for private use only and are kept out of git (see .gitignore);
-// a missing file is simply skipped.
+// a missing file just stays silent. `thumb` is the YouTube thumbnail shrunk to 48x27 so it
+// reads as pixel art; with `color` it tells songs apart for those who can't read.
 const MUSIC = [
     {
         file: 'assets/music/descendants-cast-rotten-to-the-core.mp3',
+        thumb: 'assets/music/descendants-cast-rotten-to-the-core.jpg',
         artist: 'Descendants – Cast',
         title: 'Rotten to the Core',
         album: 'Descendants (Original TV Movie Soundtrack)',
-        source: 'https://www.youtube.com/watch?v=zGlLe1w3DJM',
-        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium'
+        youtubeUrl: 'https://www.youtube.com/watch?v=zGlLe1w3DJM',
+        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
+        color: 0xd9ccf5
+    },
+    {
+        file: 'assets/music/dove-cameron-if-only.mp3',
+        thumb: 'assets/music/dove-cameron-if-only.jpg',
+        artist: 'Dove Cameron',
+        title: 'If Only',
+        album: 'Descendants (Original TV Movie Soundtrack)',
+        youtubeUrl: 'https://www.youtube.com/watch?v=JFYedt-KnB0',
+        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
+        color: 0xf7b2cc
     }
 ];
