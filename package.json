@@ -1,0 +1,9 @@
+{
+  "name": "swiat-siostr",
+  "private": true,
+  "description": "Świat Sióstr – gra w Phaser 4",
+  "scripts": {
+    "start": "node tools/dev-server.mjs 8080",
+    "dev": "node tools/dev-server.mjs 8080 --livereload"
+  }
+}
