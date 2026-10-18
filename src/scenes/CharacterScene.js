@@ -27,7 +27,6 @@ class CharacterScene extends Phaser.Scene {
         CHARACTERS.forEach((c) => createHamsterTextures(this, c));
 
         PixelUI.drawSky(this, width, height);
-        PixelUI.addTitle(this, cx, 14, 'Wybierz postać');
 
         const slot = 30;
         const gap = 4;
@@ -41,16 +40,20 @@ class CharacterScene extends Phaser.Scene {
         let panelX;
         let panelY;
         if (portrait) {
+            // Grid above the preview panel (about 118px tall), centred as one block.
+            const blockH = gridH + 20 + 118;
             gridX = Math.round((width - gridW) / 2);
-            gridY = 30;
+            gridY = Math.max(30, Math.round((height - 28 - blockH) / 2));
             panelX = cx;
-            panelY = Math.round(gridY + gridH + (height - gridY - gridH - 28) / 2);
+            panelY = gridY + gridH + 20 + 48;
         } else {
             gridX = Math.max(8, Math.round(width / 2 - 8 - gridW));
             gridY = Math.round((height - gridH) / 2) + 6;
             panelX = Math.round(width / 2 + 8 + (width / 2 - 16) / 2);
             panelY = Math.round(height / 2);
         }
+
+        PixelUI.addTitle(this, cx, gridY - 16, 'Wybierz postać');
 
         for (let i = 0; i < CHARACTER_SLOTS; i++) {
             const x = gridX + (i % cols) * (slot + gap);

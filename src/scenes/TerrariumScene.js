@@ -43,8 +43,8 @@ class TerrariumScene extends Phaser.Scene {
         PixelUI.drawSky(this, width, height);
 
         const tank = {
-            w: Math.min(width - 24, 360),
-            h: Math.min(height - 56, 200)
+            w: Math.min(width - 24, 480),
+            h: Math.min(height - 56, 260)
         };
         tank.x = Math.round((width - tank.w) / 2);
         // Centre the tank in the space between the title and the bottom bar.
