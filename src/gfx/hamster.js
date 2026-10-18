@@ -96,7 +96,9 @@ function createHamsterTextures(scene, character) {
         L: character.colors.light,
         P: character.colors.pink,
         E: 0x3d2b3d,
-        W: 0xffffff
+        W: 0xffffff,
+        // Extra letters a drawn character may use for its own colours.
+        ...(character.palette || {})
     };
 
     // Drawn characters have no separate blink or chew frames.

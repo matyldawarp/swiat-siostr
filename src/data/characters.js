@@ -207,6 +207,52 @@ CHARACTERS.push(
     }
 );
 
+// Character 6 was coloured square by square on grid paper (assets/scans/postac-6.jpg),
+// so it is copied cell for cell with its own colours, softened to pastels.
+CHARACTERS.push({
+    id: 'postac6',
+    name: 'Postać 6',
+    species: '',
+    colors: { body: 0x8fdcea },
+    palette: {
+        O: 0x4f74c8, // blue outline
+        T: 0x8fdcea, // turquoise fur
+        G: 0xc4ecc8, // light green fur
+        M: 0xd9a6d6, // inside of the ears
+        P: 0xf5bfd2, // pink lip
+        S: 0xf4aaae, // big pink mouth
+        E: 0x3d5cb0, // pupils and nose
+        W: 0xffffff
+    },
+    pixels: [
+        '................',
+        '..OO........OO..',
+        '.OMTO......OGMO.',
+        '.OMTTOOOOOOGTMO.',
+        '.OTTTGGTTGGGTTO.',
+        'OGGGGGGTTGGGTTTO',
+        'OGGWETTTTTTWETTO',
+        'OGGEETTTTTTEETTO',
+        'OGPPPPPPPPPPPPTO',
+        'OGGSSSSEESSSSTTO',
+        'OGSSSSSSSSSSSSTO',
+        'OTSSSSSSSSSSSSGO',
+        'OTTSSSSSSSSSSGGO',
+        '.OTTPSSSSSPPGGO.',
+        '..OOTGGGTTTTOO..',
+        '....OOOOOOOO....'
+    ],
+    // A little "miau".
+    sound: {
+        wave: 'triangle',
+        gap: 0,
+        chirps: [
+            { from: 500, to: 900, duration: 0.15 },
+            { from: 900, to: 550, duration: 0.25 }
+        ]
+    }
+});
+
 function getCharacter(id) {
     return CHARACTERS.find((c) => c.id === id) || CHARACTERS[0];
 }
