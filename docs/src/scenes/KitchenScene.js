@@ -77,7 +77,10 @@ export class KitchenScene extends BaseScene {
         this.drawBowl();
         this.cake = this.add.graphics();
 
-        PixelUI.createIconButton(this, S(24), height - S(24), S(32),
+        // On a narrow phone screen the home button moves to the top-left corner, leaving the
+        // bottom for the step buttons.
+        this.narrow = width < S(250);
+        PixelUI.createIconButton(this, S(24), this.narrow ? S(24) : height - S(24), S(32),
             (g, size) => Icons.house(g, 0, 0, size), () => this.goHome());
 
         this.showIngredientButtons();
@@ -290,14 +293,19 @@ export class KitchenScene extends BaseScene {
         this.rowButtons.forEach((b) => b.destroy());
         this.rowButtons = [];
         const size = S(36);
-        const y = this.view.height - S(30);
-        // Centred in the space right of the home button, packed tighter on narrow screens.
-        const left = S(52);
+        // Centred in the space right of the home button (or the whole width when it sits at
+        // the top), packed tighter on narrow screens, in more rows when one is not enough.
+        const left = this.narrow ? S(6) : S(52);
         const right = this.view.width - S(6);
-        const gap = Math.min(S(46), (right - left) / defs.length);
+        const perRow = Math.max(1, Math.min(defs.length, Math.floor((right - left) / (size + S(4)))));
+        const rows = Math.ceil(defs.length / perRow);
         const centerX = (left + right) / 2;
         defs.forEach((def, i) => {
-            const x = Math.round(centerX + (i - (defs.length - 1) / 2) * gap);
+            const row = Math.floor(i / perRow);
+            const inRow = row < rows - 1 ? perRow : defs.length - row * perRow;
+            const gap = Math.min(S(46), (right - left) / inRow);
+            const x = Math.round(centerX + ((i % perRow) - (inRow - 1) / 2) * gap);
+            const y = this.view.height - S(30) - (rows - 1 - row) * (size + S(6));
             const button = PixelUI.createIconButton(this, x, y, size, def.draw, () => def.onTap(button));
             button.key = def.key;
             this.rowButtons.push(button);

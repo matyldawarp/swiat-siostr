@@ -32,7 +32,18 @@ export class CharacterScene extends BaseScene {
         const slot = S(30);
         const gap = S(4);
         const cols = portrait ? 4 : 5;
-        const rows = Math.ceil(CHARACTER_SLOTS / cols);
+
+        // The title sits just above the grid, so the grid starts low enough for both.
+        const title = PixelUI.addTitle(this, cx, 0, 'Wybierz postać');
+        const minGridY = Math.max(S(30), PixelUI.topClearY(width, title.width, title.height) + S(16));
+
+        // Rows that fit below the title, above the preview panel (below the grid when upright)
+        // and the back button. On small phone screens the locked "?" slots, which are only
+        // a promise of more characters, are left out; every character always gets a slot.
+        const freeH = height - minGridY - S(28) - (portrait ? S(20) + S(118) : 0);
+        const rowsFit = Math.floor((freeH + gap) / (slot + gap));
+        const rows = Math.max(Math.ceil(CHARACTERS.length / cols), Math.min(Math.ceil(CHARACTER_SLOTS / cols), rowsFit));
+        const slotCount = Math.min(CHARACTER_SLOTS, rows * cols);
         const gridW = cols * slot + (cols - 1) * gap;
         const gridH = rows * slot + (rows - 1) * gap;
 
@@ -44,19 +55,18 @@ export class CharacterScene extends BaseScene {
             // Grid above the preview panel, centred as one block.
             const blockH = gridH + S(20) + S(118);
             gridX = Math.round((width - gridW) / 2);
-            gridY = Math.max(S(30), Math.round((height - S(28) - blockH) / 2));
+            gridY = Math.max(minGridY, Math.round((height - S(28) - blockH) / 2));
             panelX = cx;
             panelY = gridY + gridH + S(20) + S(48);
         } else {
             gridX = Math.max(S(8), Math.round(width / 2 - S(8) - gridW));
-            gridY = Math.round((height - gridH) / 2) + S(6);
+            gridY = Math.max(minGridY, Math.round((height - gridH) / 2) + S(6));
             panelX = Math.round(width / 2 + S(8) + (width / 2 - S(16)) / 2);
             panelY = Math.round(height / 2);
         }
+        title.setY(gridY - S(16));
 
-        PixelUI.addTitle(this, cx, gridY - S(16), 'Wybierz postać');
-
-        for (let i = 0; i < CHARACTER_SLOTS; i++) {
+        for (let i = 0; i < slotCount; i++) {
             const x = gridX + (i % cols) * (slot + gap);
             const y = gridY + Math.floor(i / cols) * (slot + gap);
             this.slots.push(this.createSlot(x, y, slot, CHARACTERS[i]));

@@ -50,6 +50,9 @@ export function setRenderScale(value) {
     RENDER_SCALE = value;
 }
 
+// OverlayScene's music and reload buttons fill this corner at the top right of every scene.
+export const OVERLAY_CORNER = { width: S(56), height: S(28) };
+
 // Text styles used across scenes; pass the size through S().
 export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}) {
     return {
@@ -79,6 +82,28 @@ export const PixelUI = {
     addText(scene, x, y, text, style) {
         return scene.add.text(x, y, text, { ...style, resolution: RENDER_SCALE });
     },
+    // Smallest y for the centre of something `width` x `height` centred at the top of the
+    // view, so it doesn't run into the overlay buttons (top right) or into the scene's own
+    // buttons in the top-left corner (`left` wide, down to `leftBottom`). 0 when it fits
+    // between them; on narrow phone screens it has to go below them.
+    topClearY(viewWidth, width, height, { left = 0, leftBottom = 0 } = {}) {
+        const half = width / 2 + S(4);
+        const cx = viewWidth / 2;
+        if (cx - half >= left && cx + half <= viewWidth - OVERLAY_CORNER.width) {
+            return 0;
+        }
+        return Math.max(OVERLAY_CORNER.height, leftBottom) + height / 2 + S(2);
+    },
+
+    // Shrinks a text's font until it is at most maxWidth wide, e.g. a big title on a phone.
+    fitWidth(text, maxWidth) {
+        if (text.width > maxWidth) {
+            const size = parseFloat(text.style.fontSize);
+            text.setFontSize(`${Math.floor((size * maxWidth) / text.width)}px`);
+        }
+        return text;
+    },
+
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
         for (let dy = -r; dy <= r; dy++) {

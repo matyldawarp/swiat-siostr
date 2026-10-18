@@ -14,6 +14,14 @@ import { OverlayScene } from './scenes/OverlayScene.js';
 // Safari's toolbars (about 820x1060-1110) at zoom 2 rather than dropping to 1.
 const BASE_LONG = 512;
 const BASE_SHORT = 324;
+// Phones (short side under PHONE_MAX_SHORT CSS px) are much smaller than that, and with the
+// tablet base everything there came out tiny (1 CSS px per game pixel), so they get a
+// smaller game area, counted in device pixels: typical Android phones end up at about
+// 1.7-1.9 CSS px per game pixel upright. Every scene must still fit in
+// PHONE_BASE_LONG x PHONE_BASE_SHORT.
+const PHONE_MAX_SHORT = 600;
+const PHONE_BASE_LONG = 384;
+const PHONE_BASE_SHORT = 216;
 
 const config = {
     type: Phaser.AUTO,
@@ -38,10 +46,14 @@ function fitToWindow(game) {
     const dpr = window.devicePixelRatio || 1;
     const long = Math.max(w, h);
     const short = Math.min(w, h);
-
-    // Game pixel size in CSS pixels, then in whole device pixels.
-    const zoom = Math.max(1, Math.floor(Math.min(long / BASE_LONG, short / BASE_SHORT)));
-    setRenderScale(Math.max(1, Math.round(zoom * dpr)));
+    if (short < PHONE_MAX_SHORT) {
+        // Phones: the largest whole number of device pixels that fits the phone base.
+        setRenderScale(Math.max(1, Math.floor(Math.min((long * dpr) / PHONE_BASE_LONG, (short * dpr) / PHONE_BASE_SHORT))));
+    } else {
+        // Tablets and computers: a whole number of CSS pixels, then in whole device pixels.
+        const zoom = Math.max(1, Math.floor(Math.min(long / BASE_LONG, short / BASE_SHORT)));
+        setRenderScale(Math.max(1, Math.round(zoom * dpr)));
+    }
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
     const gameW = Math.ceil((w * dpr) / RENDER_SCALE);
