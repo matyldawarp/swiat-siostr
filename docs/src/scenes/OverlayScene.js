@@ -5,6 +5,9 @@ import { MUSIC } from '../data/music.js';
 import { Settings } from '../ui/settings.js';
 import { BaseScene } from './BaseScene.js';
 
+// Scenes that show the gear button; elsewhere the girls can't open Settings by accident.
+const SETTINGS_SCENES = ['StartScene', 'CharacterScene'];
+
 // Always-on-top scene with controls that stay visible on every screen.
 // It is last in the scene list, so it renders above the others and gets input first.
 export class OverlayScene extends BaseScene {
@@ -27,10 +30,12 @@ export class OverlayScene extends BaseScene {
         const top = margin + toGame(SAFE_AREA.top);
         const right = width - margin - toGame(SAFE_AREA.right);
         this.createReloadButton(right - size / 2, top + size / 2, size);
-        // Settings sit left of the music button (which may be missing).
-        PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
+        // Settings sit left of the music button (which may be missing). They are for the
+        // grown-ups, so the gear shows only on the start and character screens (update()).
+        this.settingsButton = PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
             (g) => Icons.gear(g, 0, 0, Math.round(size * 0.7)),
             () => (this.menu ? this.closeMenu() : this.openSettings()));
+        this.settingsButton.setVisible(this.settingsAllowed());
 
         // The note button appears only once some song file is known to exist.
         const thisRun = {};
@@ -45,6 +50,18 @@ export class OverlayScene extends BaseScene {
 
         this.debugInfo = null;
         this.refreshDebugInfo();
+    }
+
+    // Scenes where the gear (Settings) button is shown.
+    settingsAllowed() {
+        return SETTINGS_SCENES.some((key) => this.scene.isActive(key));
+    }
+
+    update() {
+        const allowed = this.settingsAllowed();
+        if (this.settingsButton && this.settingsButton.visible !== allowed) {
+            this.settingsButton.setVisible(allowed);
+        }
     }
 
     // In debug mode (Settings): the window and screen size in the bottom-left corner, to

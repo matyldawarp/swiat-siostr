@@ -150,8 +150,8 @@ export class MapScene extends BaseScene {
 
         const near = (p, list, dist) => list.some((q) => Phaser.Math.Distance.Between(p.x, p.y, q.x, q.y) < dist);
         const sparseRoad = roadPoints.filter((_, i) => i % 4 === 0);
-        // Keep clear of the settings, music and reload buttons in the top-right corner.
-        const corner = [{ x: width - S(17), y: S(17) }, { x: width - S(43), y: S(17) }, { x: width - S(69), y: S(17) }];
+        // Keep clear of the music and reload buttons in the top-right corner.
+        const corner = [{ x: width - S(17), y: S(17) }, { x: width - S(43), y: S(17) }];
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
