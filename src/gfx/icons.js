@@ -326,6 +326,202 @@ const Icons = {
         PixelUI.fillCircle(g, cx, headY, Math.max(1, petalR - 1));
     },
 
+    // Filled ellipse made of 1px rows.
+    fillEllipse(g, cx, cy, rx, ry) {
+        for (let dy = -ry; dy <= ry; dy++) {
+            const dx = Math.round(rx * Math.sqrt(1 - (dy * dy) / (ry * ry)));
+            g.fillRect(cx - dx, cy + dy, dx * 2 + 1, 1);
+        }
+    },
+
+    // --- Kitchen ----------------------------------------------------------------
+
+    // Flour sack tied at the top, with a little wheat ear.
+    flour(g, cx, cy, size) {
+        const w = Math.round(size * 0.62);
+        const h = Math.round(size * 0.66);
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2 + size * 0.1);
+        PixelUI.drawBox(g, left, top, w, h, ICON_COLORS.cream, PALETTE.outline);
+        // Gathered neck.
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(Math.round(cx - w * 0.25) - 1, top - Math.round(size * 0.14), Math.round(w * 0.5) + 2, Math.round(size * 0.16));
+        g.fillStyle(ICON_COLORS.cream, 1);
+        g.fillRect(Math.round(cx - w * 0.25), top - Math.round(size * 0.14) + 1, Math.round(w * 0.5), Math.round(size * 0.16) - 1);
+        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        g.fillRect(Math.round(cx - w * 0.3), top - 1, Math.round(w * 0.6), 2);
+        // Wheat.
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        g.fillRect(cx, top + Math.round(h * 0.25), 1, Math.round(h * 0.55));
+        for (let i = 0; i < 3; i++) {
+            const y = top + Math.round(h * 0.28) + i * 3;
+            g.fillRect(cx - 2, y, 2, 2);
+            g.fillRect(cx + 1, y, 2, 2);
+        }
+    },
+
+    egg(g, cx, cy, size) {
+        const rx = Math.round(size * 0.28);
+        const ry = Math.round(size * 0.38);
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillEllipse(g, cx, cy, rx + 1, ry + 1);
+        g.fillStyle(0xfff7e8, 1);
+        Icons.fillEllipse(g, cx, cy, rx, ry);
+        // Narrower top.
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(cx - Math.round(rx / 2), cy - Math.round(ry / 2), 2, 3);
+    },
+
+    // Glass jar of sugar cubes with a lavender lid.
+    sugar(g, cx, cy, size) {
+        const w = Math.round(size * 0.6);
+        const h = Math.round(size * 0.62);
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2 + size * 0.08);
+        PixelUI.drawBox(g, left, top, w, h, ICON_COLORS.sky, PALETTE.outline);
+        PixelUI.drawBox(g, left - 2, top - Math.round(size * 0.14), w + 4, Math.round(size * 0.16), ICON_COLORS.lavender, PALETTE.outline);
+        const cube = Math.max(3, Math.round(size * 0.14));
+        g.fillStyle(0xffffff, 1);
+        [[0.2, 0.55], [0.55, 0.55], [0.38, 0.25]].forEach(([fx, fy]) => {
+            g.fillRect(left + Math.round(w * fx), top + Math.round(h * fy), cube, cube);
+        });
+    },
+
+    // Milk carton with a pointed top.
+    milk(g, cx, cy, size) {
+        const w = Math.round(size * 0.46);
+        const h = Math.round(size * 0.56);
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2 + size * 0.14);
+        const roof = Math.round(size * 0.22);
+        for (let r = 0; r < roof; r++) {
+            const half = Math.round(((r + 1) / roof) * (w / 2));
+            g.fillStyle(r === 0 ? PALETTE.outline : ICON_COLORS.sky, 1);
+            g.fillRect(Math.round(cx - half), top - roof + r, half * 2, 1);
+        }
+        PixelUI.drawBox(g, left, top, w, h, 0xffffff, PALETTE.outline);
+        g.fillStyle(ICON_COLORS.sky, 1);
+        g.fillRect(left + 2, top + Math.round(h * 0.35), w - 4, Math.round(h * 0.25));
+    },
+
+    // Balloon whisk: handle at the bottom, wire loops on top.
+    whisk(g, cx, cy, size) {
+        const handleH = Math.round(size * 0.32);
+        const loopRy = Math.round(size * 0.3);
+        const loopCy = Math.round(cy - size * 0.12);
+        g.fillStyle(ICON_COLORS.lavenderDark, 1);
+        g.fillRect(cx - 1, Math.round(cy + size * 0.12), 3, handleH);
+        g.fillStyle(0x9a94ad, 1);
+        [0.3, 0.18].forEach((f) => {
+            const rx = Math.round(size * f);
+            for (let dy = -loopRy; dy <= loopRy; dy++) {
+                const dx = Math.round(rx * Math.sqrt(1 - (dy * dy) / (loopRy * loopRy)));
+                g.fillRect(cx - dx, loopCy + dy, 1, 1);
+                g.fillRect(cx + dx, loopCy + dy, 1, 1);
+            }
+        });
+        g.fillRect(cx, loopCy - loopRy, 1, loopRy * 2);
+    },
+
+    // Piping bag of pink icing.
+    icing(g, cx, cy, size) {
+        const rows = Math.round(size * 0.7);
+        const top = Math.round(cy - size * 0.38);
+        for (let r = 0; r < rows; r++) {
+            const half = Math.max(1, Math.round((1 - r / rows) * size * 0.3));
+            g.fillStyle(PALETTE.outline, 1);
+            g.fillRect(cx - half - 1, top + r, half * 2 + 3, 1);
+            g.fillStyle(r < rows * 0.25 ? 0xffffff : ICON_COLORS.pink, 1);
+            g.fillRect(cx - half, top + r, half * 2 + 1, 1);
+        }
+        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        g.fillRect(cx, top + rows, 1, Math.round(size * 0.12));
+    },
+
+    // Shaker with colourful sprinkles falling out.
+    sprinkles(g, cx, cy, size) {
+        const w = Math.round(size * 0.42);
+        const h = Math.round(size * 0.5);
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - size * 0.42);
+        PixelUI.drawBox(g, left, top, w, h, ICON_COLORS.cream, PALETTE.outline);
+        g.fillStyle(ICON_COLORS.lavender, 1);
+        g.fillRect(left + 2, top + 2, w - 4, 3);
+        const colors = [ICON_COLORS.pinkDark, ICON_COLORS.mintDark, ICON_COLORS.goldDark, ICON_COLORS.lavenderDark];
+        for (let i = 0; i < 6; i++) {
+            g.fillStyle(colors[i % colors.length], 1);
+            g.fillRect(left + 2 + ((i * 5) % (w - 4)), top + h + 2 + (i % 3) * 3, 2, 1);
+        }
+    },
+
+    strawberry(g, cx, cy, size) {
+        const r = Math.round(size * 0.3);
+        const top = Math.round(cy - r * 0.6);
+        g.fillStyle(PALETTE.outline, 1);
+        for (let row = 0; row <= r * 2; row++) {
+            const half = Math.round(r * (1 - Math.pow(row / (r * 2), 1.6)) ) + 1;
+            g.fillRect(cx - half, top + row, half * 2 + 1, 1);
+        }
+        g.fillStyle(0xf28aa5, 1);
+        for (let row = 1; row < r * 2; row++) {
+            const half = Math.round(r * (1 - Math.pow(row / (r * 2), 1.6)));
+            g.fillRect(cx - half, top + row, half * 2 + 1, 1);
+        }
+        g.fillStyle(0xfff1c9, 1);
+        [[-0.4, 0.5], [0.3, 0.6], [0, 1.1], [-0.2, 1.5], [0.4, 1.2]].forEach(([fx, fy]) => {
+            g.fillRect(Math.round(cx + fx * r), Math.round(top + fy * r), 1, 1);
+        });
+        g.fillStyle(0x9fd6b8, 1);
+        g.fillRect(cx - Math.round(r * 0.7), top - 1, Math.round(r * 1.4) + 1, 2);
+        g.fillRect(cx, top - 3, 2, 3);
+    },
+
+    // Round layer cake on a plate; (cx, bottom) is the middle of the plate.
+    // `bite` (0..1) is how much has been eaten from the right side.
+    cake(g, cx, bottom, w, { icing = false, sprinkles = false, strawberry = false, bite = 0 } = {}) {
+        const h = Math.round(w * 0.42);
+        const left = Math.round(cx - w / 2);
+        const right = Math.round(left + w * (1 - bite));
+        const top = bottom - Math.round(w * 0.06) - h;
+        const cw = right - left;
+
+        // Plate.
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - Math.round(w * 0.12) - 1, bottom - Math.round(w * 0.06) - 1, Math.round(w * 1.24) + 2, Math.round(w * 0.06) + 2);
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(left - Math.round(w * 0.12), bottom - Math.round(w * 0.06), Math.round(w * 1.24), Math.round(w * 0.06));
+        if (cw <= 2) {
+            return;
+        }
+
+        // Sponge with a cream filling.
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, top - 1, cw + 2, h + 1);
+        g.fillStyle(0xf6d098, 1);
+        g.fillRect(left, top, cw, h);
+        g.fillStyle(0xfff7e8, 1);
+        g.fillRect(left, top + Math.round(h * 0.5), cw, Math.max(2, Math.round(h * 0.12)));
+
+        if (icing) {
+            g.fillStyle(ICON_COLORS.pink, 1);
+            g.fillRect(left, top, cw, Math.round(h * 0.28));
+            // Drips.
+            for (let x = left + 2; x < right - 2; x += 6) {
+                g.fillRect(x, top + Math.round(h * 0.28), 2, 2 + ((x / 6) % 2) * 2);
+            }
+        }
+        if (sprinkles) {
+            const colors = [ICON_COLORS.mintDark, ICON_COLORS.goldDark, ICON_COLORS.lavenderDark, 0xffffff];
+            for (let x = left + 2, i = 0; x < right - 2; x += 4, i++) {
+                g.fillStyle(colors[i % colors.length], 1);
+                g.fillRect(x, top + 1 + (i % 3) * 2, 2, 1);
+            }
+        }
+        if (strawberry && bite < 0.5) {
+            Icons.strawberry(g, Math.round(cx), top - Math.round(w * 0.06), Math.round(w * 0.36));
+        }
+    },
+
     // Tiny tree for map decoration.
     tree(g, cx, bottom, size) {
         const trunkH = Math.round(size * 0.3);

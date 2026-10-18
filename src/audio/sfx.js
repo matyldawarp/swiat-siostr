@@ -84,6 +84,64 @@ function playDoorbell(scene) {
     playNotes(scene, [{ freq: 784, duration: 0.35 }, { freq: 622, duration: 0.6 }], 'sine', 0.12);
 }
 
+// Soft "plop" when an ingredient lands in the bowl.
+function playPlop(scene) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    const t = ctx.currentTime + 0.005;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(420, t);
+    osc.frequency.exponentialRampToValueAtTime(140, t + 0.12);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(t);
+    osc.stop(t + 0.16);
+}
+
+// Swish of the whisk in the batter.
+function playWhisk(scene) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    const duration = 0.12;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.sin((Math.PI * i) / data.length);
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1200;
+    filter.Q.value = 0.8;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.25;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+    source.start();
+}
+
+// Little sparkle for a cake decoration.
+function playSparkle(scene) {
+    playNotes(scene, [
+        { freq: 1568, duration: 0.08 },
+        { freq: 2093, duration: 0.08 },
+        { freq: 2637, duration: 0.16 }
+    ], 'sine', 0.08);
+}
+
 // Thermometer "done" chime.
 function playDing(scene) {
     playNotes(scene, [{ freq: 1319, duration: 0.18 }, { freq: 1760, duration: 0.35 }], 'sine', 0.12);
