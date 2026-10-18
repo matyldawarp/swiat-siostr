@@ -1,6 +1,24 @@
+const PALETTE = {
+    skyTop: 0xcfe8ff,
+    skyBottom: 0xffe1ec,
+    sun: 0xfff1c9,
+    cloud: 0xffffff,
+    hillBack: 0xd9ccf5,
+    hillFront: 0xbfe8d6,
+    button: 0xf7b2cc,
+    buttonHover: 0xf59bbd,
+    buttonBorder: 0xffffff,
+    // Fade colour as RGB for camera effects.
+    fade: [255, 244, 248]
+};
+
 class StartScene extends Phaser.Scene {
     constructor() {
         super('StartScene');
+    }
+
+    init() {
+        this.starting = false;
     }
 
     create() {
@@ -8,25 +26,26 @@ class StartScene extends Phaser.Scene {
         const cx = width / 2;
 
         this.drawSky(width, height);
-        this.drawStars(width, height);
-        this.drawMoon(width * 0.8, height * 0.22);
+        this.drawSun(width * 0.8, height * 0.22);
+        this.drawClouds(width, height);
         this.drawHills(width, height);
+        this.drawSparkles(width, height);
 
         const title = this.add.text(cx, height * 0.36, 'Świat Sióstr', {
             fontFamily: '"Playfair Display", Georgia, serif',
             fontStyle: 'bold',
             fontSize: '110px',
-            color: '#ffe9c7',
-            stroke: '#3b1d5e',
-            strokeThickness: 8,
-            shadow: { offsetX: 0, offsetY: 6, color: '#000000', blur: 18, fill: true, stroke: true }
+            color: '#8a5c9e',
+            stroke: '#ffffff',
+            strokeThickness: 10,
+            shadow: { offsetX: 0, offsetY: 6, color: '#e7c8e8', blur: 16, fill: true, stroke: true }
         }).setOrigin(0.5).setAlpha(0);
 
         const subtitle = this.add.text(cx, height * 0.36 + 90, 'opowieść o dwóch siostrach', {
             fontFamily: '"Playfair Display", Georgia, serif',
             fontStyle: 'italic',
             fontSize: '30px',
-            color: '#d9c6f5'
+            color: '#a07aa8'
         }).setOrigin(0.5).setAlpha(0);
 
         const button = this.createButton(cx, height * 0.68, 'Rozpocznij');
@@ -35,7 +54,7 @@ class StartScene extends Phaser.Scene {
         const hint = this.add.text(cx, height - 40, 'Kliknij lub naciśnij Enter', {
             fontFamily: 'Nunito, sans-serif',
             fontSize: '18px',
-            color: '#9d8cc0'
+            color: '#6f9c8a'
         }).setOrigin(0.5).setAlpha(0);
 
         this.tweens.add({ targets: title, alpha: 1, y: title.y - 10, duration: 1400, ease: 'Sine.easeOut' });
@@ -45,44 +64,23 @@ class StartScene extends Phaser.Scene {
         this.input.keyboard.once('keydown-ENTER', () => this.startGame());
         this.input.keyboard.once('keydown-SPACE', () => this.startGame());
 
-        this.cameras.main.fadeIn(800, 13, 10, 31);
+        this.cameras.main.fadeIn(800, ...PALETTE.fade);
     }
 
     drawSky(width, height) {
         const sky = this.add.graphics();
-        sky.fillGradientStyle(0x0d0a1f, 0x0d0a1f, 0x4a2a6b, 0x4a2a6b, 1);
+        sky.fillGradientStyle(PALETTE.skyTop, PALETTE.skyTop, PALETTE.skyBottom, PALETTE.skyBottom, 1);
         sky.fillRect(0, 0, width, height);
     }
 
-    drawStars(width, height) {
-        for (let i = 0; i < 120; i++) {
-            const x = Phaser.Math.Between(0, width);
-            const y = Phaser.Math.Between(0, height * 0.7);
-            const r = Phaser.Math.FloatBetween(0.6, 2.2);
-            const star = this.add.circle(x, y, r, 0xffffff, Phaser.Math.FloatBetween(0.3, 1));
-
-            this.tweens.add({
-                targets: star,
-                alpha: 0.1,
-                duration: Phaser.Math.Between(900, 2600),
-                delay: Phaser.Math.Between(0, 2000),
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-        }
-    }
-
-    drawMoon(x, y) {
-        const glow = this.add.circle(x, y, 90, 0xfff3d6, 0.12);
-        this.add.circle(x, y, 52, 0xfff3d6);
-        // Cut-out disc matches the sky gradient at the moon's height to form a crescent.
-        this.add.circle(x + 22, y - 12, 46, 0x1a1130);
+    drawSun(x, y) {
+        const glow = this.add.circle(x, y, 110, PALETTE.sun, 0.45);
+        this.add.circle(x, y, 60, PALETTE.sun);
 
         this.tweens.add({
             targets: glow,
-            scale: 1.15,
-            alpha: 0.05,
+            scale: 1.12,
+            alpha: 0.25,
             duration: 3000,
             yoyo: true,
             repeat: -1,
@@ -90,15 +88,63 @@ class StartScene extends Phaser.Scene {
         });
     }
 
+    drawClouds(width, height) {
+        const clouds = [
+            { x: width * 0.15, y: height * 0.14, scale: 1 },
+            { x: width * 0.55, y: height * 0.09, scale: 0.7 },
+            { x: width * 0.9, y: height * 0.42, scale: 0.85 }
+        ];
+
+        clouds.forEach(({ x, y, scale }, i) => {
+            const cloud = this.add.graphics({ x, y });
+            cloud.fillStyle(PALETTE.cloud, 0.9);
+            cloud.fillEllipse(0, 0, 160, 60);
+            cloud.fillEllipse(-45, -18, 90, 70);
+            cloud.fillEllipse(35, -25, 100, 80);
+            cloud.setScale(scale);
+
+            this.tweens.add({
+                targets: cloud,
+                x: x + 40,
+                duration: 7000 + i * 1500,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        });
+    }
+
     drawHills(width, height) {
         const back = this.add.graphics();
-        back.fillStyle(0x2a1a47, 1);
+        back.fillStyle(PALETTE.hillBack, 1);
         back.fillEllipse(width * 0.25, height + 40, width * 0.9, 300);
         back.fillEllipse(width * 0.8, height + 60, width * 0.9, 320);
 
         const front = this.add.graphics();
-        front.fillStyle(0x170f2e, 1);
+        front.fillStyle(PALETTE.hillFront, 1);
         front.fillEllipse(width * 0.5, height + 90, width * 1.4, 260);
+    }
+
+    drawSparkles(width, height) {
+        const colors = [0xffffff, 0xffd6e5, 0xfff1c9, 0xd9ccf5];
+
+        for (let i = 0; i < 40; i++) {
+            const x = Phaser.Math.Between(0, width);
+            const y = Phaser.Math.Between(0, height * 0.75);
+            const r = Phaser.Math.FloatBetween(1.5, 3.5);
+            const sparkle = this.add.circle(x, y, r, Phaser.Utils.Array.GetRandom(colors), 0.9);
+
+            this.tweens.add({
+                targets: sparkle,
+                alpha: 0.15,
+                y: y - 12,
+                duration: Phaser.Math.Between(1500, 3500),
+                delay: Phaser.Math.Between(0, 2000),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
     }
 
     createButton(x, y, label) {
@@ -110,24 +156,24 @@ class StartScene extends Phaser.Scene {
             bg.clear();
             bg.fillStyle(fill, 1);
             bg.fillRoundedRect(-w / 2, -h / 2, w, h, 36);
-            bg.lineStyle(3, 0xffe9c7, 1);
+            bg.lineStyle(4, PALETTE.buttonBorder, 1);
             bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 36);
         };
-        draw(0x7b3fa8);
+        draw(PALETTE.button);
 
         const text = this.add.text(0, 0, label, {
             fontFamily: 'Nunito, sans-serif',
             fontStyle: '800',
             fontSize: '32px',
-            color: '#ffffff'
+            color: '#7a3f63'
         }).setOrigin(0.5);
 
         const button = this.add.container(x, y, [bg, text]);
         button.setSize(w, h);
         button.setInteractive({ useHandCursor: true });
 
-        button.on('pointerover', () => draw(0x9552c7));
-        button.on('pointerout', () => draw(0x7b3fa8));
+        button.on('pointerover', () => draw(PALETTE.buttonHover));
+        button.on('pointerout', () => draw(PALETTE.button));
         button.on('pointerup', () => this.startGame());
 
         this.tweens.add({
@@ -149,11 +195,7 @@ class StartScene extends Phaser.Scene {
         this.starting = true;
 
         // No gameplay scene yet: fade out and back in as a placeholder.
-        this.cameras.main.fadeOut(600, 13, 10, 31);
+        this.cameras.main.fadeOut(600, ...PALETTE.fade);
         this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart());
-    }
-
-    init() {
-        this.starting = false;
     }
 }

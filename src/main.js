@@ -1,7 +1,7 @@
 const config = {
     type: Phaser.AUTO,
     title: 'Świat Sióstr',
-    backgroundColor: '#0d0a1f',
+    backgroundColor: '#fff4f8',
     scale: {
         mode: Phaser.Scale.FIT,
         parent: 'game',
