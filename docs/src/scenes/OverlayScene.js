@@ -1,4 +1,4 @@
-import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
@@ -21,7 +21,11 @@ export class OverlayScene extends BaseScene {
 
         const size = S(22);
         const margin = S(6);
-        this.createReloadButton(width - margin - size / 2, margin + size / 2, size);
+        // Below the iPad's status bar and clear of rounded corners (CSS px -> game px).
+        const toGame = (css) => Math.ceil((css * (window.devicePixelRatio || 1)) / RENDER_SCALE);
+        const top = margin + toGame(SAFE_AREA.top);
+        const right = width - margin - toGame(SAFE_AREA.right);
+        this.createReloadButton(right - size / 2, top + size / 2, size);
 
         // The note button appears only once some song file is known to exist.
         const thisRun = {};
@@ -31,7 +35,7 @@ export class OverlayScene extends BaseScene {
                 return;
             }
             this.loadThumbnails();
-            this.createMusicButton(width - margin - size * 1.5 - S(4), margin + size / 2, size);
+            this.createMusicButton(right - size * 1.5 - S(4), top + size / 2, size);
         });
     }
 

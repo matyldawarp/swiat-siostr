@@ -2,13 +2,16 @@
 <html lang="pl">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- viewport-fit=cover and black-translucent let the game draw under the iPad's status
+         bar when started from the home screen, instead of leaving a white strip there. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Świat Sióstr</title>
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#fff4f8">
     <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
     <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Świat Sióstr">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +21,8 @@
 </head>
 <body>
     <div id="game"></div>
+    <!-- Measures the safe area (status bar, rounded corners) for the overlay buttons. -->
+    <div id="safe-area"></div>
     <script src="https://cdn.jsdelivr.net/npm/phaser@4.2.1/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nosleep.js@0.12.0/dist/NoSleep.min.js"></script>
     <!-- Game code is ES modules: main.js imports everything else. -->

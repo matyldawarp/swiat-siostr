@@ -1,4 +1,4 @@
-import { STAGE, fitScale, setRenderScale } from './ui/pixel.js';
+import { SAFE_AREA, STAGE, fitScale, setRenderScale } from './ui/pixel.js';
 import { Music } from './audio/music.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
@@ -32,6 +32,14 @@ function fitToWindow(game) {
     const dpr = window.devicePixelRatio || 1;
 
     setRenderScale(fitScale(w, h, dpr));
+
+    // Status bar and rounded corners, measured by the hidden #safe-area element.
+    const probe = document.getElementById('safe-area');
+    if (probe) {
+        const style = getComputedStyle(probe);
+        SAFE_AREA.top = parseFloat(style.paddingTop) || 0;
+        SAFE_AREA.right = parseFloat(style.paddingRight) || 0;
+    }
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
     game.scale.resize(Math.round(w * dpr), Math.round(h * dpr));

@@ -60,6 +60,11 @@ export function setRenderScale(value) {
     RENDER_SCALE = value;
 }
 
+// Parts of the window covered by the status bar or rounded corners (iPad started from the
+// home screen), in CSS px; set by fitToWindow(). The stage still fills the whole screen,
+// but OverlayScene keeps its buttons clear of these.
+export const SAFE_AREA = { top: 0, right: 0 };
+
 // The scale at which the stage fits a window of w x h CSS px at this device pixel ratio.
 // A whole number keeps every game pixel exactly the same size (and the iPad at exactly 4,
 // i.e. 2 CSS px). On a sharp screen (dpr >= 2, phones) where rounding down would shrink the
