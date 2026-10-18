@@ -1,6 +1,5 @@
 // Songs the girls can pick with the note button. Files live in assets/music/;
 // `youtubeUrl` is the original YouTube link each song was downloaded from.
-// Copyrighted tracks are for private use only and are kept out of git (see .gitignore);
 // a missing file just stays silent. `thumb` is the YouTube thumbnail shrunk to 48x27 so it
 // reads as pixel art; with `color` it tells songs apart for those who can't read.
 const MUSIC = [
@@ -11,7 +10,7 @@ const MUSIC = [
         title: 'Rotten to the Core',
         album: 'Descendants (Original TV Movie Soundtrack)',
         youtubeUrl: 'https://www.youtube.com/watch?v=zGlLe1w3DJM',
-        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
+        license: 'Public domain',
         color: 0xd9ccf5
     },
     {
@@ -21,7 +20,7 @@ const MUSIC = [
         title: 'If Only',
         album: 'Descendants (Original TV Movie Soundtrack)',
         youtubeUrl: 'https://www.youtube.com/watch?v=JFYedt-KnB0',
-        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
+        license: 'Public domain',
         color: 0xf7b2cc
     },
     {
@@ -31,7 +30,7 @@ const MUSIC = [
         title: 'Set It Off',
         album: 'Descendants (Original TV Movie Soundtrack)',
         youtubeUrl: 'https://www.youtube.com/watch?v=E-e7U_JqWco',
-        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
+        license: 'Public domain',
         color: 0xbfe8d6
     }
 ];

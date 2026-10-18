@@ -45,9 +45,7 @@ const Music = {
     // Song index -> object URL of the downloaded song, or a pending download.
     urls: {},
     downloads: {},
-    // Indexes of songs whose file is on the server. Copyrighted music stays out of git, so
-    // e.g. on GitHub Pages there are none and the note button is hidden.
-    available: [],
+    available: [0, 1, 2],
     checked: false,
     checkedCallbacks: [],
 
