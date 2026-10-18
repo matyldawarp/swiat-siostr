@@ -40,7 +40,7 @@ const CHARACTERS = [
 CHARACTERS.push(
     {
         id: 'postac1',
-        name: 'Postać 1',
+        name: 'Titi',
         species: '',
         colors: { body: 0xd9ccf5 },
         pixels: [
@@ -73,7 +73,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac2',
-        name: 'Postać 2',
+        name: 'Lili',
         species: '',
         colors: { body: 0xbfe8d6 },
         pixels: [
@@ -107,7 +107,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac3',
-        name: 'Postać 3',
+        name: 'Harry',
         species: '',
         colors: { body: 0xffd6b8 },
         pixels: [
@@ -141,7 +141,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac4',
-        name: 'Postać 4',
+        name: 'Harbin',
         species: '',
         colors: { body: 0xfbd3e2 },
         pixels: [
@@ -174,7 +174,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac5',
-        name: 'Postać 5',
+        name: 'Karabilein',
         species: '',
         colors: { body: 0xcfe8ff },
         pixels: [
