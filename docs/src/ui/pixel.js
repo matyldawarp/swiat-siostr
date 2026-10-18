@@ -40,13 +40,15 @@ export function S(n) {
     return Math.round(n * UI_SCALE);
 }
 
-// Every scene is laid out on a stage of this fixed size in game pixels: the iPad Air
-// (2025) held on its side, in Safari (about 1180x740 CSS px), at 2 CSS px per game pixel.
+// Every scene is laid out on a stage of this fixed size in game pixels: the whole screen
+// of the 11-inch iPad Air (2025) held on its side, 1180x820 CSS px, at 2 CSS px per game
+// pixel. It fills the iPad when the game runs full screen (from the home screen); in
+// Safari, whose toolbars take some height, it shrinks a little.
 // The game is always this landscape shape and looks the same everywhere: on other screens
 // (also a window held upright) the whole stage is scaled to fit and centred, and the space
 // around it stays empty. Only OverlayScene (music and reload buttons) uses the whole
 // window, so its buttons may sit outside the stage.
-export const STAGE = { width: 590, height: 370 };
+export const STAGE = { width: 590, height: 410 };
 
 // Device pixels per game pixel, set by fitToWindow() in main.js: as large as the stage
 // allows. The canvas renders at the screen's native resolution and every scene camera
