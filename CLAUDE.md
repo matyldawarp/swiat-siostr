@@ -6,6 +6,11 @@ Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `python
 
 - Po każdej zmianie rób commit, bez pytania o zgodę.
 
+## Dla kogo
+
+- Grają dwie siostry: 7 i 4 lata. Młodsza nie czyta, więc wszystko musi dać się zrozumieć bez czytania: ikonki, dźwięki, animacje, duże pola do stukania. Krótkie napisy mogą być tylko dodatkiem dla starszej.
+- Bez porażek, kar i strasznych rzeczy. Każda akcja kończy się czymś miłym.
+
 ## Styl wizualny
 
 - Grafika w stylu pixel art: niska rozdzielczość bazowa skalowana całkowitymi krotnościami, `pixelArt: true` w konfiguracji gry, ostre krawędzie bez wygładzania i gradientów, czcionki pikselowe.
