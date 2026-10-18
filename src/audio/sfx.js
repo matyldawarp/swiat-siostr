@@ -91,6 +91,47 @@ function playStep(scene) {
     playNotes(scene, [{ freq: 900 + Math.random() * 200, duration: 0.03 }], 'square', 0.03);
 }
 
+// "A-psik!": a short rising "a" followed by a hissy burst.
+function playSneeze(scene) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    const t = ctx.currentTime + 0.01;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(500, t);
+    osc.frequency.exponentialRampToValueAtTime(800, t + 0.18);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.1, t + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(t);
+    osc.stop(t + 0.22);
+
+    const duration = 0.15;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3000;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.25;
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(output);
+    noise.start(t + 0.22);
+}
+
 // Little rising "blup" of a bath bubble.
 function playBubble(scene) {
     const audio = getAudio(scene);

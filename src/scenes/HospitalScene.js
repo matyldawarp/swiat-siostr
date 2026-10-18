@@ -136,6 +136,21 @@ class HospitalScene extends Phaser.Scene {
         });
         startBlinking(this, this.hamsterImage, this.character);
 
+        // Still has its cold on arrival: bubble stays until the treatment is done.
+        if (Illness.isSick(this)) {
+            this.sickBubble = Illness.createBubble(this).setDepth(20);
+            this.sickBubble.setPosition(hx + S(30), hy - 8 * scale - S(12));
+            this.sneezeTimer = this.time.addEvent({
+                delay: 5000,
+                loop: true,
+                callback: () => {
+                    if (!this.busy) {
+                        Illness.sneeze(this, this.hamsterImage, this.hamster, this.character, this.spots.mouth);
+                    }
+                }
+            });
+        }
+
         // Points on the hamster the tools go to (in world coordinates).
         this.spots = {
             mouth: { x: hx, y: hy + 1.5 * scale },
@@ -337,6 +352,17 @@ class HospitalScene extends Phaser.Scene {
 
         playFanfare(this);
         this.showHearts(5);
+
+        // Healthy again.
+        Illness.setSick(this, false);
+        if (this.sneezeTimer) {
+            this.sneezeTimer.remove();
+        }
+        if (this.sickBubble) {
+            const bubble = this.sickBubble;
+            this.sickBubble = null;
+            this.tweens.add({ targets: bubble, alpha: 0, duration: 300, onComplete: () => bubble.destroy() });
+        }
 
         const star = this.add.graphics({ x: cx, y: cy }).setDepth(30);
         Icons.star(star, 0, 0, S(26));

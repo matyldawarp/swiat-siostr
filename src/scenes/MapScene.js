@@ -24,6 +24,13 @@ class MapScene extends Phaser.Scene {
         this.skipIntro = Boolean(data.resized);
         this.character = getCharacter(this.registry.get('selectedCharacter'));
         this.location = this.registry.get('mapLocation') || 'home';
+        this.sickBubble = null;
+    }
+
+    update() {
+        if (this.sickBubble) {
+            this.sickBubble.setPosition(Math.round(this.hamster.x + S(16)), Math.round(this.hamster.y - S(30)));
+        }
     }
 
     create() {
@@ -56,9 +63,13 @@ class MapScene extends Phaser.Scene {
         this.createClouds(width, height, [homePos, hospitalPos], roadPoints);
         this.createHamster();
 
-        // The place you can travel to gently pulses.
+        // The place you can travel to gently pulses; a sick hamster's hospital pulses harder.
+        const sick = Illness.isSick(this);
         const target = this.location === 'home' ? 'hospital' : 'home';
-        PixelUI.pulse(this, this.places[target], 0.06);
+        PixelUI.pulse(this, this.places[target], sick && target === 'hospital' ? 0.14 : 0.06);
+        if (sick) {
+            this.sickBubble = Illness.createBubble(this, S(20)).setDepth(11);
+        }
 
         if (!this.skipIntro) {
             PixelUI.fadeIn(this);

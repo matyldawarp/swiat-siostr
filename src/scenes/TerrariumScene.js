@@ -55,6 +55,7 @@ class TerrariumScene extends Phaser.Scene {
         this.character = getCharacter(this.registry.get('selectedCharacter'));
         this.state = 'idle';
         this.seeds = [];
+        this.sickBubble = null;
     }
 
     create() {
@@ -109,11 +110,17 @@ class TerrariumScene extends Phaser.Scene {
         PixelUI.createButton(this, S(36), height - S(14), 'Wróć', () => this.back(), { width: S(56), height: S(18), fontSize: S(10) });
 
         // Map to travel to other places, e.g. the hospital.
-        PixelUI.createIconButton(this, S(20), S(20), S(28), (g, size) => Icons.map(g, 0, 0, size), () => {
+        this.mapButton = PixelUI.createIconButton(this, S(20), S(20), S(28), (g, size) => Icons.map(g, 0, 0, size), () => {
             this.registry.set('mapLocation', 'home');
             PixelUI.fadeTo(this, 'MapScene');
         });
         this.input.keyboard.on('keydown-ESC', () => this.back());
+
+        if (Illness.isSick(this)) {
+            this.showSickness();
+        } else {
+            this.scheduleCold();
+        }
 
         if (!this.skipIntro) {
             PixelUI.fadeIn(this);
@@ -272,6 +279,11 @@ class TerrariumScene extends Phaser.Scene {
         if (this.state !== 'idle' || this.seeds.some((s) => s.landed)) {
             return;
         }
+        // Too poorly for a run: a sneeze says so.
+        if (Illness.isSick(this)) {
+            this.sneeze();
+            return;
+        }
         this.state = 'goingToWheel';
         const { x, r } = this.wheel;
         this.walkTo(x + r + 8 * TERRARIUM_HAMSTER_SCALE, () => this.enterWheel(), 12);
@@ -421,6 +433,10 @@ class TerrariumScene extends Phaser.Scene {
 
     goToBath() {
         if (this.state !== 'idle' || this.seeds.some((s) => s.landed)) {
+            return;
+        }
+        if (Illness.isSick(this)) {
+            this.sneeze();
             return;
         }
         this.state = 'goingToBath';
@@ -617,6 +633,49 @@ class TerrariumScene extends Phaser.Scene {
         return this.state === 'enteringHouse' || this.state === 'sleeping' || this.state === 'leavingHouse';
     }
 
+    // --- Catching a cold -----------------------------------------------------
+
+    scheduleCold() {
+        this.coldTimer = this.time.delayedCall(Phaser.Math.Between(ILLNESS.minDelayMs, ILLNESS.maxDelayMs), () => {
+            if (Illness.canGetSick(this)) {
+                Illness.setSick(this, true);
+                this.showSickness();
+                this.sneeze();
+            } else {
+                this.scheduleCold();
+            }
+        });
+    }
+
+    // Thermometer bubble over the hamster, regular sneezes and a pulsing map button.
+    showSickness() {
+        this.sickBubble = Illness.createBubble(this).setDepth(DEPTH.effects);
+        this.mapPulse = PixelUI.pulse(this, this.mapButton);
+        this.sneezeTimer = this.time.addEvent({
+            delay: 6000,
+            loop: true,
+            callback: () => this.sneeze()
+        });
+    }
+
+    sneeze() {
+        if (this.state !== 'idle') {
+            return;
+        }
+        Illness.sneeze(this, this.hamsterImage, this.hamster, this.character, {
+            x: this.hamster.x,
+            y: this.hamster.y + 2 * this.hamsterImage.scaleY
+        });
+    }
+
+    update() {
+        // Keep the sick bubble just above the hamster's head, whatever its size.
+        if (this.sickBubble) {
+            const top = this.hamster.y + this.hamsterImage.y - 8 * this.hamsterImage.scaleY;
+            this.sickBubble.setPosition(Math.round(this.hamster.x + S(20)), Math.round(top - S(14)));
+        }
+    }
+
     // --- Hamster -------------------------------------------------------------
 
     createHamster(tank, { minX, maxX }) {
@@ -686,6 +745,21 @@ class TerrariumScene extends Phaser.Scene {
         if (this.state !== 'idle') {
             return;
         }
+        const { minX, maxX } = this.walkArea;
+        const next = () => {
+            this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander());
+        };
+
+        // A sick hamster takes it easy: slow strolls and naps, no wheel or bath.
+        if (Illness.isSick(this)) {
+            if (Math.random() < 0.25) {
+                this.goToSleep();
+            } else {
+                this.walkTo(Phaser.Math.Between(minX, maxX), next, 32);
+            }
+            return;
+        }
+
         // Now and then go for a run in the wheel or a nap instead of a stroll.
         const roll = Math.random();
         if (roll < 0.3) {
@@ -700,10 +774,7 @@ class TerrariumScene extends Phaser.Scene {
             this.goToBath();
             return;
         }
-        const { minX, maxX } = this.walkArea;
-        this.walkTo(Phaser.Math.Between(minX, maxX), () => {
-            this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander());
-        });
+        this.walkTo(Phaser.Math.Between(minX, maxX), next);
     }
 
     // --- Sunflower seeds ------------------------------------------------------
