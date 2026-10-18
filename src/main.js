@@ -61,7 +61,15 @@ function keepScreenAwake() {
     document.addEventListener('click', enable);
 }
 
+// Lets Chrome offer "Install app". Service workers only run on HTTPS or localhost.
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+}
+
 function startGame() {
+    registerServiceWorker();
     keepScreenAwake();
     Music.init();
 
