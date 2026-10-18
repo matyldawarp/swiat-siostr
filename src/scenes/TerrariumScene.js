@@ -67,6 +67,8 @@ class TerrariumScene extends Phaser.Scene {
         const glass = this.add.zone(tank.x + tank.w / 2, tank.y + tank.h / 2, tank.w, tank.h).setInteractive();
         glass.on('pointerdown', (pointer) => this.dropSeed(pointer.worldX, pointer.worldY));
 
+        this.createWheel();
+
         this.createHamster(tank, layout);
 
         PixelUI.createButton(this, width - S(40), height - S(14), 'Ziarno', () => {
@@ -131,21 +133,15 @@ class TerrariumScene extends Phaser.Scene {
             g.fillRect(x + Phaser.Math.Between(0, w - 2), Phaser.Math.Between(beddingTop + S(3), y + h - 2), 2, 1);
         }
 
-        // Wheel on the left.
-        const wr = Math.max(S(14), Math.min(S(24), Math.round(h * 0.18)));
-        const wcx = x + S(14) + wr;
+        // Wheel stand on the left; the wheel itself is drawn by drawWheel() so it can spin.
+        // The inside must fit the hamster sprite (16px x TERRARIUM_HAMSTER_SCALE).
+        const wr = Math.max(S(28), Math.min(S(36), Math.round(h * 0.2)));
+        const wcx = x + S(10) + wr;
         const wcy = floorY - wr - S(6);
         g.fillStyle(C.wheelStand, 1);
         g.fillRect(wcx - 1, wcy, S(3), floorY - wcy);
-        g.fillRect(wcx - S(6), floorY - S(2), S(13), S(2));
-        g.fillStyle(C.wheel, 1);
-        PixelUI.fillCircle(g, wcx, wcy, wr);
-        g.fillStyle(C.glass, 1);
-        PixelUI.fillCircle(g, wcx, wcy, wr - S(3));
-        g.fillStyle(C.wheel, 1);
-        g.fillRect(wcx - wr + S(2), wcy, (wr - S(2)) * 2 + 1, S(1));
-        g.fillRect(wcx, wcy - wr + S(2), S(1), (wr - S(2)) * 2 + 1);
-        PixelUI.fillCircle(g, wcx, wcy, S(2));
+        g.fillRect(wcx - S(8), floorY - S(2), S(17), S(2));
+        this.wheel = { x: wcx, y: wcy, r: wr };
 
         // House on the right.
         const hw = S(40);
@@ -203,6 +199,136 @@ class TerrariumScene extends Phaser.Scene {
             ? { minX, maxX }
             : { minX: x + margin, maxX: x + w - margin };
     }
+
+    // --- Wheel ---------------------------------------------------------------
+
+    createWheel() {
+        const { x, y, r } = this.wheel;
+        this.wheelAngle = 0;
+        this.wheelGraphics = this.add.graphics();
+        this.drawWheel();
+
+        // Tapping the wheel invites the hamster in; sits above the glass zone for input.
+        const zone = this.add.zone(x, y, r * 2, r * 2).setInteractive({ useHandCursor: true });
+        zone.on('pointerdown', () => this.goToWheel());
+    }
+
+    drawWheel() {
+        const C = TERRARIUM_COLORS;
+        const g = this.wheelGraphics;
+        const { x, y, r } = this.wheel;
+        const rim = S(3);
+
+        g.clear();
+        g.fillStyle(C.wheel, 1);
+        PixelUI.fillCircle(g, x, y, r);
+        g.fillStyle(C.glass, 1);
+        PixelUI.fillCircle(g, x, y, r - rim);
+
+        // Four spokes; redrawn at a new angle on every spin step.
+        g.fillStyle(C.wheel, 1);
+        for (let k = 0; k < 4; k++) {
+            const a = Phaser.Math.DegToRad(this.wheelAngle + k * 90);
+            for (let t = 0; t < r - rim; t++) {
+                g.fillRect(Math.round(x + Math.cos(a) * t), Math.round(y + Math.sin(a) * t), 2, 2);
+            }
+        }
+        g.fillStyle(C.wheelStand, 1);
+        PixelUI.fillCircle(g, x, y, S(3));
+    }
+
+    goToWheel() {
+        if (this.state !== 'idle' || this.seeds.some((s) => s.landed)) {
+            return;
+        }
+        this.state = 'goingToWheel';
+        const { x, r } = this.wheel;
+        this.walkTo(x + r + 8 * TERRARIUM_HAMSTER_SCALE, () => this.enterWheel(), 12);
+    }
+
+    // Jumps along a small arc to (x, y), then calls onLand.
+    hopTo(x, y, onLand) {
+        const peakY = Math.min(this.hamster.y, y) - S(14);
+        this.tweens.chain({
+            targets: this.hamster,
+            tweens: [
+                { x: (this.hamster.x + x) / 2, y: peakY, duration: 180, ease: 'Quad.easeOut' },
+                { x, y, duration: 180, ease: 'Quad.easeIn' }
+            ],
+            onComplete: onLand
+        });
+    }
+
+    enterWheel() {
+        this.state = 'entering';
+        const { x, y, r } = this.wheel;
+        // Feet on the inside of the rim.
+        const insideY = y + r - S(3) - 8 * TERRARIUM_HAMSTER_SCALE + S(1);
+
+        this.hopTo(x, insideY, () => {
+            if (this.seeds.some((s) => s.landed)) {
+                this.leaveWheel();
+                return;
+            }
+            this.runInWheel();
+        });
+    }
+
+    runInWheel() {
+        this.state = 'running';
+
+        this.hopTween = this.tweens.add({
+            targets: this.hamsterImage,
+            y: -S(2),
+            duration: 70,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Stepped',
+            easeParams: [1]
+        });
+
+        let step = 0;
+        this.spinTimer = this.time.addEvent({
+            delay: 50,
+            loop: true,
+            callback: () => {
+                // Spokes roll backwards under the running hamster.
+                this.wheelAngle = (this.wheelAngle - 15 + 360) % 360;
+                this.drawWheel();
+                if (++step % 6 === 0) {
+                    playWheelTick(this);
+                }
+            }
+        });
+
+        this.wheelTimer = this.time.delayedCall(Phaser.Math.Between(3000, 6000), () => this.leaveWheel());
+    }
+
+    leaveWheel() {
+        if (this.spinTimer) {
+            this.spinTimer.remove();
+        }
+        if (this.wheelTimer) {
+            this.wheelTimer.remove();
+        }
+        if (this.hopTween) {
+            this.hopTween.stop();
+        }
+        this.hamsterImage.y = 0;
+
+        this.state = 'exiting';
+        const { x, r } = this.wheel;
+        this.hopTo(x + r + 8 * TERRARIUM_HAMSTER_SCALE, this.hamsterGroundY, () => {
+            this.state = 'idle';
+            this.goEat();
+        });
+    }
+
+    isInWheel() {
+        return this.state === 'entering' || this.state === 'running' || this.state === 'exiting';
+    }
+
+    // --- Hamster -------------------------------------------------------------
 
     createHamster(tank, { minX, maxX }) {
         const scale = TERRARIUM_HAMSTER_SCALE;
@@ -271,6 +397,11 @@ class TerrariumScene extends Phaser.Scene {
         if (this.state !== 'idle') {
             return;
         }
+        // Now and then go for a run in the wheel instead of a stroll.
+        if (Math.random() < 0.3) {
+            this.goToWheel();
+            return;
+        }
         const { minX, maxX } = this.walkArea;
         this.walkTo(Phaser.Math.Between(minX, maxX), () => {
             this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander());
@@ -306,6 +437,14 @@ class TerrariumScene extends Phaser.Scene {
     // Walks to the nearest seed on the ground, or goes back to wandering.
     goEat() {
         if (this.state === 'eating' || this.state === 'goingToEat') {
+            return;
+        }
+        // Food beats exercise: hop out of the wheel first. Mid-jump states call goEat() when they land.
+        if (this.state === 'running') {
+            this.leaveWheel();
+            return;
+        }
+        if (this.state === 'entering' || this.state === 'exiting') {
             return;
         }
 
@@ -362,6 +501,12 @@ class TerrariumScene extends Phaser.Scene {
 
     poke() {
         playCharacterSound(this, this.character.sound);
+
+        // In the wheel the hamster is off the ground, so no jump there.
+        if (this.isInWheel()) {
+            this.showHeart();
+            return;
+        }
 
         // Little jump; the walking hop keeps animating the image, so jump the container.
         // Restart from the ground so quick repeated taps don't make it drift upwards.

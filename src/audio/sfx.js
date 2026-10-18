@@ -41,6 +41,28 @@ function playCrunch(scene) {
     source.start();
 }
 
+// Quiet click of the spinning wheel.
+function playWheelTick(scene) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    const t = ctx.currentTime + 0.005;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1800, t);
+    gain.gain.setValueAtTime(0.04, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(t);
+    osc.stop(t + 0.03);
+}
+
 // Synthesised character sounds, so the game needs no audio files.
 // Each chirp is a short oscillator sweep described in the character data.
 function playCharacterSound(scene, sound) {
