@@ -84,20 +84,23 @@ export class KitchenScene extends BaseScene {
 
     // --- Room ------------------------------------------------------------------
 
+    // Wall and splashback reach the edges of the whole window (view.bleed), beyond the stage.
     drawWall(width) {
         const C = KITCHEN_COLORS;
         const g = this.add.graphics();
         const top = this.counterTop;
+        const b = this.view.bleed;
 
         g.fillStyle(C.wall, 1);
-        g.fillRect(0, 0, width, top);
+        g.fillRect(b.x, b.y, b.width, top - b.y);
 
         // Tiled splashback above the counter.
         const tile = S(8);
         const tilesTop = top - S(40);
+        const firstX = Math.floor(b.x / tile) * tile;
         for (let y = tilesTop; y < top; y += tile) {
-            for (let x = 0; x < width; x += tile) {
-                const odd = (Math.floor(x / tile) + Math.floor((y - tilesTop) / tile)) % 2;
+            for (let x = firstX; x < b.x + b.width; x += tile) {
+                const odd = Math.abs(Math.floor(x / tile) + Math.floor((y - tilesTop) / tile)) % 2;
                 g.fillStyle(odd ? C.tileB : C.tileA, 1);
                 g.fillRect(x, y, tile, Math.min(tile, top - y));
             }
@@ -139,32 +142,36 @@ export class KitchenScene extends BaseScene {
         this.mouth = { x, y: this.charGroundY + 1.5 * scale };
     }
 
+    // Counter and cabinets, also continued across the whole window (view.bleed).
     drawCounter(width, height) {
         const C = KITCHEN_COLORS;
         const g = this.add.graphics();
         const top = this.counterTop;
         const slab = S(12);
+        const b = this.view.bleed;
 
         g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(0, top, width, slab + 1);
+        g.fillRect(b.x, top, b.width, slab + 1);
         g.fillStyle(C.counter, 1);
-        g.fillRect(0, top + 1, width, slab - 2);
+        g.fillRect(b.x, top + 1, b.width, slab - 2);
         g.fillStyle(C.counterEdge, 1);
-        g.fillRect(0, top + slab - 3, width, 2);
+        g.fillRect(b.x, top + slab - 3, b.width, 2);
 
-        // Cabinets underneath, down to the button row.
+        // Cabinets underneath, down to the button row; doors repeat out to the window edges.
         const cabTop = top + slab + 1;
         const cabBottom = height - S(52);
         if (cabBottom - cabTop > S(16)) {
             const doorW = S(56);
-            for (let x = S(6); x + doorW < width; x += doorW + S(6)) {
+            const step = doorW + S(6);
+            const firstX = S(6) - Math.ceil((S(6) - b.x) / step) * step;
+            for (let x = firstX; x < b.x + b.width; x += step) {
                 PixelUI.drawBox(g, x, cabTop + S(4), doorW, cabBottom - cabTop - S(4), C.cabinet, PALETTE.outline);
                 g.fillStyle(C.handle, 1);
                 g.fillRect(x + Math.round(doorW / 2) - S(6), cabTop + S(10), S(12), S(3));
             }
         }
         g.fillStyle(C.cabinetDark, 1);
-        g.fillRect(0, cabBottom, width, height - cabBottom);
+        g.fillRect(b.x, cabBottom, b.width, b.y + b.height - cabBottom);
     }
 
     createOven(width) {

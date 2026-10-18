@@ -91,7 +91,10 @@ export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}
 
 export const PixelUI = {
     // Zooms the scene camera to game pixels and centres the stage in the window; returns
-    // the stage size, which the scene lays itself out in (0..width, 0..height).
+    // the stage size, which the scene lays itself out in (0..width, 0..height), and
+    // `bleed`: the whole window as { x, y, width, height } in the same coordinates (x and y
+    // are 0 or below). Backgrounds are drawn over the bleed, so a window of another shape
+    // shows more of them around the stage instead of empty strips.
     // With { stage: false } the view is the whole window instead (OverlayScene).
     setupView(scene, { stage = true } = {}) {
         const camera = scene.cameras.main;
@@ -101,12 +104,19 @@ export const PixelUI = {
 
         const viewW = scene.scale.width / RENDER_SCALE;
         const viewH = scene.scale.height / RENDER_SCALE;
+        const full = { x: 0, y: 0, width: Math.ceil(viewW), height: Math.ceil(viewH) };
         if (!stage) {
             camera.setScroll(0, 0);
-            return { width: Math.floor(viewW), height: Math.floor(viewH) };
+            return { width: Math.floor(viewW), height: Math.floor(viewH), bleed: full };
         }
-        camera.setScroll(-Math.floor((viewW - STAGE.width) / 2), -Math.floor((viewH - STAGE.height) / 2));
-        return { width: STAGE.width, height: STAGE.height };
+        const ox = Math.floor((viewW - STAGE.width) / 2);
+        const oy = Math.floor((viewH - STAGE.height) / 2);
+        camera.setScroll(-ox, -oy);
+        return {
+            width: STAGE.width,
+            height: STAGE.height,
+            bleed: { x: -ox - 1, y: -oy - 1, width: full.width + 2, height: full.height + 2 }
+        };
     },
 
     // Text rasterised at device resolution so glyph edges stay sharp when zoomed.
@@ -137,20 +147,23 @@ export const PixelUI = {
         }
     },
 
-    // Horizontal colour bands joined by a checkerboard dither row.
-    drawSky(scene, width, height) {
+    // Horizontal colour bands joined by a checkerboard dither row, over `area`
+    // ({ x, y, width, height }, usually the scene's view.bleed: the whole window).
+    drawSky(scene, area) {
         const sky = scene.add.graphics();
         const bands = PALETTE.sky;
-        const bandHeight = Math.ceil(height / bands.length);
+        const bandHeight = Math.ceil(area.height / bands.length);
+        const left = area.x - (Math.abs(area.x) % 2);
+        const right = area.x + area.width;
 
         bands.forEach((color, i) => {
-            const y = i * bandHeight;
+            const y = area.y + i * bandHeight;
             sky.fillStyle(color, 1);
-            sky.fillRect(0, y, width, bandHeight);
+            sky.fillRect(area.x, y, area.width, bandHeight);
 
             if (i < bands.length - 1) {
                 sky.fillStyle(bands[i + 1], 1);
-                for (let x = 0; x < width; x += 2) {
+                for (let x = left; x < right; x += 2) {
                     sky.fillRect(x, y + bandHeight - 2, 1, 1);
                     sky.fillRect(x + 1, y + bandHeight - 1, 1, 1);
                 }

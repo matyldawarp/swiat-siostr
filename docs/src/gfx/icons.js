@@ -311,6 +311,42 @@ export const Icons = {
         }
     },
 
+    // Cog wheel: "settings". Eight teeth around a ring with a hole.
+    gear(g, cx, cy, size, color = PALETTE.buttonBorder) {
+        const r = size * 0.32;
+        const tooth = size * 0.48;
+        g.fillStyle(color, 1);
+        for (let dy = -Math.ceil(tooth); dy <= Math.ceil(tooth); dy++) {
+            for (let dx = -Math.ceil(tooth); dx <= Math.ceil(tooth); dx++) {
+                const d = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                // Teeth: the outer edge is pushed out in 8 places.
+                const onTooth = Math.cos(angle * 8) > 0.35;
+                if ((d <= r || (onTooth && d <= tooth)) && d > size * 0.13) {
+                    g.fillRect(cx + dx, cy + dy, 1, 1);
+                }
+            }
+        }
+    },
+
+    // Square box, ticked or empty, for a setting that can be on or off.
+    checkbox(g, cx, cy, size, checked) {
+        const left = Math.round(cx - size / 2);
+        const top = Math.round(cy - size / 2);
+        PixelUI.drawBox(g, left, top, size, size, ICON_COLORS.white, PALETTE.buttonBorder);
+        if (checked) {
+            const t = Math.max(2, Math.round(size / 8));
+            g.fillStyle(PALETTE.buttonBorder, 1);
+            // Short stroke down to the right, then a long one up to the right.
+            for (let i = 0; i < Math.round(size * 0.22); i++) {
+                g.fillRect(left + Math.round(size * 0.22) + i, top + Math.round(size * 0.48) + i, t, t);
+            }
+            for (let i = 0; i < Math.round(size * 0.4); i++) {
+                g.fillRect(left + Math.round(size * 0.42) + i, top + Math.round(size * 0.68) - i, t, t);
+            }
+        }
+    },
+
     // Zig-zag lightning bolt: "full of energy".
     lightning(g, cx, cy, size) {
         const s = size / 10;

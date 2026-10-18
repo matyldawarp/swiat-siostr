@@ -57,7 +57,7 @@ export class MapScene extends BaseScene {
             this.stands.home, ...bends, this.stands.hospital
         ].map((p) => new Phaser.Math.Vector2(p.x, p.y)));
 
-        this.drawGround(width, height);
+        this.drawGround(this.view.bleed);
         const roadPoints = this.drawRoad();
 
         this.createPlace('home', homePos, (g) => Icons.house(g, homePos.x, homePos.y - S(18), S(44)));
@@ -76,21 +76,19 @@ export class MapScene extends BaseScene {
         }
     }
 
-    drawGround(width, height) {
+    // Grass over the whole window (`area` is view.bleed), with lighter patches and flowers.
+    drawGround({ x, y, width, height }) {
         const g = this.add.graphics();
         g.fillStyle(MAP_COLORS.grass, 1);
-        g.fillRect(0, 0, width, height);
+        g.fillRect(x, y, width, height);
 
-        // Lighter grass patches and scattered flowers.
         g.fillStyle(MAP_COLORS.grassLight, 1);
         for (let i = 0; i < (width * height) / 9000; i++) {
-            const x = Phaser.Math.Between(0, width);
-            const y = Phaser.Math.Between(0, height);
-            PixelUI.fillCircle(g, x, y, Phaser.Math.Between(S(6), S(14)));
+            PixelUI.fillCircle(g, Phaser.Math.Between(x, x + width), Phaser.Math.Between(y, y + height), Phaser.Math.Between(S(6), S(14)));
         }
         for (let i = 0; i < (width * height) / 1500; i++) {
             g.fillStyle(Phaser.Utils.Array.GetRandom(MAP_COLORS.flowers), 1);
-            g.fillRect(Phaser.Math.Between(0, width), Phaser.Math.Between(0, height), 2, 2);
+            g.fillRect(Phaser.Math.Between(x, x + width), Phaser.Math.Between(y, y + height), 2, 2);
         }
     }
 
@@ -152,8 +150,8 @@ export class MapScene extends BaseScene {
 
         const near = (p, list, dist) => list.some((q) => Phaser.Math.Distance.Between(p.x, p.y, q.x, q.y) < dist);
         const sparseRoad = roadPoints.filter((_, i) => i % 4 === 0);
-        // Keep clear of the music and reload buttons in the top-right corner.
-        const corner = [{ x: width - S(17), y: S(17) }, { x: width - S(43), y: S(17) }];
+        // Keep clear of the settings, music and reload buttons in the top-right corner.
+        const corner = [{ x: width - S(17), y: S(17) }, { x: width - S(43), y: S(17) }, { x: width - S(69), y: S(17) }];
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {

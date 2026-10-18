@@ -2,6 +2,7 @@ import { PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, textStyle } 
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
+import { Settings } from '../ui/settings.js';
 import { BaseScene } from './BaseScene.js';
 
 // Always-on-top scene with controls that stay visible on every screen.
@@ -26,6 +27,10 @@ export class OverlayScene extends BaseScene {
         const top = margin + toGame(SAFE_AREA.top);
         const right = width - margin - toGame(SAFE_AREA.right);
         this.createReloadButton(right - size / 2, top + size / 2, size);
+        // Settings sit left of the music button (which may be missing).
+        PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
+            (g) => Icons.gear(g, 0, 0, Math.round(size * 0.7)),
+            () => (this.menu ? this.closeMenu() : this.openSettings()));
 
         // The note button appears only once some song file is known to exist.
         const thisRun = {};
@@ -36,6 +41,114 @@ export class OverlayScene extends BaseScene {
             }
             this.loadThumbnails();
             this.createMusicButton(right - size * 1.5 - S(4), top + size / 2, size);
+        });
+
+        this.debugInfo = null;
+        this.refreshDebugInfo();
+    }
+
+    // In debug mode (Settings): the window and screen size in the bottom-left corner, to
+    // tune STAGE for a device.
+    refreshDebugInfo() {
+        if (this.debugInfo) {
+            this.debugInfo.destroy();
+            this.debugInfo = null;
+        }
+        if (!Settings.get('debug')) {
+            return;
+        }
+        const dpr = window.devicePixelRatio || 1;
+        const lines = [
+            `okno ${window.innerWidth}x${window.innerHeight} CSS, dpr ${dpr}`,
+            `ekran ${window.screen.width}x${window.screen.height}`,
+            `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`
+        ];
+        this.debugInfo = PixelUI.addText(this, S(6), this.view.height - S(6), lines.join('\n'),
+            textStyle(S(9), { bold: true, color: TEXT_COLORS.button }))
+            .setOrigin(0, 1)
+            .setBackgroundColor('#ffffff')
+            .setDepth(200);
+    }
+
+    // --- Pop-up panels (song chooser, settings) ------------------------------------
+
+    // Opens a panel of panelW x panelH in the middle over a soft lavender veil; tapping
+    // outside it closes it without reaching the game underneath. Returns the panel's
+    // top-left corner; add its contents to this.menu.
+    openPanel(panelW, panelH) {
+        const { width, height } = this.view;
+        const panelX = Math.round((width - panelW) / 2);
+        const panelY = Math.max(S(36), Math.round((height - panelH) / 2));
+
+        this.menu = this.add.container(0, 0).setDepth(100);
+
+        const backdrop = this.add.rectangle(0, 0, width, height, ICON_COLORS.lavender, 0.55).setOrigin(0);
+        backdrop.setInteractive();
+        backdrop.on('pointerdown', (pointer, x, y, event) => event.stopPropagation());
+        backdrop.on('pointerup', (pointer, x, y, event) => {
+            event.stopPropagation();
+            this.closeMenu();
+        });
+        this.menu.add(backdrop);
+
+        const panel = this.add.graphics();
+        PixelUI.drawBox(panel, panelX, panelY, panelW, panelH, ICON_COLORS.cream, PALETTE.buttonBorder, 0xffffff);
+        this.menu.add(panel);
+        return { panelX, panelY };
+    }
+
+    // A tappable row in a panel, w x h centred on (left + w/2, cy); onTap runs on release.
+    addPanelRow(parts, left, cy, w, h, onTap) {
+        const row = this.add.container(left + w / 2, cy, parts);
+        row.setSize(w, h);
+        row.setInteractive({ useHandCursor: true });
+        row.on('pointerdown', (pointer, x, y, event) => event.stopPropagation());
+        row.on('pointerup', (pointer, x, y, event) => {
+            event.stopPropagation();
+            onTap();
+        });
+        this.menu.add(row);
+        return row;
+    }
+
+    closeMenu() {
+        if (this.menu) {
+            this.menu.destroy();
+            this.menu = null;
+        }
+    }
+
+    // --- Settings -----------------------------------------------------------------
+
+    // A title and one row per setting, each with a checkbox; mostly for the grown-ups.
+    openSettings() {
+        const rowH = S(34);
+        const pad = S(10);
+        const titleH = S(24);
+        const panelW = Math.min(this.view.width - S(24), S(220));
+        const settings = [{ key: 'debug', label: 'Tryb debug' }];
+        const panelH = pad * 2 + titleH + settings.length * rowH;
+        const { panelX, panelY } = this.openPanel(panelW, panelH);
+
+        this.menu.add(PixelUI.addText(this, panelX + panelW / 2, panelY + pad + titleH / 2, 'Ustawienia',
+            textStyle(S(13), { bold: true })).setOrigin(0.5));
+
+        settings.forEach(({ key, label }, i) => {
+            const w = panelW - pad * 2;
+            const cy = panelY + pad + titleH + i * rowH + rowH / 2;
+            const box = this.add.graphics();
+            const drawBox = () => {
+                box.clear();
+                Icons.checkbox(box, -w / 2 + S(12), 0, S(18), Settings.get(key));
+            };
+            drawBox();
+            const text = PixelUI.addText(this, -w / 2 + S(28), 0, label,
+                textStyle(S(11), { bold: true, color: TEXT_COLORS.button })).setOrigin(0, 0.5);
+            this.addPanelRow([box, text], panelX + pad, cy, w, rowH, () => {
+                Settings.set(key, !Settings.get(key));
+                drawBox();
+                this.refreshDebugInfo();
+            });
         });
     }
 
@@ -56,7 +169,7 @@ export class OverlayScene extends BaseScene {
         const iconSize = Math.round(size * 0.7);
         const button = PixelUI.createIconButton(this, x, y, size,
             (g) => Icons.note(g, 0, 0, iconSize, Music.enabled),
-            () => (this.menu ? this.closeMusicMenu() : this.openMusicMenu()));
+            () => (this.menu ? this.closeMenu() : this.openMusicMenu()));
         this.musicIcon = button.list[1];
         this.musicIconSize = iconSize;
     }
@@ -69,37 +182,19 @@ export class OverlayScene extends BaseScene {
     // One big coloured row per song, plus "Cisza" (silence). Colours and numbers tell
     // the songs apart for the youngest; titles and artists are for the older sister.
     openMusicMenu() {
-        const { width, height } = this.view;
         const rowH = S(34);
         const gap = S(6);
         const pad = S(10);
-        const panelW = Math.min(width - S(24), S(260));
+        const panelW = Math.min(this.view.width - S(24), S(260));
         // Available songs, then silence (-1).
         const songs = [...Music.available, -1];
         const rows = songs.length;
         const panelH = pad * 2 + rows * rowH + (rows - 1) * gap;
-        const panelX = Math.round((width - panelW) / 2);
-        const panelY = Math.max(S(36), Math.round((height - panelH) / 2));
-
-        this.menu = this.add.container(0, 0).setDepth(100);
-
-        // Tapping outside the panel closes it without reaching the game underneath.
-        const backdrop = this.add.rectangle(0, 0, width, height, ICON_COLORS.lavender, 0.55).setOrigin(0);
-        backdrop.setInteractive();
-        backdrop.on('pointerdown', (pointer, x, y, event) => event.stopPropagation());
-        backdrop.on('pointerup', (pointer, x, y, event) => {
-            event.stopPropagation();
-            this.closeMusicMenu();
-        });
-        this.menu.add(backdrop);
-
-        const panel = this.add.graphics();
-        PixelUI.drawBox(panel, panelX, panelY, panelW, panelH, ICON_COLORS.cream, PALETTE.buttonBorder, 0xffffff);
-        this.menu.add(panel);
+        const { panelX, panelY } = this.openPanel(panelW, panelH);
 
         songs.forEach((index, i) => {
             const y = panelY + pad + i * (rowH + gap) + rowH / 2;
-            this.menu.add(this.createSongRow(index, panelX + pad, y, panelW - pad * 2, rowH));
+            this.createSongRow(index, panelX + pad, y, panelW - pad * 2, rowH);
         });
     }
 
@@ -140,24 +235,11 @@ export class OverlayScene extends BaseScene {
             Icons.heart(bg, w / 2 - S(14), 0, S(14));
         }
 
-        const row = this.add.container(left + w / 2, cy, parts);
-        row.setSize(w, h);
-        row.setInteractive({ useHandCursor: true });
-        row.on('pointerdown', (pointer, x, y, event) => event.stopPropagation());
-        row.on('pointerup', (pointer, x, y, event) => {
-            event.stopPropagation();
+        return this.addPanelRow(parts, left, cy, w, h, () => {
             Music.select(index);
             this.refreshMusicIcon();
-            this.closeMusicMenu();
+            this.closeMenu();
         });
-        return row;
-    }
-
-    closeMusicMenu() {
-        if (this.menu) {
-            this.menu.destroy();
-            this.menu = null;
-        }
     }
 
     createReloadButton(x, y, size) {

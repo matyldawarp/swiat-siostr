@@ -70,19 +70,23 @@ export class HospitalScene extends BaseScene {
     drawRoom(width, height, floorY) {
         const C = HOSPITAL_COLORS;
         const g = this.add.graphics();
+        // Wall and floor reach the edges of the whole window, beyond the stage.
+        const b = this.view.bleed;
+        const bottom = b.y + b.height;
 
         g.fillStyle(C.wall, 1);
-        g.fillRect(0, 0, width, floorY);
+        g.fillRect(b.x, b.y, b.width, floorY - b.y);
         g.fillStyle(C.wainscot, 1);
-        g.fillRect(0, floorY - S(10), width, S(10));
+        g.fillRect(b.x, floorY - S(10), b.width, S(10));
         g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(0, floorY, width, 1);
+        g.fillRect(b.x, floorY, b.width, 1);
 
-        // Checkered floor.
+        // Checkered floor, lined up with the stage's left edge.
         const tile = S(12);
-        for (let y = floorY + 1; y < height; y += tile) {
-            for (let x = 0; x < width; x += tile) {
-                const odd = (Math.floor(x / tile) + Math.floor((y - floorY) / tile)) % 2;
+        const firstX = Math.floor(b.x / tile) * tile;
+        for (let y = floorY + 1; y < bottom; y += tile) {
+            for (let x = firstX; x < b.x + b.width; x += tile) {
+                const odd = Math.abs(Math.floor(x / tile) + Math.floor((y - floorY) / tile)) % 2;
                 g.fillStyle(odd ? C.tileB : C.tileA, 1);
                 g.fillRect(x, y, tile, tile);
             }

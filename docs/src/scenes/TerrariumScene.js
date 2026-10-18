@@ -42,7 +42,7 @@ export class TerrariumScene extends BaseScene {
         const cx = Math.round(width / 2);
         createSeedTexture(this);
 
-        PixelUI.drawSky(this, width, height);
+        PixelUI.drawSky(this, this.view.bleed);
 
         const tank = {
             w: Math.min(width - S(24), S(480)),

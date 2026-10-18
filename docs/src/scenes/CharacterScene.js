@@ -28,7 +28,7 @@ export class CharacterScene extends BaseScene {
         const cx = Math.round(width / 2);
         CHARACTERS.forEach((c) => createHamsterTextures(this, c));
 
-        PixelUI.drawSky(this, width, height);
+        PixelUI.drawSky(this, this.view.bleed);
 
         // Grid of slots on the left half, preview of the chosen character on the right.
         const slot = S(30);

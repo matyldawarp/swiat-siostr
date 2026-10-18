@@ -10,10 +10,10 @@ export class StartScene extends BaseScene {
         const cx = Math.round(width / 2);
         const cy = Math.round(height / 2);
 
-        PixelUI.drawSky(this, width, height);
+        PixelUI.drawSky(this, this.view.bleed);
         this.drawSun(width - S(66), S(42));
         this.drawClouds(width, height);
-        this.drawHills(width, height);
+        this.drawHills(height, this.view.bleed);
         this.drawSparkles(width, height);
 
         const title = PixelUI.addTitle(this, cx, cy - S(34), 'Świat Sióstr', S(40));
@@ -114,20 +114,22 @@ export class StartScene extends BaseScene {
         });
     }
 
-    drawHills(width, height) {
+    // Hills along the bottom of the stage, continued across the whole window (bleed).
+    drawHills(height, bleed) {
         const back = this.add.graphics();
         const front = this.add.graphics();
+        const bottom = bleed.y + bleed.height;
 
-        for (let x = 0; x < width; x++) {
+        for (let x = bleed.x; x < bleed.x + bleed.width; x++) {
             const backTop = Math.round(height - S(46) + Math.sin(x / S(38)) * S(8) + Math.sin(x / S(13)) * S(2));
             back.fillStyle(PALETTE.hillBack, 1);
-            back.fillRect(x, backTop, 1, height - backTop);
+            back.fillRect(x, backTop, 1, bottom - backTop);
             back.fillStyle(PALETTE.hillBackShade, 1);
             back.fillRect(x, backTop + S(3), 1, 1);
 
             const frontTop = Math.round(height - S(24) + Math.sin(x / S(55) + 1.5) * S(6));
             front.fillStyle(PALETTE.hillFront, 1);
-            front.fillRect(x, frontTop, 1, height - frontTop);
+            front.fillRect(x, frontTop, 1, bottom - frontTop);
             front.fillStyle(PALETTE.hillFrontLight, 1);
             front.fillRect(x, frontTop, 1, S(2));
         }
