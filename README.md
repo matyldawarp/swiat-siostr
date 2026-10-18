@@ -26,9 +26,10 @@ Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and depl
 
 - `docs/` – cała gra, publikowana na GitHub Pages
   - `index.html` – strona gry, ładuje Phaser i skrypty
-  - `src/main.js` – konfiguracja `Phaser.Game`
-  - `src/scenes/` – ekrany gry (start, postacie, terrarium, mapa, szpital, kuchnia)
+  - `src/main.js` – konfiguracja `Phaser.Game`, importuje resztę kodu (moduły ES)
+  - `src/scenes/` – ekrany gry (start, postacie, terrarium, mapa, szpital, kuchnia), `terrarium/` – części terrarium
+  - `src/ui/`, `src/gfx/`, `src/audio/` – wspólne elementy interfejsu, grafika i dźwięk
   - `src/data/` – postacie i lista muzyki
   - `assets/icons/` – ikony aplikacji, `assets/music/` – muzyka (tylko lokalnie)
-- `tools/` – serwer deweloperski i generator ikon
+- `tools/` – serwer deweloperski, generator ikon, `check.mjs` (`npm run check`: szybka kontrola kodu i danych) i `add-song.mjs` (dodawanie piosenki z YouTube)
 - `assets/scans/` – skany rysunków postaci (nie trafiają na stronę)
