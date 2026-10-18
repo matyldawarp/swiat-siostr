@@ -7,13 +7,12 @@
 //
 // Browsers (especially on iPad) only allow playback to start during a tap. The first tap
 // "unlocks" the audio element with a moment of silence; after that the element may start
-// songs whenever their download finishes. The chosen song is fetched as soon as the game
-// loads, repeats, and the choice (or silence) is remembered per device.
+// songs whenever their download finishes. The game always starts silent; a song picked
+// with the note button repeats until another one (or silence) is picked.
 
 import { MUSIC } from '../data/music.js';
 
 const MUSIC_VOLUME = 0.35;
-const MUSIC_STORAGE_KEY = 'swiat-siostr-music';
 
 // A tenth of a second of 8-bit silence as a WAV file, used to unlock the audio element.
 function silentWavUrl() {
@@ -57,7 +56,8 @@ export const Music = {
             this.markChecked();
             return;
         }
-        this.current = this.loadChoice();
+        // Every launch starts in silence; a song plays only once it is picked with the note button.
+        this.current = -1;
 
         this.audio = new Audio();
         this.audio.volume = MUSIC_VOLUME;
@@ -106,28 +106,6 @@ export const Music = {
             cb();
         } else {
             this.checkedCallbacks.push(cb);
-        }
-    },
-
-    loadChoice() {
-        let saved = null;
-        try {
-            saved = localStorage.getItem(MUSIC_STORAGE_KEY);
-        } catch {
-            // Storage blocked: fall back to the first song.
-        }
-        if (saved === 'off') {
-            return -1;
-        }
-        const index = MUSIC.findIndex((m) => m.file === saved);
-        return index >= 0 ? index : 0;
-    },
-
-    saveChoice() {
-        try {
-            localStorage.setItem(MUSIC_STORAGE_KEY, this.current < 0 ? 'off' : MUSIC[this.current].file);
-        } catch {
-            // Storage blocked: the choice just isn't remembered.
         }
     },
 
@@ -197,7 +175,6 @@ export const Music = {
     select(index) {
         this.current = index;
         this.started = true;
-        this.saveChoice();
         if (!this.audio) {
             return;
         }
