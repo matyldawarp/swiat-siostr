@@ -5,10 +5,10 @@ Gra w przeglądarce oparta na [Phaser 4](https://phaser.io) (ładowanym z CDN, b
 ## Uruchomienie
 
 ```bash
-python -m http.server 8080 --bind 127.0.0.1
+python -m http.server 8080 --bind 0.0.0.0
 ```
 
-Następnie otwórz http://localhost:8080.
+Następnie otwórz http://localhost:8080. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
 
 ## Struktura
 
