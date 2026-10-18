@@ -39,6 +39,13 @@ const MAP_PLACES = {
         bends: [[0.4, 0.95], [0.64, 0.92]],
         draw: (g, x, y) => Icons.bakery(g, x, y, S(60), S(50)),
         trees: [[-48, 0]]
+    },
+    dentist: {
+        scene: 'DentistScene',
+        at: [0.3, 0.32],
+        bends: [[0.1, 0.56], [0.2, 0.42]],
+        draw: (g, x, y) => Icons.dentist(g, x, y, S(56), S(52)),
+        trees: [[44, -2]]
     }
 };
 

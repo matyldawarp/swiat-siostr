@@ -2,6 +2,7 @@ import { PALETTE, PixelUI, S } from '../ui/pixel.js';
 import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
 import { Icons } from '../gfx/icons.js';
 import { floatHeart } from '../ui/effects.js';
+import { Sweets } from '../ui/sweets.js';
 import { playCharacterSound, playCrunch, playFanfare, playPlop, playSparkle } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
@@ -358,6 +359,7 @@ export class BakeryScene extends BaseScene {
             ease: 'Quad.easeInOut',
             onComplete: () => {
                 flying.destroy();
+                Sweets.add(this);
                 this.chew(() => {
                     playCharacterSound(this, this.character.sound);
                     for (let i = 0; i < 3; i++) {

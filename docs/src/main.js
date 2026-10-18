@@ -7,6 +7,7 @@ import { MapScene } from './scenes/MapScene.js';
 import { HospitalScene } from './scenes/HospitalScene.js';
 import { KitchenScene } from './scenes/KitchenScene.js';
 import { BakeryScene } from './scenes/BakeryScene.js';
+import { DentistScene } from './scenes/DentistScene.js';
 import { OverlayScene } from './scenes/OverlayScene.js';
 
 const config = {
@@ -24,7 +25,7 @@ const config = {
         height: STAGE.height
     },
     // OverlayScene must stay last so it draws on top of every other scene.
-    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, OverlayScene]
+    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, OverlayScene]
 };
 
 function fitToWindow(game) {

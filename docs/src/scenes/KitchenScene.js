@@ -3,6 +3,7 @@ import { getCake } from '../data/characters.js';
 import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
 import { Icons } from '../gfx/icons.js';
 import { floatHeart } from '../ui/effects.js';
+import { Sweets } from '../ui/sweets.js';
 import { playCharacterSound, playCrunch, playDing, playFanfare, playPlop, playSparkle, playStep, playWhisk } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
@@ -567,7 +568,9 @@ export class KitchenScene extends BaseScene {
         });
     }
 
+    // The whole cake is eaten: a sweet the dentist will find later.
     finish() {
+        Sweets.add(this);
         playFanfare(this);
         playCharacterSound(this, this.character.sound);
         for (let i = 0; i < 6; i++) {

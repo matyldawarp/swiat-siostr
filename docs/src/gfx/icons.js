@@ -736,6 +736,137 @@ export const Icons = {
         Icons.cupcake(g, cx, top + 2, Math.round(w * 0.3), { cream: ICON_COLORS.lavender, sprinkles: true, topping: 'cherry' });
     },
 
+    // --- Dentist -----------------------------------------------------------------
+
+    // Shiny white tooth with two little roots.
+    tooth(g, cx, cy, size) {
+        const rows = [
+            '.OOOOOOO.',
+            'OWWWWWLWO',
+            'OWWWWWWLO',
+            'OWWWWWWWO',
+            'OWWWWWWWO',
+            '.OWWWWWO.',
+            '.OWWOWWO.',
+            '.OWO.OWO.',
+            '..O...O..'
+        ];
+        const colors = { O: PALETTE.outline, W: ICON_COLORS.white, L: ICON_COLORS.sky };
+        const s = Math.max(1, Math.round(size / 9));
+        rows.forEach((row, y) => [...row].forEach((ch, x) => {
+            if (colors[ch] !== undefined) {
+                g.fillStyle(colors[ch], 1);
+                g.fillRect(Math.round(cx - 4.5 * s) + x * s, Math.round(cy - 4.5 * s) + y * s, s, s);
+            }
+        }));
+    },
+
+    // Toothbrush lying sideways, bristles up at the right end.
+    toothbrush(g, cx, cy, size) {
+        const len = Math.round(size * 0.9);
+        const left = Math.round(cx - len / 2);
+        const handleH = Math.max(3, Math.round(size * 0.13));
+        const handleY = Math.round(cy + size * 0.12);
+        const headW = Math.round(size * 0.3);
+        const headX = left + len - headW;
+        const bristleH = Math.round(size * 0.2);
+
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, handleY - 1, len + 2, handleH + 2);
+        g.fillStyle(ICON_COLORS.pink, 1);
+        g.fillRect(left, handleY, len, handleH);
+        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        g.fillRect(left + 2, handleY + Math.round(handleH / 2), Math.round(len * 0.5), 1);
+
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(headX - 1, handleY - bristleH - 1, headW + 2, bristleH + 1);
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(headX, handleY - bristleH, headW, bristleH);
+        g.fillStyle(ICON_COLORS.sky, 1);
+        for (let x = headX + 1; x < headX + headW - 1; x += 3) {
+            g.fillRect(x, handleY - bristleH, 1, bristleH);
+        }
+    },
+
+    // Little round dentist's mirror on a long handle.
+    dentalMirror(g, cx, cy, size) {
+        const r = Math.max(3, Math.round(size * 0.2));
+        const mx = Math.round(cx + size * 0.18);
+        const my = Math.round(cy - size * 0.18);
+        g.fillStyle(PALETTE.outline, 1);
+        for (let i = 0; i < Math.round(size * 0.55); i++) {
+            g.fillRect(Math.round(cx - size * 0.32) + i, Math.round(cy + size * 0.34) - i, 3, 3);
+        }
+        g.fillStyle(ICON_COLORS.lavenderDark, 1);
+        for (let i = 1; i < Math.round(size * 0.55) - 1; i++) {
+            g.fillRect(Math.round(cx - size * 0.32) + i + 1, Math.round(cy + size * 0.34) - i, 1, 1);
+        }
+        g.fillStyle(PALETTE.outline, 1);
+        PixelUI.fillCircle(g, mx, my, r + 1);
+        g.fillStyle(ICON_COLORS.sky, 1);
+        PixelUI.fillCircle(g, mx, my, r);
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(mx - Math.ceil(r / 2), my - Math.ceil(r / 2), Math.max(1, Math.round(r / 2)), Math.max(1, Math.round(r / 2)));
+    },
+
+    // Cup of water for rinsing.
+    cup(g, cx, cy, size) {
+        const h = Math.round(size * 0.6);
+        const top = Math.round(cy - h / 2);
+        const topHalf = Math.round(size * 0.28);
+        const bottomHalf = Math.round(size * 0.2);
+        for (let r = -1; r <= h; r++) {
+            const half = Math.round(topHalf + (bottomHalf - topHalf) * (Math.max(0, r) / h));
+            g.fillStyle(PALETTE.outline, 1);
+            g.fillRect(cx - half - 1, top + r, half * 2 + 3, 1);
+        }
+        for (let r = 0; r < h; r++) {
+            const half = Math.round(topHalf + (bottomHalf - topHalf) * (r / h));
+            g.fillStyle(r < Math.round(h * 0.35) ? ICON_COLORS.sky : ICON_COLORS.mint, 1);
+            g.fillRect(cx - half, top + r, half * 2 + 1, 1);
+        }
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(cx - topHalf + 2, top + 2, 2, Math.round(h * 0.5));
+    },
+
+    // Dentist's surgery for the map: a tooth on the sign; (cx, bottom) is the base's middle.
+    dentist(g, cx, bottom, w, h) {
+        const left = Math.round(cx - w / 2);
+        const top = bottom - h;
+        const roofH = Math.round(h * 0.16);
+
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, top - 1, w + 2, h + 1);
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(left, top, w, h);
+        g.fillStyle(ICON_COLORS.sky, 1);
+        g.fillRect(left, top, w, roofH);
+        g.fillStyle(ICON_COLORS.mintDark, 1);
+        g.fillRect(left, top + roofH - 1, w, 1);
+
+        // Round sign with a big tooth.
+        const signR = Math.round(Math.min(w, h) * 0.2);
+        const signY = top + roofH + signR + 2;
+        g.fillStyle(PALETTE.outline, 1);
+        PixelUI.fillCircle(g, cx, signY, signR + 1);
+        g.fillStyle(ICON_COLORS.mint, 1);
+        PixelUI.fillCircle(g, cx, signY, signR);
+        Icons.tooth(g, cx, signY, Math.round(signR * 1.5));
+
+        // Windows and door.
+        const win = Math.max(3, Math.round(w * 0.14));
+        const winY = signY - Math.round(win / 2);
+        g.fillStyle(ICON_COLORS.sky, 1);
+        g.fillRect(left + 3, winY, win, win);
+        g.fillRect(left + w - 3 - win, winY, win, win);
+        const doorW = Math.round(w * 0.24);
+        const doorH = Math.round(h * 0.3);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(Math.round(cx - doorW / 2) - 1, bottom - doorH - 1, doorW + 2, doorH + 1);
+        g.fillStyle(ICON_COLORS.mint, 1);
+        g.fillRect(Math.round(cx - doorW / 2), bottom - doorH, doorW, doorH);
+    },
+
     // Tiny tree for map decoration.
     tree(g, cx, bottom, size) {
         const trunkH = Math.round(size * 0.3);
