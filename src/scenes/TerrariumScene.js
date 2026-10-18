@@ -114,9 +114,9 @@ class TerrariumScene extends Phaser.Scene {
             this.registry.set('mapLocation', 'home');
             PixelUI.fadeTo(this, 'MapScene');
         });
-        // Kitchen: bake a cake for this character.
+        // Kitchen: bake this character's own cake, which the button shows.
         PixelUI.createIconButton(this, S(54), S(20), S(28),
-            (g, size) => Icons.cake(g, 0, Math.round(size * 0.3), Math.round(size * 0.8), { icing: true, strawberry: true }),
+            (g, size) => Icons.characterCake(g, this.character, 0, Math.round(size * 0.3), Math.round(size * 0.8)),
             () => PixelUI.fadeTo(this, 'KitchenScene'));
         this.input.keyboard.on('keydown-ESC', () => this.back());
 

@@ -423,18 +423,18 @@ const Icons = {
         g.fillRect(cx, loopCy - loopRy, 1, loopRy * 2);
     },
 
-    // Piping bag of pink icing.
-    icing(g, cx, cy, size) {
+    // Piping bag of icing in the given colour.
+    icing(g, cx, cy, size, color = ICON_COLORS.pink) {
         const rows = Math.round(size * 0.7);
         const top = Math.round(cy - size * 0.38);
         for (let r = 0; r < rows; r++) {
             const half = Math.max(1, Math.round((1 - r / rows) * size * 0.3));
             g.fillStyle(PALETTE.outline, 1);
             g.fillRect(cx - half - 1, top + r, half * 2 + 3, 1);
-            g.fillStyle(r < rows * 0.25 ? 0xffffff : ICON_COLORS.pink, 1);
+            g.fillStyle(r < rows * 0.25 ? 0xffffff : color, 1);
             g.fillRect(cx - half, top + r, half * 2 + 1, 1);
         }
-        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        g.fillStyle(color, 1);
         g.fillRect(cx, top + rows, 1, Math.round(size * 0.12));
     },
 
@@ -476,9 +476,109 @@ const Icons = {
         g.fillRect(cx, top - 3, 2, 3);
     },
 
+    // A cake topping centred on (cx, cy): one of the keys used in CHARACTER_CAKES.
+    topping(g, key, cx, cy, size) {
+        switch (key) {
+            case 'strawberry':
+                Icons.strawberry(g, cx, cy, size);
+                break;
+            case 'seed': {
+                // The sunflower seed hamsters eat in the terrarium.
+                const s = Math.max(1, Math.round(size / 9));
+                const colors = { O: PALETTE.outline, G: 0x8d7f99, W: 0xf3eef8 };
+                SEED_PIXELS.forEach((row, y) => [...row].forEach((ch, x) => {
+                    if (colors[ch] !== undefined) {
+                        g.fillStyle(colors[ch], 1);
+                        g.fillRect(Math.round(cx - 2.5 * s) + x * s, Math.round(cy - 3.5 * s) + y * s, s, s);
+                    }
+                }));
+                break;
+            }
+            case 'blueberry': {
+                const r = Math.max(2, Math.round(size * 0.17));
+                [[-1, 0.5], [1, 0.5], [0, -0.6]].forEach(([fx, fy]) => {
+                    const bx = Math.round(cx + fx * r * 1.1);
+                    const by = Math.round(cy + fy * r * 1.1);
+                    g.fillStyle(PALETTE.outline, 1);
+                    PixelUI.fillCircle(g, bx, by, r + 1);
+                    g.fillStyle(0x9aa8e8, 1);
+                    PixelUI.fillCircle(g, bx, by, r);
+                    g.fillStyle(0xd9e0fa, 1);
+                    g.fillRect(bx - 1, by - 1, 1, 1);
+                });
+                break;
+            }
+            case 'cherry': {
+                const r = Math.max(2, Math.round(size * 0.24));
+                const by = Math.round(cy + r * 0.4);
+                g.fillStyle(0x9fd6b8, 1);
+                for (let i = 0; i < Math.round(size * 0.4); i++) {
+                    g.fillRect(cx + Math.round(i * 0.5), by - r - i, 1, 1);
+                }
+                g.fillStyle(PALETTE.outline, 1);
+                PixelUI.fillCircle(g, cx, by, r + 1);
+                g.fillStyle(0xf28aa5, 1);
+                PixelUI.fillCircle(g, cx, by, r);
+                g.fillStyle(0xffffff, 1);
+                g.fillRect(cx - Math.round(r / 2), by - Math.round(r / 2), 2, 1);
+                break;
+            }
+            case 'star':
+                Icons.star(g, cx, cy, Math.round(size * 0.42));
+                break;
+            case 'heart':
+                Icons.heart(g, cx, cy, Math.round(size * 0.8));
+                break;
+            case 'candle': {
+                const w = Math.max(3, Math.round(size * 0.18));
+                const h = Math.round(size * 0.5);
+                const left = Math.round(cx - w / 2);
+                const top = Math.round(cy - h / 2 + size * 0.12);
+                g.fillStyle(PALETTE.outline, 1);
+                g.fillRect(left - 1, top - 1, w + 2, h + 1);
+                for (let y = 0; y < h; y++) {
+                    g.fillStyle(Math.floor(y / 2) % 2 ? ICON_COLORS.pink : 0xffffff, 1);
+                    g.fillRect(left, top + y, w, 1);
+                }
+                // Flame.
+                g.fillStyle(ICON_COLORS.goldDark, 1);
+                Icons.fillEllipse(g, cx, top - Math.round(size * 0.14), Math.max(1, Math.round(w / 2)), Math.round(size * 0.12));
+                g.fillStyle(0xfff7e0, 1);
+                g.fillRect(cx, top - Math.round(size * 0.14), 1, 2);
+                break;
+            }
+            case 'flower':
+                Icons.flower(g, cx, cy + Math.round(size * 0.1), size);
+                break;
+            default:
+                break;
+        }
+    },
+
+    // The character's own cake; by default fully decorated, as on the "bake" button.
+    characterCake(g, character, cx, bottom, w, { icing = true, sprinkles = true, topping = true, bite = 0 } = {}) {
+        const style = getCake(character);
+        Icons.cake(g, cx, bottom, w, {
+            sponge: style.sponge,
+            icingColor: style.icing,
+            icing,
+            sprinkles,
+            topping: topping ? style.topping : null,
+            bite
+        });
+    },
+
     // Round layer cake on a plate; (cx, bottom) is the middle of the plate.
-    // `bite` (0..1) is how much has been eaten from the right side.
-    cake(g, cx, bottom, w, { icing = false, sprinkles = false, strawberry = false, bite = 0 } = {}) {
+    // `bite` (0..1) is how much has been eaten from the right side. Colours and the topping
+    // come from the character's cake (CHARACTER_CAKES).
+    cake(g, cx, bottom, w, {
+        sponge = 0xf6d098,
+        icingColor = ICON_COLORS.pink,
+        icing = false,
+        sprinkles = false,
+        topping = null,
+        bite = 0
+    } = {}) {
         const h = Math.round(w * 0.42);
         const left = Math.round(cx - w / 2);
         const right = Math.round(left + w * (1 - bite));
@@ -497,13 +597,13 @@ const Icons = {
         // Sponge with a cream filling.
         g.fillStyle(PALETTE.outline, 1);
         g.fillRect(left - 1, top - 1, cw + 2, h + 1);
-        g.fillStyle(0xf6d098, 1);
+        g.fillStyle(sponge, 1);
         g.fillRect(left, top, cw, h);
         g.fillStyle(0xfff7e8, 1);
         g.fillRect(left, top + Math.round(h * 0.5), cw, Math.max(2, Math.round(h * 0.12)));
 
         if (icing) {
-            g.fillStyle(ICON_COLORS.pink, 1);
+            g.fillStyle(icingColor, 1);
             g.fillRect(left, top, cw, Math.round(h * 0.28));
             // Drips.
             for (let x = left + 2; x < right - 2; x += 6) {
@@ -517,8 +617,8 @@ const Icons = {
                 g.fillRect(x, top + 1 + (i % 3) * 2, 2, 1);
             }
         }
-        if (strawberry && bite < 0.5) {
-            Icons.strawberry(g, Math.round(cx), top - Math.round(w * 0.06), Math.round(w * 0.36));
+        if (topping && bite < 0.5) {
+            Icons.topping(g, topping, Math.round(cx), top - Math.round(w * 0.08), Math.round(w * 0.36));
         }
     },
 

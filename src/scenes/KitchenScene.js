@@ -28,11 +28,14 @@ const INGREDIENTS = [
     { key: 'milk', draw: (g, s) => Icons.milk(g, 0, 0, s), blob: 0xe4f1ff }
 ];
 
-const TOPPINGS = [
-    { key: 'icing', draw: (g, s) => Icons.icing(g, 0, 0, s) },
-    { key: 'sprinkles', draw: (g, s) => Icons.sprinkles(g, 0, 0, s) },
-    { key: 'strawberry', draw: (g, s) => Icons.strawberry(g, 0, 0, s) }
-];
+// Decorations for a character's own cake: icing in its colour, sprinkles and its topping.
+function cakeDecorations(style) {
+    return [
+        { key: 'icing', draw: (g, s) => Icons.icing(g, 0, 0, s, style.icing) },
+        { key: 'sprinkles', draw: (g, s) => Icons.sprinkles(g, 0, 0, s) },
+        { key: 'topping', draw: (g, s) => Icons.topping(g, style.topping, 0, 0, s) }
+    ];
+}
 
 // Baking a cake for the chosen character, all by tapping:
 // ingredients -> mix -> bake -> decorate -> serve. The next step pulses, nothing can fail.
@@ -45,6 +48,7 @@ class KitchenScene extends Phaser.Scene {
         this.leaving = false;
         this.skipIntro = Boolean(data.resized);
         this.character = getCharacter(this.registry.get('selectedCharacter'));
+        this.cakeStyle = getCake(this.character);
         this.phase = 'ingredients';
         this.added = [];
         this.mixed = false;
@@ -478,7 +482,7 @@ class KitchenScene extends Phaser.Scene {
         this.heartAt(this.bowlPos.x, this.bowlPos.y - S(44));
         this.busy = false;
 
-        const defs = TOPPINGS.map((t) => ({ key: t.key, draw: t.draw, onTap: (button) => this.addTopping(t, button) }));
+        const defs = cakeDecorations(this.cakeStyle).map((t) => ({ key: t.key, draw: t.draw, onTap: (button) => this.addTopping(t, button) }));
         defs.push({ key: 'serve', draw: (g, s) => Icons.heart(g, 0, 0, s), onTap: () => this.serve() });
         this.setRow(defs);
         this.hint(this.rowButtons[0]);
@@ -486,7 +490,12 @@ class KitchenScene extends Phaser.Scene {
 
     drawCake(bite = 0) {
         this.cake.clear();
-        Icons.cake(this.cake, this.bowlPos.x, this.bowlPos.y, S(56), { ...this.toppings, bite });
+        Icons.characterCake(this.cake, this.character, this.bowlPos.x, this.bowlPos.y, S(56), {
+            icing: Boolean(this.toppings.icing),
+            sprinkles: Boolean(this.toppings.sprinkles),
+            topping: Boolean(this.toppings.topping),
+            bite
+        });
     }
 
     addTopping(topping, button) {
@@ -519,9 +528,9 @@ class KitchenScene extends Phaser.Scene {
         const piece = this.add.graphics({ x: this.bowlPos.x + S(16), y: this.bowlPos.y - S(14) }).setDepth(20);
         piece.fillStyle(PALETTE.outline, 1);
         piece.fillRect(-S(5) - 1, -S(4) - 1, S(10) + 2, S(8) + 2);
-        piece.fillStyle(0xf6d098, 1);
+        piece.fillStyle(this.cakeStyle.sponge, 1);
         piece.fillRect(-S(5), -S(4), S(10), S(8));
-        piece.fillStyle(this.toppings.icing ? ICON_COLORS.pink : 0xfff7e8, 1);
+        piece.fillStyle(this.toppings.icing ? this.cakeStyle.icing : 0xfff7e8, 1);
         piece.fillRect(-S(5), -S(4), S(10), S(3));
 
         this.drawCake(bite / 3);
@@ -572,7 +581,7 @@ class KitchenScene extends Phaser.Scene {
         // Bake again, or go home.
         this.setRow([{
             key: 'again',
-            draw: (g, s) => Icons.cake(g, 0, Math.round(s * 0.3), Math.round(s * 0.8)),
+            draw: (g, s) => Icons.characterCake(g, this.character, 0, Math.round(s * 0.3), Math.round(s * 0.8)),
             onTap: () => this.scene.restart({ resized: true })
         }]);
         this.hint(this.rowButtons[0]);
