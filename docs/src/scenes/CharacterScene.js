@@ -1,6 +1,8 @@
 import { PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { CHARACTERS, CHARACTER_SLOTS, getCharacter } from '../data/characters.js';
 import { createHamsterTextures } from '../gfx/hamster.js';
+import { getPersonality } from '../data/personalities.js';
+import { addPersonalityBadge } from '../ui/effects.js';
 import { BaseScene } from './BaseScene.js';
 
 const SLOT_COLORS = {
@@ -110,6 +112,9 @@ export class CharacterScene extends BaseScene {
             easeParams: [2]
         });
 
+        // Personality icon beside the character's head (preview is 16px x 6, centred).
+        this.previewBadge = addPersonalityBadge(this, x + 8 * 6 + S(16), y - S(16) - S(20), getPersonality(CHARACTERS[0]), S(26));
+
         this.previewName = PixelUI.addTitle(this, x, y + S(26), '');
         this.previewSpecies = PixelUI.addText(this, x, y + S(40), '', textStyle(S(8), { color: TEXT_COLORS.subtitle })).setOrigin(0.5);
 
@@ -125,7 +130,9 @@ export class CharacterScene extends BaseScene {
 
         this.preview.setTexture(character.id);
         this.previewName.setText(character.name);
-        this.previewSpecies.setText(character.species);
+        const personality = getPersonality(character);
+        this.previewBadge.setPersonality(personality);
+        this.previewSpecies.setText([character.species, personality.name].filter(Boolean).join(' · '));
 
         // Restart the blink loop for the newly shown character.
         this.blinkToken = (this.blinkToken || 0) + 1;

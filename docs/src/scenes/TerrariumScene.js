@@ -2,7 +2,8 @@ import { PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { addCharacter, createSeedTexture, spriteHalf } from '../gfx/hamster.js';
 import { Icons } from '../gfx/icons.js';
 import { ILLNESS, Illness } from '../ui/illness.js';
-import { floatHeart, walkBob } from '../ui/effects.js';
+import { addPersonalityBadge, floatHeart, walkBob } from '../ui/effects.js';
+import { getPersonality } from '../data/personalities.js';
 import { playCharacterSound, playCrunch } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 import { DEPTH, HAMSTER_SCALE, MAX_SEEDS, SEED_SCALE } from './terrarium/config.js';
@@ -14,7 +15,8 @@ import { Poops } from './terrarium/Poops.js';
 
 // The hamster's glass tank: it wanders, eats dropped seeds, now and then goes to one of
 // its activities (terrarium/Activity.js explains how those work) and sometimes leaves a
-// dropping that the girls clean up with a finger (terrarium/Poops.js).
+// dropping that the girls clean up with a finger (terrarium/Poops.js). How often it does
+// what, and how fast, comes from its personality (data/personalities.js).
 //
 // this.phase is what the hamster is doing:
 //   'idle'       standing or strolling about
@@ -29,6 +31,7 @@ export class TerrariumScene extends BaseScene {
     init(data) {
         super.init(data);
         this.character = this.selectedCharacter();
+        this.personality = getPersonality(this.character);
         this.phase = 'idle';
         this.activity = null;
         this.seeds = [];
@@ -52,7 +55,9 @@ export class TerrariumScene extends BaseScene {
         tank.beddingH = Math.max(S(18), Math.round(tank.h * 0.2));
         tank.floorY = tank.y + tank.h - tank.beddingH + S(2);
 
-        PixelUI.addTitle(this, cx, tank.y - S(16), this.character.name);
+        const title = PixelUI.addTitle(this, cx, tank.y - S(16), this.character.name);
+        // Personality icon right of the name.
+        addPersonalityBadge(this, Math.round(cx + title.width / 2 + S(16)), tank.y - S(16), this.personality, S(20));
 
         const layout = drawTank(this, tank);
 
@@ -120,7 +125,7 @@ export class TerrariumScene extends BaseScene {
         }
         this.activity = activity;
         this.phase = 'walking';
-        this.walkTo(activity.approachX(), () => this.enterActivity(), activity.walkSpeed);
+        this.walkTo(activity.approachX(), () => this.enterActivity(), activity.walkSpeed * this.personality.walkSpeed);
     }
 
     enterActivity() {
@@ -258,7 +263,7 @@ export class TerrariumScene extends BaseScene {
             return;
         }
         const { minX, maxX } = this.walkArea;
-        const { wheel, bath, house } = this.activities;
+        const p = this.personality;
         const next = () => {
             this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander());
         };
@@ -266,9 +271,9 @@ export class TerrariumScene extends BaseScene {
         // A sick hamster takes it easy: slow strolls and naps, no wheel or bath.
         if (Illness.isSick(this)) {
             if (Math.random() < 0.25) {
-                this.startActivity(house);
+                this.startActivity(this.activities.house);
             } else {
-                this.walkTo(Phaser.Math.Between(minX, maxX), next, 32);
+                this.walkTo(Phaser.Math.Between(minX, maxX), next, 32 * p.walkSpeed);
             }
             return;
         }
@@ -276,18 +281,32 @@ export class TerrariumScene extends BaseScene {
         if (Math.random() < 0.08) {
             this.poop();
         }
-
-        // Now and then go for a run in the wheel, a nap or a bath instead of a stroll.
-        const roll = Math.random();
-        if (roll < 0.3) {
-            this.startActivity(wheel);
-        } else if (roll < 0.45) {
-            this.startActivity(house);
-        } else if (roll < 0.6) {
-            this.startActivity(bath);
-        } else {
-            this.walkTo(Phaser.Math.Between(minX, maxX), next);
+        // A cheerful one jumps for joy now and then.
+        if (Math.random() < p.happyHop) {
+            PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(10), { duration: 150, repeat: 1 });
+            this.showHeart();
         }
+
+        // A stroll, a run in the wheel, a nap or a bath, as often as its personality likes.
+        const choice = this.pickWeighted(p.wander);
+        if (choice === 'stroll') {
+            this.walkTo(Phaser.Math.Between(minX, maxX), next, 20 * p.walkSpeed);
+        } else {
+            this.startActivity(this.activities[choice]);
+        }
+    }
+
+    // A key of `weights` ({ key: relative weight }), picked at random by weight.
+    pickWeighted(weights) {
+        const entries = Object.entries(weights);
+        let roll = Math.random() * entries.reduce((sum, [, w]) => sum + w, 0);
+        for (const [key, w] of entries) {
+            roll -= w;
+            if (roll < 0) {
+                return key;
+            }
+        }
+        return entries[0][0];
     }
 
     // --- Sunflower seeds ------------------------------------------------------
@@ -348,7 +367,7 @@ export class TerrariumScene extends BaseScene {
         // Forget any activity it was walking to, and hurry over for food.
         this.activity = null;
         this.phase = 'goingToEat';
-        this.walkTo(seed.x, () => this.eat(seed), 10);
+        this.walkTo(seed.x, () => this.eat(seed), 10 * this.personality.seedHurry);
     }
 
     eat(seed) {
@@ -379,11 +398,11 @@ export class TerrariumScene extends BaseScene {
                 if (bite === bites) {
                     this.hamsterImage.setTexture(id);
                     seed.destroy();
-                    this.showHeart();
+                    this.showHearts(this.personality.eatHearts);
                     this.phase = 'idle';
                     this.goEat();
                     // What goes in comes out, a little later.
-                    if (Math.random() < 0.5) {
+                    if (Math.random() < this.personality.poopChance) {
                         this.time.delayedCall(Phaser.Math.Between(1500, 4000), () => this.poop());
                     }
                 }
@@ -410,9 +429,7 @@ export class TerrariumScene extends BaseScene {
         if (this.phase === 'idle' || this.phase === 'goingToEat' || this.phase === 'eating') {
             PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(8), { duration: 160, repeat: 1 });
         }
-        for (let i = 0; i < 3; i++) {
-            this.time.delayedCall(i * 150, () => this.showHeart());
-        }
+        this.showHearts(3);
     }
 
     poke() {
@@ -425,8 +442,15 @@ export class TerrariumScene extends BaseScene {
         }
 
         // Little jump; the walking bob keeps animating the image, so jump the container.
-        PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(8));
-        this.showHeart();
+        PixelUI.hop(this, this.hamster, this.hamsterGroundY, Math.round(S(8) * this.personality.pokeHop));
+        this.showHearts(this.personality.pokeHearts);
+    }
+
+    // `count` hearts, one after another.
+    showHearts(count) {
+        for (let i = 0; i < count; i++) {
+            this.time.delayedCall(i * 150, () => this.showHeart());
+        }
     }
 
     showHeart() {

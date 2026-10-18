@@ -9,11 +9,14 @@
 //   -> stop(), then leave(done)                      ['leaving']
 //   -> idle again, and the hamster looks for seeds   ['idle']
 //
-// To add an activity: subclass Activity in its own file in this folder, then create it in
-// TerrariumScene.createActivities().
+// To add an activity: subclass Activity in its own file in this folder, create it in
+// TerrariumScene.createActivities() under its key, and add that key to DEFAULTS.wander and
+// DEFAULTS.stay in data/personalities.js.
 export class Activity {
-    constructor(scene) {
+    // `key` names it in the personality's wander and stay tables (data/personalities.js).
+    constructor(scene, key) {
         this.scene = scene;
+        this.key = key;
         // Walking speed to the place in ms per pixel (lower is faster).
         this.walkSpeed = 12;
         // A sick hamster sneezes instead of doing this.
@@ -35,6 +38,11 @@ export class Activity {
 
     // The hamster is in: start animations and a timer that calls scene.leaveActivity().
     start() {}
+
+    // A random stay between minMs and maxMs, longer or shorter as the personality likes it here.
+    stayMs(minMs, maxMs) {
+        return Math.round(Phaser.Math.Between(minMs, maxMs) * this.scene.personality.stay[this.key]);
+    }
 
     // Stops everything start() began. May be called right after enter(), before start().
     stop() {}

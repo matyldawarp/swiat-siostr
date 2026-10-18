@@ -215,6 +215,48 @@ if (charactersModule) {
     });
 }
 
+const personalitiesModule = loaded['docs/src/data/personalities.js'];
+const personalitiesFile = join(SRC, 'data', 'personalities.js');
+if (personalitiesModule) {
+    const { PERSONALITIES, DEFAULTS } = personalitiesModule;
+    // Records draw calls instead of drawing, to see that every icon can be drawn.
+    const fakeGraphics = new Proxy({}, { get: () => () => {} });
+    Object.entries(PERSONALITIES).forEach(([key, p]) => {
+        const where = `PERSONALITIES.${key}`;
+        if (!p.name) {
+            fail(personalitiesFile, `${where}: missing name`);
+        }
+        if (typeof p.icon !== 'function') {
+            fail(personalitiesFile, `${where}: icon must be a drawing function (g, cx, cy, size)`);
+        } else {
+            try {
+                p.icon(fakeGraphics, 0, 0, 20);
+            } catch (error) {
+                fail(personalitiesFile, `${where}: icon fails to draw: ${error.message}`);
+            }
+        }
+        Object.keys(p).filter((k) => !['name', 'icon'].includes(k)).forEach((k) => {
+            if (!(k in DEFAULTS)) {
+                fail(personalitiesFile, `${where}: unknown field ${k} (fields are listed in DEFAULTS)`);
+            }
+        });
+        ['wander', 'stay'].forEach((table) => {
+            Object.entries(p[table] || {}).forEach(([k, v]) => {
+                if (!(k in DEFAULTS[table])) {
+                    fail(personalitiesFile, `${where}.${table}: unknown activity ${k}`);
+                }
+                if (!(v >= 0)) {
+                    fail(personalitiesFile, `${where}.${table}.${k}: must be a number, 0 or more`);
+                }
+            });
+        });
+        const wander = { ...DEFAULTS.wander, ...p.wander };
+        if (Object.values(wander).reduce((a, b) => a + b, 0) <= 0) {
+            fail(personalitiesFile, `${where}.wander: weights must not all be 0`);
+        }
+    });
+}
+
 if (musicModule) {
     musicModule.MUSIC.forEach((song, i) => {
         const where = `MUSIC[${i}] (${song.title || '?'})`;

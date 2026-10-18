@@ -1,7 +1,21 @@
 // Small animations shared by the scenes: rewards floating away and walking bounces.
 
-import { PixelUI, S, textStyle } from './pixel.js';
+import { PALETTE, PixelUI, S, textStyle } from './pixel.js';
 import { createHeartTexture } from '../gfx/hamster.js';
+
+// Round-cornered badge showing a personality's icon (data/personalities.js), centred on
+// (x, y). Returns a container; redraw it for another personality with setPersonality().
+export function addPersonalityBadge(scene, x, y, personality, size = S(22)) {
+    const g = scene.add.graphics();
+    const badge = scene.add.container(x, y, [g]);
+    badge.setPersonality = (p) => {
+        g.clear();
+        PixelUI.drawBox(g, -size / 2, -size / 2, size, size, 0xffffff, PALETTE.buttonBorder);
+        p.icon(g, 0, 0, Math.round(size * 0.7));
+    };
+    badge.setPersonality(personality);
+    return badge;
+}
 
 // Moves `target` by (dx, dy) while it fades out in pixel-art steps, then destroys it.
 export function floatAway(scene, target, { dx = 0, dy = 0, duration = 800, steps = 6, delay = 0 } = {}) {

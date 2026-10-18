@@ -24,6 +24,7 @@ Kod to moduły ES bez kroku budowania: `index.html` ładuje tylko `src/main.js`,
 - `gfx/icons.js` – rysowane ikony `Icons.*` (wycentrowane na `(cx, cy)`) i dodatki na torty `CAKE_TOPPINGS`.
 - `audio/sfx.js` – syntezowane efekty `play*()` (bez plików dźwiękowych). `audio/music.js` – odtwarzacz muzyki.
 - `data/characters.js` – postacie (`CHARACTERS`) i ich torty (`CHARACTER_CAKES`). `data/music.js` – lista piosenek.
+- `data/personalities.js` – osobowości (`PERSONALITIES`). Każda postać dostaje losową osobowość przy pierwszym spotkaniu na danym urządzeniu, zapamiętaną w `localStorage`. Osobowość zmienia zachowanie w terrarium (częstość zajęć, szybkość, serduszka, podskoki, kupki) i widać ją jako ikonkę przy imieniu (`addPersonalityBadge`). Pola i wartości domyślne opisuje `DEFAULTS`.
 - Stan między scenami trzymamy w `this.registry`: `selectedCharacter`, `mapLocation`, `sick`, `lastHealed`, `stickers`.
 
 ## Dla kogo

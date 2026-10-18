@@ -9,7 +9,7 @@ import { DEPTH, HAMSTER_SCALE } from './config.js';
 export class House extends Activity {
     // { x, y, w, h, doorX, doorBottom } from drawTank().
     constructor(scene, house) {
-        super(scene);
+        super(scene, 'house');
         Object.assign(this, house);
         this.walkSpeed = 14;
         // A sick hamster may nap; it is good for it.
@@ -64,7 +64,7 @@ export class House extends Activity {
                 playSnore(scene);
             }
         });
-        this.timer = scene.time.delayedCall(Phaser.Math.Between(6000, 10000), () => scene.leaveActivity());
+        this.timer = scene.time.delayedCall(this.stayMs(6000, 10000), () => scene.leaveActivity());
     }
 
     stop() {

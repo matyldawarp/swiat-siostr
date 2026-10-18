@@ -311,6 +311,38 @@ export const Icons = {
         }
     },
 
+    // Zig-zag lightning bolt: "full of energy".
+    lightning(g, cx, cy, size) {
+        const s = size / 10;
+        const pts = (grow) => [
+            { x: cx + 1 * s, y: cy - 5 * s - grow },
+            { x: cx - 3 * s - grow, y: cy + 1 * s },
+            { x: cx - 0.2 * s, y: cy + 1 * s },
+            { x: cx - 1 * s, y: cy + 5 * s + grow },
+            { x: cx + 3 * s + grow, y: cy - 1 * s },
+            { x: cx + 0.2 * s, y: cy - 1 * s }
+        ];
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, pts(1));
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        Icons.fillPolygon(g, pts(0));
+    },
+
+    // Three soap bubbles of different sizes: "loves baths".
+    bubbles(g, cx, cy, size) {
+        [[-0.18, 0.12, 0.26], [0.22, -0.12, 0.2], [0.12, 0.3, 0.13]].forEach(([fx, fy, fr]) => {
+            const x = Math.round(cx + fx * size);
+            const y = Math.round(cy + fy * size);
+            const r = Math.max(2, Math.round(fr * size));
+            g.fillStyle(PALETTE.outline, 1);
+            PixelUI.fillCircle(g, x, y, r + 1);
+            g.fillStyle(ICON_COLORS.sky, 1);
+            PixelUI.fillCircle(g, x, y, r);
+            g.fillStyle(ICON_COLORS.white, 1);
+            g.fillRect(x - Math.ceil(r / 2), y - Math.ceil(r / 2), Math.max(1, Math.round(r / 3)), Math.max(1, Math.round(r / 3)));
+        });
+    },
+
     // Little flower on a stem: the visitor's gift.
     flower(g, cx, cy, size) {
         const petalR = Math.max(2, Math.round(size * 0.16));

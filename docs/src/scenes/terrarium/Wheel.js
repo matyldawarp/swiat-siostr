@@ -9,7 +9,7 @@ import { HAMSTER_SCALE, TERRARIUM_COLORS } from './config.js';
 export class Wheel extends Activity {
     // { x, y, r }: centre and radius, from drawTank().
     constructor(scene, { x, y, r }) {
-        super(scene);
+        super(scene, 'wheel');
         this.x = x;
         this.y = y;
         this.r = r;
@@ -77,7 +77,7 @@ export class Wheel extends Activity {
             }
         });
 
-        this.timer = scene.time.delayedCall(Phaser.Math.Between(3000, 6000), () => scene.leaveActivity());
+        this.timer = scene.time.delayedCall(this.stayMs(3000, 6000), () => scene.leaveActivity());
     }
 
     stop() {

@@ -7,7 +7,7 @@ import { DEPTH, TERRARIUM_COLORS } from './config.js';
 export class Bath extends Activity {
     // The tank from TerrariumScene; the tub stands on its floor right of the middle.
     constructor(scene, tank) {
-        super(scene);
+        super(scene, 'bath');
         this.tank = tank;
     }
 
@@ -95,7 +95,7 @@ export class Bath extends Activity {
         });
 
         this.bubbleTimer = scene.time.addEvent({ delay: 260, loop: true, callback: () => this.floatBubble() });
-        this.timer = scene.time.delayedCall(Phaser.Math.Between(4000, 7000), () => scene.leaveActivity());
+        this.timer = scene.time.delayedCall(this.stayMs(4000, 7000), () => scene.leaveActivity());
     }
 
     floatBubble() {
