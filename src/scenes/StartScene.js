@@ -24,21 +24,25 @@ class StartScene extends Phaser.Scene {
         super('StartScene');
     }
 
-    init() {
+    init(data) {
         this.starting = false;
+        this.skipIntro = Boolean(data.resized);
     }
 
     create() {
         const { width, height } = this.scale;
-        const cx = width / 2;
+        const cx = Math.round(width / 2);
+        const cy = Math.round(height / 2);
+
+        this.cameras.main.setSize(width, height);
 
         this.drawSky(width, height);
-        this.drawSun(318, 42);
-        this.drawClouds();
+        this.drawSun(width - 66, 42);
+        this.drawClouds(width, height);
         this.drawHills(width, height);
         this.drawSparkles(width, height);
 
-        const title = this.add.text(cx, 70, 'Świat Sióstr', {
+        const title = this.add.text(cx, cy - 34, 'Świat Sióstr', {
             fontFamily: FONT,
             fontStyle: '700',
             fontSize: '40px',
@@ -48,13 +52,13 @@ class StartScene extends Phaser.Scene {
             shadow: { offsetX: 2, offsetY: 2, color: '#e3c2e6', blur: 0, fill: true, stroke: true }
         }).setOrigin(0.5).setAlpha(0);
 
-        const subtitle = this.add.text(cx, 102, 'opowieść o dwóch siostrach', {
+        const subtitle = this.add.text(cx, cy - 6,'opowieść o dwóch siostrach', {
             fontFamily: FONT,
             fontSize: '12px',
             color: '#a07aa8'
         }).setOrigin(0.5).setAlpha(0);
 
-        const button = this.createButton(cx, 142, 'Rozpocznij');
+        const button = this.createButton(cx, cy + 34, 'Rozpocznij');
         button.setAlpha(0);
 
         const hint = this.add.text(cx, height - 10, 'Kliknij lub naciśnij Enter', {
@@ -63,14 +67,31 @@ class StartScene extends Phaser.Scene {
             color: '#5f8f7c'
         }).setOrigin(0.5).setAlpha(0);
 
-        this.tweens.add({ targets: title, alpha: 1, y: title.y - 4, duration: 1200, ease: 'Sine.easeOut' });
-        this.tweens.add({ targets: subtitle, alpha: 1, duration: 1000, delay: 500 });
-        this.tweens.add({ targets: [button, hint], alpha: 1, duration: 800, delay: 900 });
+        if (this.skipIntro) {
+            title.setAlpha(1).setY(title.y - 4);
+            subtitle.setAlpha(1);
+            button.setAlpha(1);
+            hint.setAlpha(1);
+        } else {
+            this.tweens.add({ targets: title, alpha: 1, y: title.y - 4, duration: 1200, ease: 'Sine.easeOut' });
+            this.tweens.add({ targets: subtitle, alpha: 1, duration: 1000, delay: 500 });
+            this.tweens.add({ targets: [button, hint], alpha: 1, duration: 800, delay: 900 });
+            this.cameras.main.fadeIn(600, ...PALETTE.fade);
+        }
 
         this.input.keyboard.once('keydown-ENTER', () => this.startGame());
         this.input.keyboard.once('keydown-SPACE', () => this.startGame());
 
-        this.cameras.main.fadeIn(600, ...PALETTE.fade);
+        // Rebuild the layout for the new game size whenever the window changes.
+        const onResize = () => {
+            if (!this.starting) {
+                this.scene.restart({ resized: true });
+            }
+        };
+        this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
+        });
     }
 
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
@@ -122,7 +143,7 @@ class StartScene extends Phaser.Scene {
         });
     }
 
-    drawClouds() {
+    drawClouds(width, height) {
         if (!this.textures.exists('cloud')) {
             const g = this.make.graphics({ x: 0, y: 0 }, false);
             g.fillStyle(PALETTE.cloudShade, 1);
@@ -137,9 +158,9 @@ class StartScene extends Phaser.Scene {
         }
 
         const clouds = [
-            { x: 50, y: 22, scale: 1 },
-            { x: 190, y: 14, scale: 1 },
-            { x: 350, y: 92, scale: 1 }
+            { x: Math.round(width * 0.13), y: 22 },
+            { x: Math.round(width * 0.5), y: 14 },
+            { x: Math.round(width * 0.91), y: Math.round(height * 0.43) }
         ];
 
         clouds.forEach(({ x, y }, i) => {
@@ -260,6 +281,6 @@ class StartScene extends Phaser.Scene {
 
         // No gameplay scene yet: fade out and back in as a placeholder.
         this.cameras.main.fadeOut(500, ...PALETTE.fade);
-        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart());
+        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({}));
     }
 }
