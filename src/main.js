@@ -18,7 +18,8 @@ const config = {
         width: BASE_LONG,
         height: BASE_SHORT
     },
-    scene: [StartScene, CharacterScene, TerrariumScene]
+    // OverlayScene must stay last so it draws on top of every other scene.
+    scene: [StartScene, CharacterScene, TerrariumScene, OverlayScene]
 };
 
 function fitToWindow(game) {

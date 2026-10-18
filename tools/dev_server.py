@@ -1,10 +1,10 @@
-"""Static dev server with live reload.
+"""Static dev server with optional live reload.
 
-Serves the project root, injects a small EventSource client into index.html
-and tells every connected browser (desktop, iPad, ...) to reload when a file
-in the project changes.
+Serves the project root without caching. With --livereload it also injects a
+small EventSource client into index.html and tells every connected browser
+(desktop, iPad, ...) to reload when a file in the project changes.
 
-Usage: python tools/dev_server.py [port]
+Usage: python tools/dev_server.py [port] [--livereload]
 """
 
 import http.server
@@ -14,7 +14,9 @@ import threading
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+ARGS = [a for a in sys.argv[1:] if not a.startswith('--')]
+PORT = int(ARGS[0]) if ARGS else 8080
+LIVE_RELOAD = '--livereload' in sys.argv
 IGNORED_DIRS = {'.git', '.claude', '__pycache__', 'node_modules'}
 RELOAD_PATH = '/__livereload'
 CLIENT_SNIPPET = (
@@ -66,7 +68,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split('?', 1)[0]
-        if path == RELOAD_PATH:
+        if not LIVE_RELOAD:
+            super().do_GET()
+        elif path == RELOAD_PATH:
             self.stream_reloads()
         elif path in ('/', '/index.html'):
             self.send_index()
@@ -110,8 +114,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    threading.Thread(target=watch, daemon=True).start()
+    if LIVE_RELOAD:
+        threading.Thread(target=watch, daemon=True).start()
     server = http.server.ThreadingHTTPServer(('0.0.0.0', PORT), Handler)
     server.daemon_threads = True
-    print(f'Serving {ROOT} on http://0.0.0.0:{PORT} with live reload', flush=True)
+    mode = 'with' if LIVE_RELOAD else 'without'
+    print(f'Serving {ROOT} on http://0.0.0.0:{PORT} {mode} live reload', flush=True)
     server.serve_forever()

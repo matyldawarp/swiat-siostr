@@ -8,7 +8,7 @@ Gra w przeglądarce oparta na [Phaser 4](https://phaser.io) (ładowanym z CDN, b
 python tools/dev_server.py 8080
 ```
 
-Następnie otwórz http://localhost:8080. Serwer obserwuje pliki projektu i po każdej zmianie sam przeładowuje wszystkie podłączone przeglądarki. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
+Następnie otwórz http://localhost:8080. Serwer wyłącza cache, więc przycisk przeładowania w prawym górnym rogu gry zawsze wczytuje najnowsze pliki. Z flagą `--livereload` serwer sam przeładowuje wszystkie podłączone przeglądarki po każdej zmianie pliku. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
 
 ## Struktura
 
