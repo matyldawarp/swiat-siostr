@@ -137,6 +137,21 @@ export function createSeedTexture(scene) {
     paintPixels(scene, 'seed', SEED_PIXELS, SEED_COLORS);
 }
 
+// A little heap of three droppings in soft caramel: O outline, B body, L shine.
+const POOP_PIXELS = [
+    '...OOO...',
+    '..OBBLO..',
+    '..OBBBO..',
+    '.OOOOOOO.',
+    'OBBLOBBLO',
+    'OBBBOBBBO',
+    '.OOO.OOO.'
+];
+
+export function createPoopTexture(scene) {
+    paintPixels(scene, 'poop', POOP_PIXELS, { O: PALETTE.outline, B: 0xd8b08c, L: 0xf3dcc4 });
+}
+
 // Sprite scale for characters standing in a room (terrarium, kitchen, hospital).
 export const CHARACTER_SCALE = 4;
 

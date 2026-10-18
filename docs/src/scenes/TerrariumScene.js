@@ -10,9 +10,11 @@ import { drawTank } from './terrarium/tank.js';
 import { Wheel } from './terrarium/Wheel.js';
 import { Bath } from './terrarium/Bath.js';
 import { House } from './terrarium/House.js';
+import { Poops } from './terrarium/Poops.js';
 
-// The hamster's glass tank: it wanders, eats dropped seeds and now and then goes to one of
-// its activities (terrarium/Activity.js explains how those work).
+// The hamster's glass tank: it wanders, eats dropped seeds, now and then goes to one of
+// its activities (terrarium/Activity.js explains how those work) and sometimes leaves a
+// dropping that the girls clean up with a finger (terrarium/Poops.js).
 //
 // this.phase is what the hamster is doing:
 //   'idle'       standing or strolling about
@@ -59,6 +61,12 @@ export class TerrariumScene extends BaseScene {
         glass.on('pointerdown', (pointer) => this.dropSeed(pointer.worldX, pointer.worldY));
 
         this.createActivities(tank, layout);
+        this.poops = new Poops(this, {
+            walkArea: layout.walkArea,
+            groundY: tank.floorY + S(2),
+            keepOut: [{ x: this.activities.bath.x, halfW: this.activities.bath.w / 2 }]
+        });
+        this.poops.create();
         this.createHamster(tank, layout.walkArea);
 
         PixelUI.createButton(this, width - S(40), height - S(14), 'Ziarno', () => {
@@ -265,6 +273,10 @@ export class TerrariumScene extends BaseScene {
             return;
         }
 
+        if (Math.random() < 0.08) {
+            this.poop();
+        }
+
         // Now and then go for a run in the wheel, a nap or a bath instead of a stroll.
         const roll = Math.random();
         if (roll < 0.3) {
@@ -370,9 +382,37 @@ export class TerrariumScene extends BaseScene {
                     this.showHeart();
                     this.phase = 'idle';
                     this.goEat();
+                    // What goes in comes out, a little later.
+                    if (Math.random() < 0.5) {
+                        this.time.delayedCall(Phaser.Math.Between(1500, 4000), () => this.poop());
+                    }
                 }
             }
         });
+    }
+
+    // --- Droppings -------------------------------------------------------------
+
+    // A little hop and a dropping just behind the hamster, if it is on the ground.
+    poop() {
+        if (this.phase !== 'idle') {
+            return;
+        }
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (this.poops.drop(this.hamster.x + side * S(16))) {
+            PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(3), { duration: 90 });
+        }
+    }
+
+    // The last dropping was cleaned: the hamster is delighted.
+    onTankClean() {
+        playCharacterSound(this, this.character.sound);
+        if (this.phase === 'idle' || this.phase === 'goingToEat' || this.phase === 'eating') {
+            PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(8), { duration: 160, repeat: 1 });
+        }
+        for (let i = 0; i < 3; i++) {
+            this.time.delayedCall(i * 150, () => this.showHeart());
+        }
     }
 
     poke() {

@@ -36,11 +36,15 @@ export const TERRARIUM_COLORS = {
 export const HAMSTER_SCALE = CHARACTER_SCALE;
 export const MAX_SEEDS = 5;
 export const SEED_SCALE = 3;
+// Droppings left on the bedding at once, at most; then the hamster waits for a clean-up.
+export const MAX_POOPS = 6;
+export const POOP_SCALE = 3;
 
 // Draw order inside the tank. The hamster drops to DEPTH.hamsterInBath while bathing so the
 // front of the tub hides its body; otherwise it walks in front of the tub.
 export const DEPTH = {
     bathBack: 2,
+    poop: 3,
     hamsterInBath: 8,
     bathFront: 9,
     hamster: 10,
