@@ -41,6 +41,31 @@ function playCrunch(scene) {
     source.start();
 }
 
+// Little rising "blup" of a bath bubble.
+function playBubble(scene) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    const t = ctx.currentTime + 0.005;
+    const from = 300 + Math.random() * 300;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(from, t);
+    osc.frequency.exponentialRampToValueAtTime(from * 3, t + 0.07);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.08, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(t);
+    osc.stop(t + 0.09);
+}
+
 // Soft, low breath for each floating "z" while sleeping.
 function playSnore(scene) {
     const audio = getAudio(scene);

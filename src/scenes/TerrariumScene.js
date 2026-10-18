@@ -18,13 +18,31 @@ const TERRARIUM_COLORS = {
     seed: 0xe0a46c,
     bottle: 0xcfe8ff,
     water: 0x9fd0f5,
-    spout: 0xb7b0c4
+    spout: 0xb7b0c4,
+    tub: 0xffffff,
+    tubShade: 0xe6eefc,
+    tubRim: 0xf7f9ff,
+    tubStripe: 0xf7b2cc,
+    tubFeet: 0xd9a0c8,
+    foam: 0xffffff,
+    foamShade: 0xdcd3f2
 };
 
 // Whole-number sprite scale for the hamster inside the tank.
 const TERRARIUM_HAMSTER_SCALE = 4;
 const TERRARIUM_MAX_SEEDS = 5;
 const TERRARIUM_SEED_SCALE = 3;
+
+// Draw order inside the tank. The hamster drops to DEPTH.hamsterInBath while bathing so the
+// front of the tub hides its body; otherwise it walks in front of the tub.
+const DEPTH = {
+    bathBack: 2,
+    hamsterInBath: 8,
+    bathFront: 9,
+    hamster: 10,
+    seed: 12,
+    effects: 13
+};
 
 class TerrariumScene extends Phaser.Scene {
     constructor() {
@@ -68,6 +86,7 @@ class TerrariumScene extends Phaser.Scene {
         glass.on('pointerdown', (pointer) => this.dropSeed(pointer.worldX, pointer.worldY));
 
         this.createWheel();
+        this.createBath(tank);
 
         // Tapping the house sends the hamster to bed, or wakes it up.
         const { x: hx, y: hy, w: hw, h: hh } = this.house;
@@ -330,8 +349,167 @@ class TerrariumScene extends Phaser.Scene {
         });
     }
 
+    // In the wheel or the bath: off the ground, so taps shouldn't make it jump.
     isInWheel() {
-        return this.state === 'entering' || this.state === 'running' || this.state === 'exiting';
+        return this.state === 'entering' || this.state === 'running' || this.state === 'exiting'
+            || this.state === 'enteringBath' || this.state === 'bathing' || this.state === 'exitingBath';
+    }
+
+    // --- Bath -----------------------------------------------------------------
+
+    createBath({ x, w, floorY }) {
+        const C = TERRARIUM_COLORS;
+        const tw = S(52);
+        const th = S(18);
+        const feet = S(4);
+        const cx = Math.round(x + w * 0.68);
+        const left = cx - tw / 2;
+        const top = floorY - feet - th;
+        this.bath = { x: cx, w: tw, rimY: top };
+
+        // Water surface behind the hamster.
+        const back = this.add.graphics().setDepth(DEPTH.bathBack);
+        back.fillStyle(PALETTE.outline, 1);
+        back.fillRect(left + 2, top - S(3), tw - 4, S(3));
+        back.fillStyle(TERRARIUM_COLORS.water, 1);
+        back.fillRect(left + 3, top - S(2), tw - 6, S(2));
+
+        const front = this.add.graphics().setDepth(DEPTH.bathFront);
+
+        // Feet.
+        front.fillStyle(C.tubFeet, 1);
+        front.fillRect(left + S(5), floorY - feet, S(5), feet);
+        front.fillRect(left + tw - S(10), floorY - feet, S(5), feet);
+
+        // Tub body with a pastel stripe and a shaded bottom.
+        PixelUI.drawBox(front, left, top, tw, th, C.tub, PALETTE.outline);
+        front.fillStyle(C.tubShade, 1);
+        front.fillRect(left + 2, top + th - S(5), tw - 4, S(3));
+        front.fillStyle(C.tubStripe, 1);
+        front.fillRect(left + 2, top + S(7), tw - 4, S(2));
+
+        // Rim.
+        front.fillStyle(PALETTE.outline, 1);
+        front.fillRect(left - 2, top - 1, tw + 4, S(3) + 1);
+        front.fillStyle(C.tubRim, 1);
+        front.fillRect(left - 1, top, tw + 2, S(3) - 1);
+
+        // Foam heaped along the rim; in front of the hamster so it looks covered in bubbles.
+        const blobs = [-0.38, -0.2, 0, 0.2, 0.38];
+        blobs.forEach((f, i) => {
+            const bx = Math.round(cx + f * tw);
+            const r = i % 2 === 0 ? S(5) : S(4);
+            front.fillStyle(C.foamShade, 1);
+            PixelUI.fillCircle(front, bx, top - S(1), r + 1);
+        });
+        blobs.forEach((f, i) => {
+            const bx = Math.round(cx + f * tw);
+            const r = i % 2 === 0 ? S(5) : S(4);
+            front.fillStyle(C.foam, 1);
+            PixelUI.fillCircle(front, bx, top - S(1), r);
+        });
+
+        const zone = this.add.zone(cx, top + th / 2 - S(4), tw, th + S(12)).setInteractive({ useHandCursor: true });
+        zone.on('pointerdown', () => this.goToBath());
+    }
+
+    goToBath() {
+        if (this.state !== 'idle' || this.seeds.some((s) => s.landed)) {
+            return;
+        }
+        this.state = 'goingToBath';
+        const { x, w } = this.bath;
+        // Approach from whichever side the hamster is on.
+        this.bathSideX = this.hamster.x < x ? x - w / 2 - S(10) : x + w / 2 + S(10);
+        this.walkTo(this.bathSideX, () => this.enterBath(), 12);
+    }
+
+    enterBath() {
+        this.state = 'enteringBath';
+        const { x, rimY } = this.bath;
+
+        // Lands low enough that only the ears and eyes show above the foam.
+        // Behind the front of the tub from the top of the jump onwards.
+        this.time.delayedCall(180, () => this.hamster.setDepth(DEPTH.hamsterInBath));
+        this.hopTo(x, rimY - S(7), () => {
+            if (this.seeds.some((s) => s.landed)) {
+                this.leaveBath();
+                return;
+            }
+            this.bathe();
+        });
+    }
+
+    bathe() {
+        this.state = 'bathing';
+        const baseX = this.hamster.x;
+
+        // Happy wiggle from side to side.
+        this.hopTween = this.tweens.add({
+            targets: this.hamster,
+            x: baseX + S(2),
+            duration: 200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Stepped',
+            easeParams: [1]
+        });
+
+        this.bubbleTimer = this.time.addEvent({
+            delay: 260,
+            loop: true,
+            callback: () => this.floatBubble()
+        });
+
+        this.bathTimer = this.time.delayedCall(Phaser.Math.Between(4000, 7000), () => this.leaveBath());
+    }
+
+    floatBubble() {
+        const { x, w, rimY } = this.bath;
+        const r = Phaser.Math.Between(S(2), S(4));
+        const bubble = this.add.graphics({ x: Math.round(x + Phaser.Math.Between(-w / 2 + 6, w / 2 - 6)), y: rimY - S(4) })
+            .setDepth(DEPTH.effects);
+        bubble.fillStyle(TERRARIUM_COLORS.foamShade, 1);
+        PixelUI.fillCircle(bubble, 0, 0, r);
+        bubble.fillStyle(0xffffff, 1);
+        PixelUI.fillCircle(bubble, 0, 0, r - 1);
+        bubble.fillStyle(TERRARIUM_COLORS.water, 1);
+        bubble.fillRect(-Math.ceil(r / 2), -Math.ceil(r / 2), 1, 1);
+
+        if (Math.random() < 0.5) {
+            playBubble(this);
+        }
+
+        this.tweens.add({
+            targets: bubble,
+            y: bubble.y - Phaser.Math.Between(S(20), S(40)),
+            x: bubble.x + Phaser.Math.Between(-S(6), S(6)),
+            alpha: 0,
+            duration: 1400,
+            ease: 'Stepped',
+            easeParams: [8],
+            onComplete: () => bubble.destroy()
+        });
+    }
+
+    leaveBath() {
+        if (this.bubbleTimer) {
+            this.bubbleTimer.remove();
+        }
+        if (this.bathTimer) {
+            this.bathTimer.remove();
+        }
+        if (this.hopTween) {
+            this.hopTween.stop();
+        }
+
+        this.state = 'exitingBath';
+        // Back in front of the tub once it is over the rim.
+        this.time.delayedCall(180, () => this.hamster.setDepth(DEPTH.hamster));
+        this.hopTo(this.bathSideX, this.hamsterGroundY, () => {
+            this.state = 'idle';
+            this.goEat();
+        });
     }
 
     // --- Sleeping in the house -----------------------------------------------
@@ -388,7 +566,7 @@ class TerrariumScene extends Phaser.Scene {
             fontStyle: '700',
             fontSize: `${big ? S(12) : S(9)}px`,
             color: TEXT_COLORS.title
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setDepth(DEPTH.effects);
 
         playSnore(this);
 
@@ -443,7 +621,7 @@ class TerrariumScene extends Phaser.Scene {
         const startX = Math.round((minX + maxX) / 2);
         // Sprite is 16px tall around its centre; sink it slightly into the bedding.
         this.hamsterGroundY = tank.floorY - (8 * scale - S(4));
-        this.hamster = this.add.container(startX, this.hamsterGroundY);
+        this.hamster = this.add.container(startX, this.hamsterGroundY).setDepth(DEPTH.hamster);
 
         const image = this.add.image(0, 0, this.character.id).setScale(scale);
         this.hamster.add(image);
@@ -512,6 +690,10 @@ class TerrariumScene extends Phaser.Scene {
             this.goToSleep();
             return;
         }
+        if (roll < 0.6) {
+            this.goToBath();
+            return;
+        }
         const { minX, maxX } = this.walkArea;
         this.walkTo(Phaser.Math.Between(minX, maxX), () => {
             this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander());
@@ -528,7 +710,7 @@ class TerrariumScene extends Phaser.Scene {
         const seedX = Phaser.Math.Clamp(Math.round(x), minX, maxX);
         const startY = Math.min(fromY, this.seedGroundY - S(10));
 
-        const seed = this.add.image(seedX, startY, 'seed').setScale(TERRARIUM_SEED_SCALE);
+        const seed = this.add.image(seedX, startY, 'seed').setScale(TERRARIUM_SEED_SCALE).setDepth(DEPTH.seed);
         seed.landed = false;
         this.seeds.push(seed);
 
@@ -554,12 +736,17 @@ class TerrariumScene extends Phaser.Scene {
             this.leaveWheel();
             return;
         }
+        if (this.state === 'bathing') {
+            this.leaveBath();
+            return;
+        }
         if (this.state === 'sleeping') {
             this.wakeUp();
             return;
         }
         if (this.state === 'entering' || this.state === 'exiting'
-            || this.state === 'enteringHouse' || this.state === 'leavingHouse') {
+            || this.state === 'enteringHouse' || this.state === 'leavingHouse'
+            || this.state === 'enteringBath' || this.state === 'exitingBath') {
             return;
         }
 
@@ -651,7 +838,7 @@ class TerrariumScene extends Phaser.Scene {
     showHeart() {
         const top = this.hamster.y - 8 * TERRARIUM_HAMSTER_SCALE - S(4);
         const heart = this.add.image(this.hamster.x + Phaser.Math.Between(-S(10), S(10)), top, 'heart')
-            .setScale(3);
+            .setScale(3).setDepth(DEPTH.effects);
         this.tweens.add({
             targets: heart,
             y: heart.y - S(20),
