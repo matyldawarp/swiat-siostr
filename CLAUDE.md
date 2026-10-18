@@ -1,6 +1,6 @@
 # Świat Sióstr
 
-Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `npm start` (Node.js, serwer `tools/dev-server.mjs`, bez zależności). Skrypty narzędziowe piszemy w Node, nie w Pythonie. Serwer nasłuchuje w sieci lokalnej, żeby dało się grać z iPada. Auto-przeładowanie (`npm run dev`, flaga `--livereload`) jest na razie wyłączone na życzenie użytkownika. Zamiast niego w prawym górnym rogu na każdym ekranie jest pikselowy przycisk przeładowania (`OverlayScene`, musi zostać ostatnia na liście scen).
+Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `npm start` (Node.js, serwer `tools/dev-server.mjs`, bez zależności). Użytkownik serwuje grę także zwykłym, standardowym serwerem HTTP, więc gra nie może zależeć od niczego, co ustawia `dev-server.mjs` (typy MIME dla nietypowych rozszerzeń, nagłówki cache, wstrzykiwane skrypty). To ma być tylko wygoda przy pracy, a nie warunek działania. Skrypty narzędziowe piszemy w Node, nie w Pythonie. Serwer nasłuchuje w sieci lokalnej, żeby dało się grać z iPada. Auto-przeładowanie (`npm run dev`, flaga `--livereload`) jest na razie wyłączone na życzenie użytkownika. Zamiast niego w prawym górnym rogu na każdym ekranie jest pikselowy przycisk przeładowania (`OverlayScene`, musi zostać ostatnia na liście scen).
 
 ## Praca z repo
 
@@ -13,7 +13,7 @@ Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `npm st
 
 ## Muzyka
 
-- Gdy użytkownik wkleja link do YouTube, oznacza to: dodaj tę muzyczkę do gry. Pobierz dźwięk jako plik MP3 do `assets/music/` (krótka nazwa pliku bez polskich znaków i spacji) i dopisz go do listy muzyki w grze. Pliki muzyki w tym folderze mają rozszerzenie `.m_p_3` zamiast `.mp3` (w środku to zwykły MP3, a serwer podaje je jako `audio/mpeg`), więc po pobraniu zmień rozszerzenie.
+- Gdy użytkownik wkleja link do YouTube, oznacza to: dodaj tę muzyczkę do gry. Pobierz dźwięk jako plik MP3 do `assets/music/` (krótka nazwa pliku bez polskich znaków i spacji) i dopisz go do listy muzyki w grze. Pliki muzyki w tym folderze mają rozszerzenie `.m_p_3` zamiast `.mp3` (w środku to zwykły MP3), więc po pobraniu zmień rozszerzenie. Gra sama pobiera te pliki i odtwarza je jako `audio/mpeg` (`src/audio/music.js`), więc działa na każdym serwerze.
 - Zapisuj poprawnie autora i tytuł utworu. Ustal je z opisu filmu i nazwy kanału, a nie z samego tytułu filmu (pomiń dopiski typu „Official Video”, „HD”, „lyrics”) i zachowaj oryginalną pisownię z polskimi znakami. Zapisz je w trzech miejscach: w tagach ID3 pliku MP3 (`artist`, `title`), w nazwie pliku (`autor-tytul.m_p_3`, bez polskich znaków i spacji) i na liście muzyki w grze (`src/data/music.js`), razem z licencją i oryginalnym linkiem z YouTube, dokładnie takim, jaki wkleił użytkownik, w polu `youtubeUrl`. Pobierz też miniaturkę filmu, zmniejsz ją do 48×27 (`ffmpeg -vf scale=48:27:flags=area`) i zapisz obok pliku muzyki jako `autor-tytul.jpg`. W wyborze piosenek pokazuje się ona zamiast numeru. Jeśli autor albo tytuł są niepewne, zapytaj.
 - Przed pobraniem sprawdź licencję w opisie filmu. Muzykę na wolnej licencji (Creative Commons, „no copyright”, bez tantiem) albo własną użytkownika można normalnie dodać i zacommitować. Jeśli to muzyka chroniona prawem autorskim, powiedz o tym i zapytaj, zanim plik trafi do repozytorium na GitHubie.
 

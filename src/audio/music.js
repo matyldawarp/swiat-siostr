@@ -1,16 +1,50 @@
-// Background music player built on a plain <audio> element, so songs stream instead of
-// delaying the game's start. Browsers (especially on iPad) only allow playback after a
-// tap, so the chosen song starts on the first touch or click. The chosen song repeats,
-// and the choice (or silence) is remembered per device.
+// Background music player built on a plain <audio> element.
+//
+// Song files use the .m_p_3 extension, which an ordinary HTTP server doesn't know, so it
+// may send them with the wrong content type and Safari would refuse to play them. The game
+// therefore downloads each song itself and plays it from an in-memory Blob labelled
+// audio/mpeg, which works on any static server.
+//
+// Browsers (especially on iPad) only allow playback to start during a tap. The first tap
+// "unlocks" the audio element with a moment of silence; after that the element may start
+// songs whenever their download finishes. The chosen song is fetched as soon as the game
+// loads, repeats, and the choice (or silence) is remembered per device.
 
 const MUSIC_VOLUME = 0.35;
 const MUSIC_STORAGE_KEY = 'swiat-siostr-music';
+
+// A tenth of a second of 8-bit silence as a WAV file, used to unlock the audio element.
+function silentWavUrl() {
+    const samples = 800;
+    const buffer = new ArrayBuffer(44 + samples);
+    const view = new DataView(buffer);
+    const text = (offset, s) => [...s].forEach((ch, i) => view.setUint8(offset + i, ch.charCodeAt(0)));
+    text(0, 'RIFF');
+    view.setUint32(4, 36 + samples, true);
+    text(8, 'WAVE');
+    text(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, 1, true); // mono
+    view.setUint32(24, 8000, true); // sample rate
+    view.setUint32(28, 8000, true); // byte rate
+    view.setUint16(32, 1, true); // block align
+    view.setUint16(34, 8, true); // bits per sample
+    text(36, 'data');
+    view.setUint32(40, samples, true);
+    new Uint8Array(buffer, 44).fill(128);
+    return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+}
 
 const Music = {
     audio: null,
     // Index into MUSIC of the chosen song, or -1 for silence.
     current: -1,
     started: false,
+    unlocked: false,
+    // Song index -> object URL of the downloaded song, or a pending download.
+    urls: {},
+    downloads: {},
 
     init() {
         if (MUSIC.length === 0) {
@@ -21,6 +55,10 @@ const Music = {
         this.audio = new Audio();
         this.audio.volume = MUSIC_VOLUME;
         this.audio.loop = true;
+
+        if (this.current >= 0) {
+            this.download(this.current);
+        }
 
         const start = () => {
             if (!this.started) {
@@ -58,15 +96,62 @@ const Music = {
         return this.current >= 0;
     },
 
+    // Downloads a song once and keeps it as an audio/mpeg Blob. Resolves to its URL, or
+    // null when the file is missing (e.g. a fresh clone without the private music).
+    download(index) {
+        if (this.urls[index]) {
+            return Promise.resolve(this.urls[index]);
+        }
+        if (!this.downloads[index]) {
+            this.downloads[index] = fetch(MUSIC[index].file)
+                .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(res.status))))
+                .then((data) => {
+                    this.urls[index] = URL.createObjectURL(new Blob([data], { type: 'audio/mpeg' }));
+                    return this.urls[index];
+                })
+                .catch(() => {
+                    delete this.downloads[index];
+                    return null;
+                });
+        }
+        return this.downloads[index];
+    },
+
+    // Must first run during a tap: plays a moment of silence so the element is allowed to
+    // start the real song later, once it has downloaded.
+    unlock() {
+        if (this.unlocked) {
+            return;
+        }
+        this.unlocked = true;
+        this.audio.src = silentWavUrl();
+        this.audio.play().catch(() => {});
+    },
+
     play() {
         if (!this.audio || this.current < 0) {
             return;
         }
-        const file = MUSIC[this.current].file;
-        if (!this.audio.src.endsWith(file)) {
-            this.audio.src = file;
+        const index = this.current;
+        const url = this.urls[index];
+        if (url) {
+            // Already downloaded: start right away, still inside the tap.
+            this.unlocked = true;
+            if (this.audio.src !== url) {
+                this.audio.src = url;
+            }
+            this.audio.play().catch(() => {});
+            return;
         }
-        this.audio.play().catch(() => {});
+
+        this.unlock();
+        this.download(index).then((downloaded) => {
+            // Skip if the choice changed while downloading, or the file is missing.
+            if (downloaded && this.current === index) {
+                this.audio.src = downloaded;
+                this.audio.play().catch(() => {});
+            }
+        });
     },
 
     // Called from a tap, so playback is allowed to start here. -1 means silence.
@@ -81,7 +166,9 @@ const Music = {
             this.audio.pause();
             return;
         }
-        this.audio.src = MUSIC[index].file;
+        if (this.urls[index]) {
+            this.audio.src = this.urls[index];
+        }
         this.audio.currentTime = 0;
         this.play();
     }
