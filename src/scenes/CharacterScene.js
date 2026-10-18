@@ -19,11 +19,9 @@ class CharacterScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
+        const { width, height } = PixelUI.setupView(this);
         const cx = Math.round(width / 2);
         const portrait = height > width;
-
-        this.cameras.main.setSize(width, height);
         CHARACTERS.forEach((c) => createHamsterTextures(this, c));
 
         PixelUI.drawSky(this, width, height);
@@ -97,7 +95,7 @@ class CharacterScene extends Phaser.Scene {
         const centerY = y + size / 2;
 
         if (!character) {
-            this.add.text(centerX, centerY + 1, '?', {
+            PixelUI.addText(this, centerX, centerY + 1, '?', {
                 fontFamily: FONT,
                 fontStyle: '700',
                 fontSize: `${S(12)}px`,
@@ -134,7 +132,7 @@ class CharacterScene extends Phaser.Scene {
         });
 
         this.previewName = PixelUI.addTitle(this, x, y + S(26), '');
-        this.previewSpecies = this.add.text(x, y + S(40), '', {
+        this.previewSpecies = PixelUI.addText(this, x, y + S(40), '', {
             fontFamily: FONT,
             fontSize: `${S(8)}px`,
             color: TEXT_COLORS.subtitle

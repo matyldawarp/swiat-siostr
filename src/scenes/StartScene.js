@@ -9,11 +9,9 @@ class StartScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
+        const { width, height } = PixelUI.setupView(this);
         const cx = Math.round(width / 2);
         const cy = Math.round(height / 2);
-
-        this.cameras.main.setSize(width, height);
 
         PixelUI.drawSky(this, width, height);
         this.drawSun(width - S(66), S(42));
@@ -26,7 +24,7 @@ class StartScene extends Phaser.Scene {
         title.setShadow(S(2), S(2), TEXT_COLORS.titleShadow, 0, true, true);
         title.setAlpha(0);
 
-        const subtitle = this.add.text(cx, cy - S(6), 'opowieść o dwóch siostrach', {
+        const subtitle = PixelUI.addText(this, cx, cy - S(6), 'opowieść o dwóch siostrach', {
             fontFamily: FONT,
             fontSize: `${S(12)}px`,
             color: TEXT_COLORS.subtitle
@@ -45,7 +43,7 @@ class StartScene extends Phaser.Scene {
             easeParams: [2]
         });
 
-        const hint = this.add.text(cx, height - S(10), 'Kliknij lub naciśnij Enter', {
+        const hint = PixelUI.addText(this, cx, height - S(10), 'Kliknij lub naciśnij Enter', {
             fontFamily: FONT,
             fontSize: `${S(8)}px`,
             color: TEXT_COLORS.hint

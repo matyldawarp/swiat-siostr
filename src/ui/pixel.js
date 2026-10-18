@@ -40,7 +40,30 @@ function S(n) {
     return Math.round(n * UI_SCALE);
 }
 
+// Device pixels per game pixel, set by fitToWindow() in main.js. The canvas renders at
+// the screen's native resolution and every scene camera zooms by this whole number, so
+// pixel art stays blocky while text can be rasterised at full resolution.
+let RENDER_SCALE = 1;
+
 const PixelUI = {
+    // Zooms the scene camera to game pixels and returns the size in game pixels.
+    setupView(scene) {
+        const camera = scene.cameras.main;
+        camera.setSize(scene.scale.width, scene.scale.height);
+        camera.setOrigin(0, 0);
+        camera.setZoom(RENDER_SCALE);
+        camera.setScroll(0, 0);
+
+        return {
+            width: Math.round(scene.scale.width / RENDER_SCALE),
+            height: Math.round(scene.scale.height / RENDER_SCALE)
+        };
+    },
+
+    // Text rasterised at device resolution so glyph edges stay sharp when zoomed.
+    addText(scene, x, y, text, style) {
+        return scene.add.text(x, y, text, { ...style, resolution: RENDER_SCALE });
+    },
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
         for (let dy = -r; dy <= r; dy++) {
@@ -89,7 +112,7 @@ const PixelUI = {
     },
 
     addTitle(scene, x, y, text, fontSize = S(16)) {
-        return scene.add.text(x, y, text, {
+        return PixelUI.addText(scene, x, y, text, {
             fontFamily: FONT,
             fontStyle: '700',
             fontSize: `${fontSize}px`,
@@ -108,7 +131,7 @@ const PixelUI = {
         };
         draw(PALETTE.button);
 
-        const text = scene.add.text(0, 1, label, {
+        const text = PixelUI.addText(scene, 0, 1, label, {
             fontFamily: FONT,
             fontStyle: '700',
             fontSize: `${fontSize}px`,

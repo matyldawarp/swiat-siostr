@@ -25,12 +25,19 @@ const config = {
 function fitToWindow(game) {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
     const long = Math.max(w, h);
     const short = Math.min(w, h);
-    const zoom = Math.max(1, Math.floor(Math.min(long / BASE_LONG, short / BASE_SHORT)));
 
-    game.scale.resize(Math.ceil(w / zoom), Math.ceil(h / zoom));
-    game.scale.setZoom(zoom);
+    // Game pixel size in CSS pixels, then in whole device pixels.
+    const zoom = Math.max(1, Math.floor(Math.min(long / BASE_LONG, short / BASE_SHORT)));
+    RENDER_SCALE = Math.max(1, Math.round(zoom * dpr));
+
+    // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
+    const gameW = Math.ceil((w * dpr) / RENDER_SCALE);
+    const gameH = Math.ceil((h * dpr) / RENDER_SCALE);
+    game.scale.resize(gameW * RENDER_SCALE, gameH * RENDER_SCALE);
+    game.scale.setZoom(1 / dpr);
 }
 
 function startGame() {

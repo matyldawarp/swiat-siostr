@@ -36,10 +36,8 @@ class TerrariumScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
+        const { width, height } = PixelUI.setupView(this);
         const cx = Math.round(width / 2);
-
-        this.cameras.main.setSize(width, height);
         createHamsterTextures(this, this.character);
         createHeartTexture(this);
 
@@ -61,7 +59,7 @@ class TerrariumScene extends Phaser.Scene {
         const layout = this.drawTank(tank);
         this.createHamster(tank, layout);
 
-        this.add.text(cx, height - S(14), 'Dotknij chomika', {
+        PixelUI.addText(this, cx, height - S(14), 'Dotknij chomika', {
             fontFamily: FONT,
             fontSize: `${S(8)}px`,
             color: TEXT_COLORS.hint

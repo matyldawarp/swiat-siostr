@@ -10,8 +10,7 @@ class OverlayScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.scale;
-        this.cameras.main.setSize(width, height);
+        const { width, height } = PixelUI.setupView(this);
 
         const size = S(22);
         const margin = S(6);
