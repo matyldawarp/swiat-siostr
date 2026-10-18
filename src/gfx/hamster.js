@@ -25,6 +25,23 @@ const HAMSTER_BLINK_ROWS = {
     7: 'OBBOOBBBBBBOOBBO'
 };
 
+// Chewing: open mouth and puffed-out cheeks.
+const HAMSTER_CHEW_ROWS = {
+    8: 'OPPPLLLPPLLLPPPO',
+    9: 'OBBLLLOPPOLLLBBO'
+};
+
+// Sunflower seed: grey shell with a pale stripe. O outline, G shell, W stripe.
+const SEED_PIXELS = [
+    '..O..',
+    '.OGO.',
+    '.GWG.',
+    'OGWGO',
+    'OGWGO',
+    '.OGO.',
+    '..O..'
+];
+
 const HEART_PIXELS = [
     '.PP.PP.',
     'PPPPPPP',
@@ -58,7 +75,7 @@ function paintPixels(scene, key, rows, colors) {
     texture.refresh();
 }
 
-// Creates `<id>` and `<id>-blink` textures for a character.
+// Creates `<id>`, `<id>-blink` and `<id>-chew` textures for a character.
 function createHamsterTextures(scene, character) {
     const colors = {
         O: PALETTE.outline,
@@ -73,16 +90,28 @@ function createHamsterTextures(scene, character) {
 
     const blinkRows = HAMSTER_PIXELS.map((row, y) => HAMSTER_BLINK_ROWS[y] || row);
     paintPixels(scene, `${character.id}-blink`, blinkRows, colors);
+
+    const chewRows = HAMSTER_PIXELS.map((row, y) => HAMSTER_CHEW_ROWS[y] || row);
+    paintPixels(scene, `${character.id}-chew`, chewRows, colors);
 }
 
 function createHeartTexture(scene) {
     paintPixels(scene, 'heart', HEART_PIXELS, { P: PALETTE.heart });
 }
 
+function createSeedTexture(scene) {
+    paintPixels(scene, 'seed', SEED_PIXELS, { O: PALETTE.outline, G: 0x8d7f99, W: 0xf3eef8 });
+}
+
 // Swaps to the blink texture for a moment at random intervals while the image lives.
 function startBlinking(scene, image, character) {
     const blink = () => {
         if (!image.active) {
+            return;
+        }
+        // Only blink from the neutral face, so chewing frames aren't interrupted.
+        if (image.texture.key !== character.id) {
+            scene.time.delayedCall(Phaser.Math.Between(1800, 4200), blink);
             return;
         }
         image.setTexture(`${character.id}-blink`);

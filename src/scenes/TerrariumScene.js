@@ -23,6 +23,8 @@ const TERRARIUM_COLORS = {
 
 // Whole-number sprite scale for the hamster inside the tank.
 const TERRARIUM_HAMSTER_SCALE = 4;
+const TERRARIUM_MAX_SEEDS = 5;
+const TERRARIUM_SEED_SCALE = 3;
 
 class TerrariumScene extends Phaser.Scene {
     constructor() {
@@ -33,6 +35,8 @@ class TerrariumScene extends Phaser.Scene {
         this.leaving = false;
         this.skipIntro = Boolean(data.resized);
         this.character = getCharacter(this.registry.get('selectedCharacter'));
+        this.state = 'idle';
+        this.seeds = [];
     }
 
     create() {
@@ -40,6 +44,7 @@ class TerrariumScene extends Phaser.Scene {
         const cx = Math.round(width / 2);
         createHamsterTextures(this, this.character);
         createHeartTexture(this);
+        createSeedTexture(this);
 
         PixelUI.drawSky(this, width, height);
 
@@ -57,9 +62,19 @@ class TerrariumScene extends Phaser.Scene {
         PixelUI.addTitle(this, cx, tank.y - S(16), this.character.name);
 
         const layout = this.drawTank(tank);
+
+        // Tapping the glass drops a seed; created before the hamster so taps on it go to the hamster.
+        const glass = this.add.zone(tank.x + tank.w / 2, tank.y + tank.h / 2, tank.w, tank.h).setInteractive();
+        glass.on('pointerdown', (pointer) => this.dropSeed(pointer.worldX, pointer.worldY));
+
         this.createHamster(tank, layout);
 
-        PixelUI.addText(this, cx, height - S(14), 'Dotknij chomika', {
+        PixelUI.createButton(this, width - S(40), height - S(14), 'Ziarno', () => {
+            const { minX, maxX } = this.walkArea;
+            this.dropSeed(Phaser.Math.Between(minX, maxX), tank.y + S(10));
+        }, { width: S(64), height: S(18), fontSize: S(10) });
+
+        PixelUI.addText(this, cx, height - S(14), 'Dotknij chomika albo szyby', {
             fontFamily: FONT,
             fontSize: `${S(8)}px`,
             color: TEXT_COLORS.hint
@@ -191,6 +206,9 @@ class TerrariumScene extends Phaser.Scene {
 
     createHamster(tank, { minX, maxX }) {
         const scale = TERRARIUM_HAMSTER_SCALE;
+        this.walkArea = { minX, maxX };
+        this.seedGroundY = tank.floorY - S(4);
+
         const startX = Math.round((minX + maxX) / 2);
         // Sprite is 16px tall around its centre; sink it slightly into the bedding.
         this.hamsterGroundY = tank.floorY - (8 * scale - S(4));
@@ -204,14 +222,30 @@ class TerrariumScene extends Phaser.Scene {
         image.on('pointerdown', () => this.poke());
 
         startBlinking(this, image, this.character);
-        this.wander(minX, maxX);
+        this.wanderTimer = this.time.delayedCall(800, () => this.wander());
     }
 
-    wander(minX, maxX) {
-        const targetX = Phaser.Math.Between(minX, maxX);
+    // --- Movement -------------------------------------------------------------
+
+    stopMoving() {
+        if (this.walkTween) {
+            this.walkTween.stop();
+        }
+        if (this.hopTween) {
+            this.hopTween.stop();
+        }
+        if (this.wanderTimer) {
+            this.wanderTimer.remove();
+        }
+        this.hamsterImage.y = 0;
+    }
+
+    // msPerPixel: 20 is a stroll, lower is faster.
+    walkTo(targetX, onArrive, msPerPixel = 20) {
+        this.stopMoving();
         const distance = Math.abs(targetX - this.hamster.x);
 
-        const hop = this.tweens.add({
+        this.hopTween = this.tweens.add({
             targets: this.hamsterImage,
             y: -S(2),
             duration: 120,
@@ -221,14 +255,107 @@ class TerrariumScene extends Phaser.Scene {
             easeParams: [1]
         });
 
-        this.tweens.add({
+        this.walkTween = this.tweens.add({
             targets: this.hamster,
             x: targetX,
-            duration: Math.max(300, distance * 20),
+            duration: Math.max(200, distance * msPerPixel),
             onComplete: () => {
-                hop.stop();
+                this.hopTween.stop();
                 this.hamsterImage.y = 0;
-                this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander(minX, maxX));
+                onArrive();
+            }
+        });
+    }
+
+    wander() {
+        if (this.state !== 'idle') {
+            return;
+        }
+        const { minX, maxX } = this.walkArea;
+        this.walkTo(Phaser.Math.Between(minX, maxX), () => {
+            this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(1200, 3500), () => this.wander());
+        });
+    }
+
+    // --- Sunflower seeds ------------------------------------------------------
+
+    dropSeed(x, fromY) {
+        if (this.seeds.length >= TERRARIUM_MAX_SEEDS) {
+            return;
+        }
+        const { minX, maxX } = this.walkArea;
+        const seedX = Phaser.Math.Clamp(Math.round(x), minX, maxX);
+        const startY = Math.min(fromY, this.seedGroundY - S(10));
+
+        const seed = this.add.image(seedX, startY, 'seed').setScale(TERRARIUM_SEED_SCALE);
+        seed.landed = false;
+        this.seeds.push(seed);
+
+        this.tweens.add({
+            targets: seed,
+            y: this.seedGroundY,
+            duration: 250 + (this.seedGroundY - startY) * 2,
+            ease: 'Bounce.easeOut',
+            onComplete: () => {
+                seed.landed = true;
+                this.goEat();
+            }
+        });
+    }
+
+    // Walks to the nearest seed on the ground, or goes back to wandering.
+    goEat() {
+        if (this.state === 'eating' || this.state === 'goingToEat') {
+            return;
+        }
+
+        const landed = this.seeds.filter((s) => s.landed);
+        if (landed.length === 0) {
+            this.state = 'idle';
+            this.wanderTimer = this.time.delayedCall(Phaser.Math.Between(800, 2000), () => this.wander());
+            return;
+        }
+
+        const hamsterX = this.hamster.x;
+        const seed = landed.reduce((a, b) => (Math.abs(a.x - hamsterX) <= Math.abs(b.x - hamsterX) ? a : b));
+
+        this.state = 'goingToEat';
+        // Hurry over for food.
+        this.walkTo(seed.x, () => this.eat(seed), 10);
+    }
+
+    eat(seed) {
+        this.state = 'eating';
+        this.seeds = this.seeds.filter((s) => s !== seed);
+
+        // Pick the seed up in the paws, then chew it away.
+        const pawsY = this.hamsterGroundY + 4 * TERRARIUM_HAMSTER_SCALE;
+        this.tweens.add({ targets: seed, y: pawsY, duration: 150, ease: 'Quad.easeOut' });
+
+        const id = this.character.id;
+        const bites = 8;
+        let bite = 0;
+
+        this.time.addEvent({
+            delay: 140,
+            repeat: bites - 1,
+            callback: () => {
+                bite++;
+                const chewing = bite % 2 === 1;
+                this.hamsterImage.setTexture(chewing ? `${id}-chew` : id);
+                if (chewing) {
+                    playCrunch(this);
+                }
+                // Seed shrinks in steps as it is nibbled.
+                seed.setScale(TERRARIUM_SEED_SCALE * (1 - bite / bites));
+
+                if (bite === bites) {
+                    this.hamsterImage.setTexture(id);
+                    seed.destroy();
+                    this.showHeart();
+                    this.state = 'idle';
+                    this.goEat();
+                }
             }
         });
     }
@@ -250,6 +377,10 @@ class TerrariumScene extends Phaser.Scene {
             ease: 'Sine.easeOut'
         });
 
+        this.showHeart();
+    }
+
+    showHeart() {
         const top = this.hamster.y - 8 * TERRARIUM_HAMSTER_SCALE - S(4);
         const heart = this.add.image(this.hamster.x + Phaser.Math.Between(-S(10), S(10)), top, 'heart')
             .setScale(3);
