@@ -1,9 +1,9 @@
-import { FONT, PixelUI, S } from '../ui/pixel.js';
-import { getCharacter } from '../data/characters.js';
+import { PixelUI, S, textStyle } from '../ui/pixel.js';
 import { createHamsterTextures, startBlinking } from '../gfx/hamster.js';
 import { Icons } from '../gfx/icons.js';
 import { Illness } from '../ui/illness.js';
 import { playStep } from '../audio/sfx.js';
+import { BaseScene } from './BaseScene.js';
 
 const MAP_COLORS = {
     grass: 0xd4f2e4,
@@ -20,16 +20,15 @@ const MAP_PLACES = {
     hospital: 'HospitalScene'
 };
 
-export class MapScene extends Phaser.Scene {
+export class MapScene extends BaseScene {
     constructor() {
         super('MapScene');
     }
 
     init(data) {
-        this.leaving = false;
+        super.init(data);
         this.traveling = false;
-        this.skipIntro = Boolean(data.resized);
-        this.character = getCharacter(this.registry.get('selectedCharacter'));
+        this.character = this.selectedCharacter();
         this.location = this.registry.get('mapLocation') || 'home';
         this.sickBubble = null;
     }
@@ -40,8 +39,7 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
-    create() {
-        const { width, height } = PixelUI.setupView(this);
+    build({ width, height }) {
         createHamsterTextures(this, this.character);
         const portrait = height > width;
 
@@ -77,11 +75,6 @@ export class MapScene extends Phaser.Scene {
         if (sick) {
             this.sickBubble = Illness.createBubble(this, S(20)).setDepth(11);
         }
-
-        if (!this.skipIntro) {
-            PixelUI.fadeIn(this);
-        }
-        PixelUI.restartOnResize(this);
     }
 
     drawGround(width, height) {
@@ -184,12 +177,7 @@ export class MapScene extends Phaser.Scene {
         const h = S(26);
         const g = this.add.graphics();
         Icons.cloud(g, 0, 0, w, h);
-        const mark = PixelUI.addText(this, 0, S(1), '?', {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: `${S(14)}px`,
-            color: '#b9a6dc'
-        }).setOrigin(0.5);
+        const mark = PixelUI.addText(this, 0, S(1), '?', textStyle(S(14), { bold: true, color: '#b9a6dc' })).setOrigin(0.5);
 
         const cloud = this.add.container(x, y, [g, mark]);
         cloud.setSize(w, h);

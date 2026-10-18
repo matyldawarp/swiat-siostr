@@ -116,8 +116,9 @@ for (const mod of modules.values()) {
         if (known.has(name)) {
             continue;
         }
-        // A use of the name that is not a property access (`.name`) or an object key (`name:`).
-        const use = new RegExp(`(^|[^.\\w$])${name.replace(/\$/g, '\\$')}(?![\\w$])(?!\\s*:(?!:))`, 'm');
+        // A use of the name that is not a property access (`.name`), an object key (`name:`)
+        // or a method definition (`name(args) {`).
+        const use = new RegExp(`(^|[^.\\w$])${name.replace(/\$/g, '\\$')}(?![\\w$])(?!\\s*:(?!:))(?!\\s*\\([^)]*\\)\\s*\\{)`, 'm');
         // Local variables and parameters may shadow the name; skip those files.
         const local = new RegExp(`(?:const|let|var|function)\\s+${name}\\b|[(,]\\s*${name}\\s*[,)=]`);
         if (use.test(code) && !local.test(code)) {
@@ -253,6 +254,12 @@ for (const mod of modules.values()) {
     const code = stripCode(mod.source);
     if (!mod.file.endsWith(join('ui', 'pixel.js')) && /\.add\.text\(/.test(code)) {
         fail(mod.file, 'creates text with add.text; use PixelUI.addText so it stays sharp');
+    }
+    if (!mod.file.endsWith('BaseScene.js') && /extends\s+Phaser\.Scene\b/.test(code)) {
+        fail(mod.file, 'extends Phaser.Scene; extend BaseScene (scenes/BaseScene.js) and implement build()');
+    }
+    if (/extends\s+BaseScene\b/.test(code) && /^\s{4}create\s*\(/m.test(code)) {
+        fail(mod.file, 'defines create(); a BaseScene implements build({ width, height }) instead');
     }
 }
 

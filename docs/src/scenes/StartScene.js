@@ -1,17 +1,12 @@
-import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { BaseScene } from './BaseScene.js';
 
-export class StartScene extends Phaser.Scene {
+export class StartScene extends BaseScene {
     constructor() {
         super('StartScene');
     }
 
-    init(data) {
-        this.leaving = false;
-        this.skipIntro = Boolean(data.resized);
-    }
-
-    create() {
-        const { width, height } = PixelUI.setupView(this);
+    build({ width, height }) {
         const cx = Math.round(width / 2);
         const cy = Math.round(height / 2);
 
@@ -26,11 +21,8 @@ export class StartScene extends Phaser.Scene {
         title.setShadow(S(2), S(2), TEXT_COLORS.titleShadow, 0, true, true);
         title.setAlpha(0);
 
-        const subtitle = PixelUI.addText(this, cx, cy - S(6), 'opowieść o dwóch siostrach', {
-            fontFamily: FONT,
-            fontSize: `${S(12)}px`,
-            color: TEXT_COLORS.subtitle
-        }).setOrigin(0.5).setAlpha(0);
+        const subtitle = PixelUI.addText(this, cx, cy - S(6), 'opowieść o dwóch siostrach',
+            textStyle(S(12), { color: TEXT_COLORS.subtitle })).setOrigin(0.5).setAlpha(0);
 
         const buttonY = cy + S(34);
         const button = PixelUI.createButton(this, cx, buttonY, 'Rozpocznij', () => this.startGame());
@@ -45,11 +37,8 @@ export class StartScene extends Phaser.Scene {
             easeParams: [2]
         });
 
-        const hint = PixelUI.addText(this, cx, height - S(10), 'Kliknij lub naciśnij Enter', {
-            fontFamily: FONT,
-            fontSize: `${S(8)}px`,
-            color: TEXT_COLORS.hint
-        }).setOrigin(0.5).setAlpha(0);
+        const hint = PixelUI.addText(this, cx, height - S(10), 'Kliknij lub naciśnij Enter',
+            textStyle(S(8), { color: TEXT_COLORS.hint })).setOrigin(0.5).setAlpha(0);
 
         if (this.skipIntro) {
             title.setAlpha(1).setY(title.y - S(4));
@@ -60,13 +49,15 @@ export class StartScene extends Phaser.Scene {
             this.tweens.add({ targets: title, alpha: 1, y: title.y - S(4), duration: 1200, ease: 'Sine.easeOut' });
             this.tweens.add({ targets: subtitle, alpha: 1, duration: 1000, delay: 500 });
             this.tweens.add({ targets: [button, hint], alpha: 1, duration: 800, delay: 900 });
-            this.cameras.main.fadeIn(600, ...PALETTE.fade);
         }
 
         this.input.keyboard.once('keydown-ENTER', () => this.startGame());
         this.input.keyboard.once('keydown-SPACE', () => this.startGame());
+    }
 
-        PixelUI.restartOnResize(this);
+    // A slower fade than other scenes, while the title floats in.
+    intro() {
+        this.cameras.main.fadeIn(600, ...PALETTE.fade);
     }
 
     drawSun(x, y) {

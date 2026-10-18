@@ -137,6 +137,27 @@ export function createSeedTexture(scene) {
     paintPixels(scene, 'seed', SEED_PIXELS, SEED_COLORS);
 }
 
+// Sprite scale for characters standing in a room (terrarium, kitchen, hospital).
+export const CHARACTER_SCALE = 4;
+
+// A character at (x, groundY): a container to move and hop (PixelUI.hop with groundY)
+// holding the blinking sprite, which calls onTap when tapped. Textures are made on demand.
+export function addCharacter(scene, character, x, groundY, { scale = CHARACTER_SCALE, depth, onTap } = {}) {
+    createHamsterTextures(scene, character);
+    const container = scene.add.container(x, groundY);
+    if (depth !== undefined) {
+        container.setDepth(depth);
+    }
+    const image = scene.add.image(0, 0, character.id).setScale(scale);
+    container.add(image);
+    if (onTap) {
+        image.setInteractive({ useHandCursor: true });
+        image.on('pointerdown', onTap);
+    }
+    startBlinking(scene, image, character);
+    return { container, image, groundY };
+}
+
 // Swaps to the blink texture for a moment at random intervals while the image lives.
 export function startBlinking(scene, image, character) {
     const blink = () => {

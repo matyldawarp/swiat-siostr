@@ -1,22 +1,20 @@
-import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
+import { BaseScene } from './BaseScene.js';
 
 // Always-on-top scene with controls that stay visible on every screen.
 // It is last in the scene list, so it renders above the others and gets input first.
-export class OverlayScene extends Phaser.Scene {
+export class OverlayScene extends BaseScene {
     constructor() {
         super({ key: 'OverlayScene', active: true });
     }
 
-    init() {
-        this.leaving = false;
-    }
+    // Always visible: no fade when the game starts.
+    intro() {}
 
-    create() {
-        const { width, height } = PixelUI.setupView(this);
-        this.view = { width, height };
+    build({ width }) {
         this.menu = null;
 
         const size = S(22);
@@ -33,8 +31,6 @@ export class OverlayScene extends Phaser.Scene {
             this.loadThumbnails();
             this.createMusicButton(width - margin - size * 1.5 - S(4), margin + size / 2, size);
         });
-
-        PixelUI.restartOnResize(this);
     }
 
     // Song thumbnails for the chooser, only for songs that exist; a song without one shows
@@ -120,29 +116,17 @@ export class OverlayScene extends Phaser.Scene {
         if (hasThumb) {
             parts.push(this.add.image(badgeX, 0, thumbKey));
         } else if (song) {
-            parts.push(PixelUI.addText(this, badgeX, 1, String(index + 1), {
-                fontFamily: FONT,
-                fontStyle: '700',
-                fontSize: `${S(16)}px`,
-                color: TEXT_COLORS.title
-            }).setOrigin(0.5));
+            parts.push(PixelUI.addText(this, badgeX, 1, String(index + 1), textStyle(S(16), { bold: true })).setOrigin(0.5));
         } else {
             Icons.note(bg, badgeX, 0, Math.round(badge * 0.7), false);
         }
 
         const textX = badgeX + badgeW / 2 + S(8);
-        parts.push(PixelUI.addText(this, textX, song ? -S(6) : 0, song ? song.title : 'Cisza', {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: `${S(11)}px`,
-            color: TEXT_COLORS.button
-        }).setOrigin(0, 0.5));
+        parts.push(PixelUI.addText(this, textX, song ? -S(6) : 0, song ? song.title : 'Cisza',
+            textStyle(S(11), { bold: true, color: TEXT_COLORS.button })).setOrigin(0, 0.5));
         if (song) {
-            parts.push(PixelUI.addText(this, textX, S(7), song.artist, {
-                fontFamily: FONT,
-                fontSize: `${S(8)}px`,
-                color: TEXT_COLORS.subtitle
-            }).setOrigin(0, 0.5));
+            parts.push(PixelUI.addText(this, textX, S(7), song.artist,
+                textStyle(S(8), { color: TEXT_COLORS.subtitle })).setOrigin(0, 0.5));
         }
 
         // Heart marks what is on now.
@@ -171,24 +155,10 @@ export class OverlayScene extends Phaser.Scene {
     }
 
     createReloadButton(x, y, size) {
-        const bg = this.add.graphics();
-        const draw = (fill) => {
-            bg.clear();
-            PixelUI.drawBox(bg, -size / 2, -size / 2, size, size, fill, PALETTE.buttonBorder, PALETTE.buttonLight);
-        };
-        draw(PALETTE.button);
-
-        const icon = this.add.graphics();
-        icon.fillStyle(PALETTE.buttonBorder, 1);
-        this.drawReloadIcon(icon, 0, 1, S(6));
-
-        const button = this.add.container(x, y, [bg, icon]);
-        button.setSize(size, size);
-        button.setInteractive({ useHandCursor: true });
-
-        button.on('pointerover', () => draw(PALETTE.buttonHover));
-        button.on('pointerout', () => draw(PALETTE.button));
-        button.on('pointerup', () => window.location.reload());
+        PixelUI.createIconButton(this, x, y, size, (g) => {
+            g.fillStyle(PALETTE.buttonBorder, 1);
+            this.drawReloadIcon(g, 0, 1, S(6));
+        }, () => window.location.reload());
     }
 
     // Clockwise circular arrow on the pixel grid: a ring with a gap at the top right

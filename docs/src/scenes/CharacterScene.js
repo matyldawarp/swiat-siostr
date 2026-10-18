@@ -1,6 +1,7 @@
-import { FONT, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { CHARACTERS, CHARACTER_SLOTS, getCharacter } from '../data/characters.js';
 import { createHamsterTextures } from '../gfx/hamster.js';
+import { BaseScene } from './BaseScene.js';
 
 const SLOT_COLORS = {
     fill: 0xfff7fb,
@@ -11,19 +12,17 @@ const SLOT_COLORS = {
     lockedBorder: 0xd9ccf5
 };
 
-export class CharacterScene extends Phaser.Scene {
+export class CharacterScene extends BaseScene {
     constructor() {
         super('CharacterScene');
     }
 
     init(data) {
-        this.leaving = false;
-        this.skipIntro = Boolean(data.resized);
+        super.init(data);
         this.slots = [];
     }
 
-    create() {
-        const { width, height } = PixelUI.setupView(this);
+    build({ width, height }) {
         const cx = Math.round(width / 2);
         const portrait = height > width;
         CHARACTERS.forEach((c) => createHamsterTextures(this, c));
@@ -74,11 +73,6 @@ export class CharacterScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-RIGHT', () => this.cycle(1));
         this.input.keyboard.on('keydown-ENTER', () => this.confirm());
         this.input.keyboard.on('keydown-ESC', () => this.back());
-
-        if (!this.skipIntro) {
-            PixelUI.fadeIn(this);
-        }
-        PixelUI.restartOnResize(this);
     }
 
     createSlot(x, y, size, character) {
@@ -99,12 +93,7 @@ export class CharacterScene extends Phaser.Scene {
         const centerY = y + size / 2;
 
         if (!character) {
-            PixelUI.addText(this, centerX, centerY + 1, '?', {
-                fontFamily: FONT,
-                fontStyle: '700',
-                fontSize: `${S(12)}px`,
-                color: '#c3b6d8'
-            }).setOrigin(0.5);
+            PixelUI.addText(this, centerX, centerY + 1, '?', textStyle(S(12), { bold: true, color: '#c3b6d8' })).setOrigin(0.5);
             return { draw };
         }
 
@@ -136,11 +125,7 @@ export class CharacterScene extends Phaser.Scene {
         });
 
         this.previewName = PixelUI.addTitle(this, x, y + S(26), '');
-        this.previewSpecies = PixelUI.addText(this, x, y + S(40), '', {
-            fontFamily: FONT,
-            fontSize: `${S(8)}px`,
-            color: TEXT_COLORS.subtitle
-        }).setOrigin(0.5);
+        this.previewSpecies = PixelUI.addText(this, x, y + S(40), '', textStyle(S(8), { color: TEXT_COLORS.subtitle })).setOrigin(0.5);
 
         PixelUI.createButton(this, x, y + S(60), 'Wybierz', () => this.confirm(), { width: S(80), height: S(20), fontSize: S(11) });
     }

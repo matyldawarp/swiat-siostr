@@ -1,9 +1,11 @@
-import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
-import { CHARACTERS, getCharacter } from '../data/characters.js';
-import { createHamsterTextures, createHeartTexture, startBlinking } from '../gfx/hamster.js';
+import { PALETTE, PixelUI, S } from '../ui/pixel.js';
+import { CHARACTERS } from '../data/characters.js';
+import { CHARACTER_SCALE, addCharacter, createHamsterTextures, spriteHalf } from '../gfx/hamster.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Illness } from '../ui/illness.js';
+import { floatHeart, floatZ, walkBob } from '../ui/effects.js';
 import { playCharacterSound, playDing, playDoorbell, playFanfare, playLullaby, playPat } from '../audio/sfx.js';
+import { BaseScene } from './BaseScene.js';
 
 const HOSPITAL_COLORS = {
     wall: 0xe4f1ff,
@@ -19,20 +21,17 @@ const HOSPITAL_COLORS = {
     windowFrame: 0xffffff
 };
 
-const HOSPITAL_HAMSTER_SCALE = 4;
-
 // Treatment steps, suggested in this order (the next one pulses) but any order works.
 const TREATMENTS = ['thermometer', 'syrup', 'plaster'];
 
-export class HospitalScene extends Phaser.Scene {
+export class HospitalScene extends BaseScene {
     constructor() {
         super('HospitalScene');
     }
 
     init(data) {
-        this.leaving = false;
-        this.skipIntro = Boolean(data.resized);
-        this.character = getCharacter(this.registry.get('selectedCharacter'));
+        super.init(data);
+        this.character = this.selectedCharacter();
         this.busy = false;
         this.done = new Set();
         this.toolButtons = {};
@@ -44,13 +43,7 @@ export class HospitalScene extends Phaser.Scene {
         this.friend = CHARACTERS.find((c) => c.id !== this.character.id) || null;
     }
 
-    create() {
-        const { width, height } = PixelUI.setupView(this);
-        this.viewWidth = width;
-        this.viewHeight = height;
-        createHamsterTextures(this, this.character);
-        createHeartTexture(this);
-
+    build({ width, height }) {
         const portrait = height > width;
         const floorY = Math.round(height * (portrait ? 0.62 : 0.66));
         this.floorY = floorY;
@@ -73,11 +66,6 @@ export class HospitalScene extends Phaser.Scene {
         }
 
         this.updateHints();
-
-        if (!this.skipIntro) {
-            PixelUI.fadeIn(this);
-        }
-        PixelUI.restartOnResize(this);
     }
 
     drawRoom(width, height, floorY, portrait) {
@@ -189,29 +177,28 @@ export class HospitalScene extends Phaser.Scene {
         PixelUI.drawBox(back, left + S(8), mattressTop - S(8), S(26), S(10), C.pillow, PALETTE.outline);
 
         // Hamster sits on the mattress next to the pillow.
-        const scale = HOSPITAL_HAMSTER_SCALE;
+        const scale = CHARACTER_SCALE;
         const hx = left + S(52);
         // Sits on the mattress; the blanket then covers only up to its paws.
-        const hy = mattressTop - 8 * scale - S(2);
+        const hy = mattressTop - spriteHalf(scale) - S(2);
         this.hamsterGroundY = hy;
-        this.hamster = this.add.container(hx, hy);
-        this.hamsterImage = this.add.image(0, 0, this.character.id).setScale(scale);
-        this.hamster.add(this.hamsterImage);
-        this.hamsterImage.setInteractive({ useHandCursor: true });
-        this.hamsterImage.on('pointerdown', () => {
-            if (this.resting) {
-                this.wakeFromRest();
-                return;
+        const hamster = addCharacter(this, this.character, hx, hy, {
+            onTap: () => {
+                if (this.resting) {
+                    this.wakeFromRest();
+                    return;
+                }
+                playCharacterSound(this, this.character.sound);
+                this.showHearts(1);
             }
-            playCharacterSound(this, this.character.sound);
-            this.showHearts(1);
         });
-        startBlinking(this, this.hamsterImage, this.character);
+        this.hamster = hamster.container;
+        this.hamsterImage = hamster.image;
 
         // Still has its cold on arrival: bubble stays until the treatment is done.
         if (Illness.isSick(this)) {
             this.sickBubble = Illness.createBubble(this).setDepth(20);
-            this.sickBubble.setPosition(hx + S(30), hy - 8 * scale - S(12));
+            this.sickBubble.setPosition(hx + S(30), hy - spriteHalf(scale) - S(12));
             this.sneezeTimer = this.time.addEvent({
                 delay: 5000,
                 loop: true,
@@ -396,27 +383,13 @@ export class HospitalScene extends Phaser.Scene {
 
     showHearts(count) {
         for (let i = 0; i < count; i++) {
-            const heart = this.add.image(
-                this.hamster.x + Phaser.Math.Between(-S(16), S(16)),
-                this.hamster.y - S(30),
-                'heart'
-            ).setScale(3).setDepth(20);
-            this.tweens.add({
-                targets: heart,
-                y: heart.y - S(24),
-                alpha: 0,
-                delay: i * 150,
-                duration: 800,
-                ease: 'Stepped',
-                easeParams: [6],
-                onComplete: () => heart.destroy()
-            });
+            floatHeart(this, this.hamster.x + Phaser.Math.Between(-S(16), S(16)), this.hamster.y - S(30), { delay: i * 150 });
         }
     }
 
     // "Brave patient" sticker, then the map button invites the trip home.
     celebrate() {
-        const cx = Math.round(this.viewWidth / 2);
+        const cx = Math.round(this.view.width / 2);
         const cy = S(44);
 
         playFanfare(this);
@@ -463,35 +436,19 @@ export class HospitalScene extends Phaser.Scene {
         this.hamsterImage.setTexture(`${this.character.id}-blink`);
 
         // Soft lavender dimming, never dark.
-        this.restOverlay = this.add.rectangle(0, 0, this.viewWidth, this.viewHeight, ICON_COLORS.lavender, 0)
+        this.restOverlay = this.add.rectangle(0, 0, this.view.width, this.view.height, ICON_COLORS.lavender, 0)
             .setOrigin(0)
             .setDepth(15);
         this.tweens.add({ targets: this.restOverlay, fillAlpha: 0.35, duration: 600 });
 
         playLullaby(this);
         let count = 0;
-        this.zzzTimer = this.time.addEvent({ delay: 900, loop: true, callback: () => this.floatZ(count++) });
-        this.restTimer = this.time.delayedCall(7000, () => this.wakeFromRest());
-    }
-
-    floatZ(index) {
-        const big = index % 3 === 2;
-        const z = PixelUI.addText(this, this.hamster.x + S(26), this.hamster.y - S(28), big ? 'Z' : 'z', {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: `${big ? S(12) : S(9)}px`,
-            color: TEXT_COLORS.title
-        }).setOrigin(0.5).setDepth(16);
-        this.tweens.add({
-            targets: z,
-            x: z.x + S(14),
-            y: z.y - S(24),
-            alpha: 0,
-            duration: 1800,
-            ease: 'Stepped',
-            easeParams: [6],
-            onComplete: () => z.destroy()
+        this.zzzTimer = this.time.addEvent({
+            delay: 900,
+            loop: true,
+            callback: () => floatZ(this, this.hamster.x + S(26), this.hamster.y - S(28), count++)
         });
+        this.restTimer = this.time.delayedCall(7000, () => this.wakeFromRest());
     }
 
     wakeFromRest() {
@@ -531,26 +488,15 @@ export class HospitalScene extends Phaser.Scene {
         this.time.delayedCall(500, () => {
             this.drawDoor(true);
 
-            const scale = HOSPITAL_HAMSTER_SCALE;
-            const groundY = this.floorY + S(8) - 8 * scale;
+            const half = spriteHalf(CHARACTER_SCALE);
+            const groundY = this.floorY + S(8) - half;
             this.visitorGroundY = groundY;
-            this.visitor = this.add.container(this.door.x, groundY).setDepth(12);
-            this.visitorImage = this.add.image(0, 0, this.friend.id).setScale(scale);
-            this.visitor.add(this.visitorImage);
-            this.visitorImage.setInteractive({ useHandCursor: true });
-            this.visitorImage.on('pointerdown', () => this.greet());
-            startBlinking(this, this.visitorImage, this.friend);
+            const visitor = addCharacter(this, this.friend, this.door.x, groundY, { depth: 12, onTap: () => this.greet() });
+            this.visitor = visitor.container;
+            this.visitorImage = visitor.image;
 
-            const targetX = Math.min(this.bed.right + S(6) + 8 * scale, this.door.x);
-            const hop = this.tweens.add({
-                targets: this.visitorImage,
-                y: -S(2),
-                duration: 120,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Stepped',
-                easeParams: [1]
-            });
+            const targetX = Math.min(this.bed.right + S(6) + half, this.door.x);
+            const hop = walkBob(this, this.visitorImage);
             this.tweens.add({
                 targets: this.visitor,
                 x: targetX,
@@ -597,16 +543,7 @@ export class HospitalScene extends Phaser.Scene {
     }
 
     heartAt(x, y) {
-        const heart = this.add.image(x, y, 'heart').setScale(3).setDepth(20);
-        this.tweens.add({
-            targets: heart,
-            y: y - S(24),
-            alpha: 0,
-            duration: 800,
-            ease: 'Stepped',
-            easeParams: [6],
-            onComplete: () => heart.destroy()
-        });
+        floatHeart(this, x, y);
     }
 
     goToMap() {

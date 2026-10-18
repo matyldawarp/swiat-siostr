@@ -1,8 +1,10 @@
 import { PALETTE, PixelUI, S } from '../ui/pixel.js';
-import { getCake, getCharacter } from '../data/characters.js';
-import { createHamsterTextures, createHeartTexture, startBlinking } from '../gfx/hamster.js';
+import { getCake } from '../data/characters.js';
+import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
 import { Icons } from '../gfx/icons.js';
+import { floatHeart } from '../ui/effects.js';
 import { playCharacterSound, playCrunch, playDing, playFanfare, playPlop, playSparkle, playStep, playWhisk } from '../audio/sfx.js';
+import { BaseScene } from './BaseScene.js';
 
 const KITCHEN_COLORS = {
     wall: 0xfff1e6,
@@ -24,8 +26,6 @@ const KITCHEN_COLORS = {
     progress: 0xf59bbd
 };
 
-const KITCHEN_CHARACTER_SCALE = 4;
-
 // Ingredient key -> how it looks on its button and the blob it leaves in the bowl.
 const INGREDIENTS = [
     { key: 'flour', draw: (g, s) => Icons.flour(g, 0, 0, s), blob: 0xffffff },
@@ -45,15 +45,14 @@ function cakeDecorations(style) {
 
 // Baking a cake for the chosen character, all by tapping:
 // ingredients -> mix -> bake -> decorate -> serve. The next step pulses, nothing can fail.
-export class KitchenScene extends Phaser.Scene {
+export class KitchenScene extends BaseScene {
     constructor() {
         super('KitchenScene');
     }
 
     init(data) {
-        this.leaving = false;
-        this.skipIntro = Boolean(data.resized);
-        this.character = getCharacter(this.registry.get('selectedCharacter'));
+        super.init(data);
+        this.character = this.selectedCharacter();
         this.cakeStyle = getCake(this.character);
         this.phase = 'ingredients';
         this.added = [];
@@ -64,12 +63,7 @@ export class KitchenScene extends Phaser.Scene {
         this.hintTween = null;
     }
 
-    create() {
-        const { width, height } = PixelUI.setupView(this);
-        this.view = { width, height };
-        createHamsterTextures(this, this.character);
-        createHeartTexture(this);
-
+    build({ width, height }) {
         const portrait = height > width;
         this.counterTop = Math.round(height * (portrait ? 0.56 : 0.6));
         this.bowlPos = { x: Math.round(width * (portrait ? 0.52 : 0.48)), y: this.counterTop };
@@ -87,11 +81,6 @@ export class KitchenScene extends Phaser.Scene {
             (g, size) => Icons.house(g, 0, 0, size), () => this.goHome());
 
         this.showIngredientButtons();
-
-        if (!this.skipIntro) {
-            PixelUI.fadeIn(this);
-        }
-        PixelUI.restartOnResize(this);
     }
 
     // --- Room ------------------------------------------------------------------
@@ -136,19 +125,18 @@ export class KitchenScene extends Phaser.Scene {
 
     // The character stands behind the counter, so the counter is drawn after it.
     createCharacter(x) {
-        const scale = KITCHEN_CHARACTER_SCALE;
+        const scale = CHARACTER_SCALE;
         // Whole face above the counter, paws hidden behind it.
-        this.charGroundY = this.counterTop + S(3) - 8 * scale;
-        this.char = this.add.container(x, this.charGroundY);
-        this.charImage = this.add.image(0, 0, this.character.id).setScale(scale);
-        this.char.add(this.charImage);
-        this.charImage.setInteractive({ useHandCursor: true });
-        this.charImage.on('pointerdown', () => {
-            playCharacterSound(this, this.character.sound);
-            this.heartAt(this.char.x, this.char.y - S(30));
-            PixelUI.hop(this, this.char, this.charGroundY, S(4));
+        this.charGroundY = this.counterTop + S(3) - spriteHalf(scale);
+        const char = addCharacter(this, this.character, x, this.charGroundY, {
+            onTap: () => {
+                playCharacterSound(this, this.character.sound);
+                this.heartAt(this.char.x, this.char.y - S(30));
+                PixelUI.hop(this, this.char, this.charGroundY, S(4));
+            }
         });
-        startBlinking(this, this.charImage, this.character);
+        this.char = char.container;
+        this.charImage = char.image;
         this.mouth = { x, y: this.charGroundY + 1.5 * scale };
     }
 
@@ -595,16 +583,7 @@ export class KitchenScene extends Phaser.Scene {
     }
 
     heartAt(x, y) {
-        const heart = this.add.image(x, y, 'heart').setScale(3).setDepth(30);
-        this.tweens.add({
-            targets: heart,
-            y: y - S(24),
-            alpha: 0,
-            duration: 800,
-            ease: 'Stepped',
-            easeParams: [6],
-            onComplete: () => heart.destroy()
-        });
+        floatHeart(this, x, y, { depth: 30 });
     }
 
     goHome() {
