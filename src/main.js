@@ -40,7 +40,30 @@ function fitToWindow(game) {
     game.scale.setZoom(1 / dpr);
 }
 
+// The game is played by touch only, so the iPad would auto-lock mid-game. NoSleep uses the
+// Screen Wake Lock API where allowed (HTTPS, localhost) and otherwise a hidden looping video,
+// which also works over plain http on the local network. It must start from a user gesture,
+// and the wake lock is dropped when the tab is hidden, so re-enable it on every tap.
+function keepScreenAwake() {
+    if (typeof NoSleep === 'undefined') {
+        return;
+    }
+    const noSleep = new NoSleep();
+    const enable = () => {
+        if (!noSleep.isEnabled) {
+            const result = noSleep.enable();
+            if (result && result.catch) {
+                result.catch(() => {});
+            }
+        }
+    };
+    document.addEventListener('touchend', enable, { passive: true });
+    document.addEventListener('click', enable);
+}
+
 function startGame() {
+    keepScreenAwake();
+
     const game = new Phaser.Game(config);
 
     game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));
