@@ -211,7 +211,7 @@ CHARACTERS.push(
 // so it is copied cell for cell with its own colours, softened to pastels.
 CHARACTERS.push({
     id: 'postac6',
-    name: 'Postać 6',
+    name: 'Leili',
     species: '',
     colors: { body: 0x8fdcea },
     palette: {
