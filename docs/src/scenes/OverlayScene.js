@@ -77,6 +77,7 @@ export class OverlayScene extends BaseScene {
         const dpr = window.devicePixelRatio || 1;
         const lines = [
             `okno ${window.innerWidth}x${window.innerHeight} CSS, dpr ${dpr}`,
+            `gra ${Math.round(this.scale.width / dpr)}x${Math.round(this.scale.height / dpr)} CSS`,
             `ekran ${window.screen.width}x${window.screen.height}`,
             `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`
         ];

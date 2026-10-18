@@ -28,12 +28,13 @@ const config = {
     scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, OverlayScene]
 };
 
-function fitToWindow(game) {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const dpr = window.devicePixelRatio || 1;
+// Started from the iPad's home screen (not in a Safari tab).
+function isHomeScreenApp() {
+    return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+}
 
-    setRenderScale(fitScale(w, h, dpr));
+function fitToWindow(game) {
+    const dpr = window.devicePixelRatio || 1;
 
     // Status bar and rounded corners, measured by the hidden #safe-area element.
     const probe = document.getElementById('safe-area');
@@ -42,6 +43,21 @@ function fitToWindow(game) {
         SAFE_AREA.top = parseFloat(style.paddingTop) || 0;
         SAFE_AREA.right = parseFloat(style.paddingRight) || 0;
     }
+
+    const w = window.innerWidth;
+    let h = window.innerHeight;
+    // As a home-screen app the page is drawn under the status bar (black-translucent), but
+    // iOS still reports the height without it, which left an empty strip at the bottom.
+    // Add the status bar back, up to the screen's own height.
+    if (isHomeScreenApp() && SAFE_AREA.top > 0) {
+        const screenH = w > h ? Math.min(window.screen.width, window.screen.height) : Math.max(window.screen.width, window.screen.height);
+        h = Math.min(h + SAFE_AREA.top, screenH);
+    }
+    // The page must be as tall as the canvas, or the bottom is cut off.
+    document.documentElement.style.height = `${h}px`;
+    document.body.style.height = `${h}px`;
+
+    setRenderScale(fitScale(w, h, dpr));
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
     game.scale.resize(Math.round(w * dpr), Math.round(h * dpr));
