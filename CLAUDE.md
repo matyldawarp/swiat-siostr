@@ -11,6 +11,11 @@ Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `python
 - Grają dwie siostry: 7 i 4 lata. Młodsza nie czyta, więc wszystko musi dać się zrozumieć bez czytania: ikonki, dźwięki, animacje, duże pola do stukania. Krótkie napisy mogą być tylko dodatkiem dla starszej.
 - Bez porażek, kar i strasznych rzeczy. Każda akcja kończy się czymś miłym.
 
+## Muzyka
+
+- Gdy użytkownik wkleja link do YouTube, oznacza to: dodaj tę muzyczkę do gry. Pobierz dźwięk jako plik MP3 do `assets/music/` (krótka nazwa pliku bez polskich znaków i spacji) i dopisz go do listy muzyki w grze.
+- Przed pobraniem sprawdź licencję w opisie filmu. Muzykę na wolnej licencji (Creative Commons, „no copyright”, bez tantiem) albo własną użytkownika można normalnie dodać i zacommitować. Jeśli to muzyka chroniona prawem autorskim, powiedz o tym i zapytaj, zanim plik trafi do repozytorium na GitHubie.
+
 ## Styl wizualny
 
 - Grafika w stylu pixel art: niska rozdzielczość bazowa skalowana całkowitymi krotnościami, `pixelArt: true` w konfiguracji gry, ostre krawędzie bez wygładzania i gradientów, czcionki pikselowe.
