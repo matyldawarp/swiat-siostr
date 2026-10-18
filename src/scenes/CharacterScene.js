@@ -28,8 +28,8 @@ class CharacterScene extends Phaser.Scene {
 
         PixelUI.drawSky(this, width, height);
 
-        const slot = 30;
-        const gap = 4;
+        const slot = S(30);
+        const gap = S(4);
         const cols = portrait ? 4 : 5;
         const rows = Math.ceil(CHARACTER_SLOTS / cols);
         const gridW = cols * slot + (cols - 1) * gap;
@@ -40,20 +40,20 @@ class CharacterScene extends Phaser.Scene {
         let panelX;
         let panelY;
         if (portrait) {
-            // Grid above the preview panel (about 118px tall), centred as one block.
-            const blockH = gridH + 20 + 118;
+            // Grid above the preview panel, centred as one block.
+            const blockH = gridH + S(20) + S(118);
             gridX = Math.round((width - gridW) / 2);
-            gridY = Math.max(30, Math.round((height - 28 - blockH) / 2));
+            gridY = Math.max(S(30), Math.round((height - S(28) - blockH) / 2));
             panelX = cx;
-            panelY = gridY + gridH + 20 + 48;
+            panelY = gridY + gridH + S(20) + S(48);
         } else {
-            gridX = Math.max(8, Math.round(width / 2 - 8 - gridW));
-            gridY = Math.round((height - gridH) / 2) + 6;
-            panelX = Math.round(width / 2 + 8 + (width / 2 - 16) / 2);
+            gridX = Math.max(S(8), Math.round(width / 2 - S(8) - gridW));
+            gridY = Math.round((height - gridH) / 2) + S(6);
+            panelX = Math.round(width / 2 + S(8) + (width / 2 - S(16)) / 2);
             panelY = Math.round(height / 2);
         }
 
-        PixelUI.addTitle(this, cx, gridY - 16, 'Wybierz postać');
+        PixelUI.addTitle(this, cx, gridY - S(16), 'Wybierz postać');
 
         for (let i = 0; i < CHARACTER_SLOTS; i++) {
             const x = gridX + (i % cols) * (slot + gap);
@@ -63,7 +63,7 @@ class CharacterScene extends Phaser.Scene {
 
         this.createPreview(panelX, panelY);
 
-        PixelUI.createButton(this, 36, height - 14, 'Wróć', () => this.back(), { width: 56, height: 18, fontSize: 10 });
+        PixelUI.createButton(this, S(36), height - S(14), 'Wróć', () => this.back(), { width: S(56), height: S(18), fontSize: S(10) });
 
         const selectedId = this.registry.get('selectedCharacter') || CHARACTERS[0].id;
         this.select(CHARACTERS.indexOf(getCharacter(selectedId)));
@@ -100,13 +100,13 @@ class CharacterScene extends Phaser.Scene {
             this.add.text(centerX, centerY + 1, '?', {
                 fontFamily: FONT,
                 fontStyle: '700',
-                fontSize: '12px',
+                fontSize: `${S(12)}px`,
                 color: '#c3b6d8'
             }).setOrigin(0.5);
             return { draw };
         }
 
-        this.add.image(centerX, centerY, character.id);
+        this.add.image(centerX, centerY, character.id).setScale(2);
 
         const zone = this.add.zone(centerX, centerY, size, size).setInteractive({ useHandCursor: true });
         const index = CHARACTERS.indexOf(character);
@@ -122,10 +122,10 @@ class CharacterScene extends Phaser.Scene {
     }
 
     createPreview(x, y) {
-        this.preview = this.add.image(x, y - 16, CHARACTERS[0].id).setScale(4);
+        this.preview = this.add.image(x, y - S(16), CHARACTERS[0].id).setScale(6);
         this.tweens.add({
             targets: this.preview,
-            y: y - 18,
+            y: y - S(18),
             duration: 600,
             yoyo: true,
             repeat: -1,
@@ -133,14 +133,14 @@ class CharacterScene extends Phaser.Scene {
             easeParams: [2]
         });
 
-        this.previewName = PixelUI.addTitle(this, x, y + 26, '');
-        this.previewSpecies = this.add.text(x, y + 40, '', {
+        this.previewName = PixelUI.addTitle(this, x, y + S(26), '');
+        this.previewSpecies = this.add.text(x, y + S(40), '', {
             fontFamily: FONT,
-            fontSize: '8px',
+            fontSize: `${S(8)}px`,
             color: TEXT_COLORS.subtitle
         }).setOrigin(0.5);
 
-        PixelUI.createButton(this, x, y + 60, 'Wybierz', () => this.confirm(), { width: 80, height: 20, fontSize: 11 });
+        PixelUI.createButton(this, x, y + S(60), 'Wybierz', () => this.confirm(), { width: S(80), height: S(20), fontSize: S(11) });
     }
 
     select(index) {

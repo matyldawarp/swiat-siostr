@@ -31,6 +31,15 @@ const TEXT_COLORS = {
 
 const FONT = '"Pixelify Sans", monospace';
 
+// Layout sizes are written in design units and scaled by S(). The game renders with
+// fine pixels (see main.js), so UI_SCALE keeps text and shapes comfortably large while
+// they still get more pixels of detail. Sprite scales stay whole numbers instead.
+const UI_SCALE = 1.5;
+
+function S(n) {
+    return Math.round(n * UI_SCALE);
+}
+
 const PixelUI = {
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
@@ -79,7 +88,7 @@ const PixelUI = {
         return sky;
     },
 
-    addTitle(scene, x, y, text, fontSize = 16) {
+    addTitle(scene, x, y, text, fontSize = S(16)) {
         return scene.add.text(x, y, text, {
             fontFamily: FONT,
             fontStyle: '700',
@@ -87,11 +96,11 @@ const PixelUI = {
             color: TEXT_COLORS.title,
             stroke: '#ffffff',
             strokeThickness: Math.max(2, Math.round(fontSize / 10)),
-            shadow: { offsetX: 1, offsetY: 1, color: TEXT_COLORS.titleShadow, blur: 0, fill: true, stroke: true }
+            shadow: { offsetX: 2, offsetY: 2, color: TEXT_COLORS.titleShadow, blur: 0, fill: true, stroke: true }
         }).setOrigin(0.5);
     },
 
-    createButton(scene, x, y, label, onClick, { width = 100, height = 24, fontSize = 12 } = {}) {
+    createButton(scene, x, y, label, onClick, { width = S(100), height = S(24), fontSize = S(12) } = {}) {
         const bg = scene.add.graphics();
         const draw = (fill) => {
             bg.clear();

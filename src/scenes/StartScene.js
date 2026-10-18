@@ -16,28 +16,28 @@ class StartScene extends Phaser.Scene {
         this.cameras.main.setSize(width, height);
 
         PixelUI.drawSky(this, width, height);
-        this.drawSun(width - 66, 42);
+        this.drawSun(width - S(66), S(42));
         this.drawClouds(width, height);
         this.drawHills(width, height);
         this.drawSparkles(width, height);
 
-        const title = PixelUI.addTitle(this, cx, cy - 34, 'Świat Sióstr', 40);
-        title.setStroke('#ffffff', 4);
-        title.setShadow(2, 2, TEXT_COLORS.titleShadow, 0, true, true);
+        const title = PixelUI.addTitle(this, cx, cy - S(34), 'Świat Sióstr', S(40));
+        title.setStroke('#ffffff', S(4));
+        title.setShadow(S(2), S(2), TEXT_COLORS.titleShadow, 0, true, true);
         title.setAlpha(0);
 
-        const subtitle = this.add.text(cx, cy - 6, 'opowieść o dwóch siostrach', {
+        const subtitle = this.add.text(cx, cy - S(6), 'opowieść o dwóch siostrach', {
             fontFamily: FONT,
-            fontSize: '12px',
+            fontSize: `${S(12)}px`,
             color: TEXT_COLORS.subtitle
         }).setOrigin(0.5).setAlpha(0);
 
-        const buttonY = cy + 34;
+        const buttonY = cy + S(34);
         const button = PixelUI.createButton(this, cx, buttonY, 'Rozpocznij', () => this.startGame());
         button.setAlpha(0);
         this.tweens.add({
             targets: button,
-            y: buttonY - 2,
+            y: buttonY - S(2),
             duration: 800,
             yoyo: true,
             repeat: -1,
@@ -45,19 +45,19 @@ class StartScene extends Phaser.Scene {
             easeParams: [2]
         });
 
-        const hint = this.add.text(cx, height - 10, 'Kliknij lub naciśnij Enter', {
+        const hint = this.add.text(cx, height - S(10), 'Kliknij lub naciśnij Enter', {
             fontFamily: FONT,
-            fontSize: '8px',
+            fontSize: `${S(8)}px`,
             color: TEXT_COLORS.hint
         }).setOrigin(0.5).setAlpha(0);
 
         if (this.skipIntro) {
-            title.setAlpha(1).setY(title.y - 4);
+            title.setAlpha(1).setY(title.y - S(4));
             subtitle.setAlpha(1);
             button.setAlpha(1);
             hint.setAlpha(1);
         } else {
-            this.tweens.add({ targets: title, alpha: 1, y: title.y - 4, duration: 1200, ease: 'Sine.easeOut' });
+            this.tweens.add({ targets: title, alpha: 1, y: title.y - S(4), duration: 1200, ease: 'Sine.easeOut' });
             this.tweens.add({ targets: subtitle, alpha: 1, duration: 1000, delay: 500 });
             this.tweens.add({ targets: [button, hint], alpha: 1, duration: 800, delay: 900 });
             this.cameras.main.fadeIn(600, ...PALETTE.fade);
@@ -72,11 +72,11 @@ class StartScene extends Phaser.Scene {
     drawSun(x, y) {
         const glow = this.add.graphics({ x, y });
         glow.fillStyle(PALETTE.sunGlow, 1);
-        PixelUI.fillCircle(glow, 0, 0, 20);
+        PixelUI.fillCircle(glow, 0, 0, S(20));
 
         const sun = this.add.graphics({ x, y });
         sun.fillStyle(PALETTE.sun, 1);
-        PixelUI.fillCircle(sun, 0, 0, 14);
+        PixelUI.fillCircle(sun, 0, 0, S(14));
 
         this.tweens.add({
             targets: glow,
@@ -93,19 +93,19 @@ class StartScene extends Phaser.Scene {
         if (!this.textures.exists('cloud')) {
             const g = this.make.graphics({ x: 0, y: 0 }, false);
             g.fillStyle(PALETTE.cloudShade, 1);
-            g.fillRect(2, 10, 44, 6);
+            g.fillRect(S(2), S(10), S(44), S(6));
             g.fillStyle(PALETTE.cloud, 1);
-            g.fillRect(4, 8, 40, 6);
-            g.fillRect(8, 4, 14, 6);
-            g.fillRect(20, 0, 16, 10);
-            g.fillRect(34, 4, 8, 6);
-            g.generateTexture('cloud', 48, 16);
+            g.fillRect(S(4), S(8), S(40), S(6));
+            g.fillRect(S(8), S(4), S(14), S(6));
+            g.fillRect(S(20), 0, S(16), S(10));
+            g.fillRect(S(34), S(4), S(8), S(6));
+            g.generateTexture('cloud', S(48), S(16));
             g.destroy();
         }
 
         const clouds = [
-            { x: Math.round(width * 0.13), y: 22 },
-            { x: Math.round(width * 0.5), y: 14 },
+            { x: Math.round(width * 0.13), y: S(22) },
+            { x: Math.round(width * 0.5), y: S(14) },
             { x: Math.round(width * 0.91), y: Math.round(height * 0.43) }
         ];
 
@@ -114,7 +114,7 @@ class StartScene extends Phaser.Scene {
 
             this.tweens.add({
                 targets: cloud,
-                x: x + 16,
+                x: x + S(16),
                 duration: 6000 + i * 1500,
                 yoyo: true,
                 repeat: -1,
@@ -128,24 +128,24 @@ class StartScene extends Phaser.Scene {
         const front = this.add.graphics();
 
         for (let x = 0; x < width; x++) {
-            const backTop = Math.round(height - 46 + Math.sin(x / 38) * 8 + Math.sin(x / 13) * 2);
+            const backTop = Math.round(height - S(46) + Math.sin(x / S(38)) * S(8) + Math.sin(x / S(13)) * S(2));
             back.fillStyle(PALETTE.hillBack, 1);
             back.fillRect(x, backTop, 1, height - backTop);
             back.fillStyle(PALETTE.hillBackShade, 1);
-            back.fillRect(x, backTop + 3, 1, 1);
+            back.fillRect(x, backTop + S(3), 1, 1);
 
-            const frontTop = Math.round(height - 24 + Math.sin(x / 55 + 1.5) * 6);
+            const frontTop = Math.round(height - S(24) + Math.sin(x / S(55) + 1.5) * S(6));
             front.fillStyle(PALETTE.hillFront, 1);
             front.fillRect(x, frontTop, 1, height - frontTop);
             front.fillStyle(PALETTE.hillFrontLight, 1);
-            front.fillRect(x, frontTop, 1, 2);
+            front.fillRect(x, frontTop, 1, S(2));
         }
     }
 
     drawSparkles(width, height) {
-        for (let i = 0; i < 24; i++) {
+        for (let i = 0; i < 30; i++) {
             const x = Phaser.Math.Between(4, width - 4);
-            const y = Phaser.Math.Between(4, height - 60);
+            const y = Phaser.Math.Between(4, height - S(60));
             const color = Phaser.Utils.Array.GetRandom(PALETTE.sparkles);
 
             // Small plus-shaped sparkle.

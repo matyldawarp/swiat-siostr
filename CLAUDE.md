@@ -9,7 +9,7 @@ Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `python
 ## Styl wizualny
 
 - Grafika w stylu pixel art: niska rozdzielczość bazowa skalowana całkowitymi krotnościami, `pixelArt: true` w konfiguracji gry, ostre krawędzie bez wygładzania i gradientów, czcionki pikselowe.
-- Gra zawsze wypełnia całe okno przeglądarki, bez pustych pasów. Zoom jest całkowity i liczony względem bazowych 576×324 w dowolnej orientacji (`fitToWindow` w `src/main.js`), a obszar gry rośnie ponad tę bazę. Piksele nie mogą być zbyt grube: na iPadzie zoom ma wynosić 2, nie więcej. Obszar gry jest zmienny, więc układ scen liczymy względem `this.scale.width/height`, nie stałych współrzędnych.
+- Gra zawsze wypełnia całe okno przeglądarki, bez pustych pasów. Zoom jest całkowity i liczony względem bazowych 512×324 w dowolnej orientacji (`fitToWindow` w `src/main.js`), a obszar gry rośnie ponad tę bazę. Piksele nie mogą być zbyt grube: na iPadzie (użytkownik ma iPad Air 2025) zoom ma wynosić 2 w obu orientacjach. Elementy nie mogą też być malutkie, dlatego rozmiary interfejsu w scenach przechodzą przez `S()` (`UI_SCALE` w `src/ui/pixel.js`), a sprite'y skalujemy całkowitymi krotnościami. Obszar gry jest zmienny, więc układ scen liczymy względem `this.scale.width/height`, nie stałych współrzędnych.
 
 - Używaj jasnej, pastelowej palety kolorów: jasne tła, miękkie pastele (róż, lawenda, mięta, brzoskwinia, błękit), bez ciemnych, nocnych ani nasyconych barw.
 - Tekst musi pozostać czytelny na jasnym tle: dawaj mu ciemniejszy odcień z tej samej palety, a nie czerń.

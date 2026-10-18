@@ -1,7 +1,8 @@
 // Reference area in game pixels (long x short side, either orientation). The zoom is the
 // largest integer that fits it, and the game area then grows to fill the window.
-// Larger values mean smaller, finer pixels on screen.
-const BASE_LONG = 576;
+// Larger values mean smaller, finer pixels on screen. 512 keeps an iPad in portrait with
+// Safari's toolbars (about 820x1060-1110) at zoom 2 rather than dropping to 1.
+const BASE_LONG = 512;
 const BASE_SHORT = 324;
 
 const config = {
