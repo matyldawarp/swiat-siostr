@@ -153,8 +153,8 @@ class MapScene extends Phaser.Scene {
 
         const near = (p, list, dist) => list.some((q) => Phaser.Math.Distance.Between(p.x, p.y, q.x, q.y) < dist);
         const sparseRoad = roadPoints.filter((_, i) => i % 4 === 0);
-        // Keep clear of the reload button in the top-right corner.
-        const reload = { x: width - S(17), y: S(17) };
+        // Keep clear of the music and reload buttons in the top-right corner.
+        const corner = [{ x: width - S(17), y: S(17) }, { x: width - S(43), y: S(17) }];
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
@@ -164,7 +164,7 @@ class MapScene extends Phaser.Scene {
                 };
                 const buildingSpots = buildings.map((b) => ({ x: b.x, y: b.y - S(20) }));
                 if (near(p, buildingSpots, S(58)) || near(p, sparseRoad, S(28))
-                    || near(p, this.treeSpots, S(26)) || near(p, [reload], S(40))) {
+                    || near(p, this.treeSpots, S(26)) || near(p, corner, S(40))) {
                     continue;
                 }
                 this.createCloud(p.x, p.y);

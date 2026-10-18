@@ -63,6 +63,7 @@ function keepScreenAwake() {
 
 function startGame() {
     keepScreenAwake();
+    Music.init();
 
     const game = new Phaser.Game(config);
 

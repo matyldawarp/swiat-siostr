@@ -274,6 +274,39 @@ const Icons = {
         g.fillRect(sx - 2, sy, 5, 1);
     },
 
+    // Music note; crossed out when the music is off.
+    note(g, cx, cy, size, on = true) {
+        const headR = Math.max(2, Math.round(size * 0.16));
+        const stemH = Math.round(size * 0.6);
+        const headX = Math.round(cx - size * 0.12);
+        const headY = Math.round(cy + size * 0.22);
+        const stemX = headX + headR - 1;
+        const stemTop = headY - stemH;
+        const thick = Math.max(2, Math.round(size / 12));
+
+        g.fillStyle(PALETTE.buttonBorder, 1);
+        PixelUI.fillCircle(g, headX, headY, headR);
+        g.fillRect(stemX, stemTop, thick, stemH);
+        // Flag.
+        for (let i = 0; i < Math.round(size * 0.25); i++) {
+            g.fillRect(stemX + thick + Math.round(i * 0.6), stemTop + i, thick, 1);
+        }
+
+        if (!on) {
+            // Thick dark slash so "off" is obvious at a glance.
+            const half = Math.round(size * 0.45);
+            const slash = Math.max(3, Math.round(size / 7));
+            g.fillStyle(ICON_COLORS.white, 1);
+            for (let i = -half; i <= half; i++) {
+                g.fillRect(cx + i - 1, cy - i - 1, slash + 2, slash + 2);
+            }
+            g.fillStyle(PALETTE.buttonBorder, 1);
+            for (let i = -half; i <= half; i++) {
+                g.fillRect(cx + i, cy - i, slash, slash);
+            }
+        }
+    },
+
     // Little flower on a stem: the visitor's gift.
     flower(g, cx, cy, size) {
         const petalR = Math.max(2, Math.round(size * 0.16));

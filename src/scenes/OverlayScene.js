@@ -15,8 +15,24 @@ class OverlayScene extends Phaser.Scene {
         const size = S(22);
         const margin = S(6);
         this.createReloadButton(width - margin - size / 2, margin + size / 2, size);
+        if (MUSIC.length > 0) {
+            this.createMusicButton(width - margin - size * 1.5 - S(4), margin + size / 2, size);
+        }
 
         PixelUI.restartOnResize(this);
+    }
+
+    // Music on/off; the note is crossed out while the music is off.
+    createMusicButton(x, y, size) {
+        const iconSize = Math.round(size * 0.7);
+        const button = PixelUI.createIconButton(this, x, y, size,
+            (g) => Icons.note(g, 0, 0, iconSize, Music.enabled),
+            () => {
+                const on = Music.toggle();
+                icon.clear();
+                Icons.note(icon, 0, 0, iconSize, on);
+            });
+        const icon = button.list[1];
     }
 
     createReloadButton(x, y, size) {
