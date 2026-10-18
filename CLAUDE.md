@@ -14,6 +14,7 @@ Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `npm st
 ## Muzyka
 
 - Gdy użytkownik wkleja link do YouTube, oznacza to: dodaj tę muzyczkę do gry. Pobierz dźwięk jako plik MP3 do `assets/music/` (krótka nazwa pliku bez polskich znaków i spacji) i dopisz go do listy muzyki w grze.
+- Zapisuj poprawnie autora i tytuł utworu. Ustal je z opisu filmu i nazwy kanału, a nie z samego tytułu filmu (pomiń dopiski typu „Official Video”, „HD”, „lyrics”) i zachowaj oryginalną pisownię z polskimi znakami. Zapisz je w trzech miejscach: w tagach ID3 pliku MP3 (`artist`, `title`), w nazwie pliku (`autor-tytul.mp3`, bez polskich znaków i spacji) i na liście muzyki w grze, razem z linkiem do filmu i licencją. Jeśli autor albo tytuł są niepewne, zapytaj.
 - Przed pobraniem sprawdź licencję w opisie filmu. Muzykę na wolnej licencji (Creative Commons, „no copyright”, bez tantiem) albo własną użytkownika można normalnie dodać i zacommitować. Jeśli to muzyka chroniona prawem autorskim, powiedz o tym i zapytaj, zanim plik trafi do repozytorium na GitHubie.
 
 ## Styl wizualny
