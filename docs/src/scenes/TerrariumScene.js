@@ -41,22 +41,18 @@ export class TerrariumScene extends BaseScene {
 
         PixelUI.drawSky(this, width, height);
 
-        // The name sits above the tank, between the map and cake buttons and the overlay
-        // buttons, or below all of them when the screen is too narrow.
-        const title = PixelUI.addTitle(this, cx, 0, this.character.name);
-        const top = Math.max(S(30), PixelUI.topClearY(width, title.width, title.height, { left: S(68), leftBottom: S(34) }) + S(16));
-
         const tank = {
             w: Math.min(width - S(24), S(480)),
             // Leaves room for the title above and the stand plus bottom bar below.
-            h: Math.min(height - top - S(36), S(260))
+            h: Math.min(height - S(66), S(260))
         };
         tank.x = Math.round((width - tank.w) / 2);
         // Centre the tank in the space between the title and the bottom bar.
-        tank.y = Math.max(top, Math.round((height - S(26) - tank.h) / 2 + 2));
+        tank.y = Math.max(S(30), Math.round((height - S(26) - tank.h) / 2 + 2));
         tank.beddingH = Math.max(S(18), Math.round(tank.h * 0.2));
         tank.floorY = tank.y + tank.h - tank.beddingH + S(2);
-        title.setY(tank.y - S(16));
+
+        PixelUI.addTitle(this, cx, tank.y - S(16), this.character.name);
 
         const layout = drawTank(this, tank);
 
@@ -78,10 +74,8 @@ export class TerrariumScene extends BaseScene {
             this.dropSeed(Phaser.Math.Between(minX, maxX), tank.y + S(10));
         }, { width: S(64), height: S(18), fontSize: S(10) });
 
-        // Only a hint for the older sister: left out when it doesn't fit between the buttons.
-        const hint = PixelUI.addText(this, cx, height - S(14), 'Dotknij postaci albo szyby',
+        PixelUI.addText(this, cx, height - S(14), 'Dotknij postaci albo szyby',
             textStyle(S(8), { color: TEXT_COLORS.hint })).setOrigin(0.5);
-        hint.setVisible(hint.width <= width - 2 * S(76));
 
         PixelUI.createButton(this, S(36), height - S(14), 'Wróć', () => this.back(), { width: S(56), height: S(18), fontSize: S(10) });
 

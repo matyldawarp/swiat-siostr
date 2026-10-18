@@ -41,13 +41,12 @@ export class MapScene extends BaseScene {
 
     build({ width, height }) {
         createHamsterTextures(this, this.character);
-        const portrait = height > width;
 
         // Where things sit, as fractions of the map so it fits any window.
         const at = (fx, fy) => ({ x: Math.round(width * fx), y: Math.round(height * fy) });
-        const homePos = portrait ? at(0.28, 0.8) : at(0.16, 0.74);
-        const hospitalPos = portrait ? at(0.7, 0.28) : at(0.8, 0.36);
-        const bends = portrait ? [at(0.64, 0.7), at(0.34, 0.46)] : [at(0.42, 0.82), at(0.58, 0.36)];
+        const homePos = at(0.16, 0.74);
+        const hospitalPos = at(0.8, 0.36);
+        const bends = [at(0.42, 0.82), at(0.58, 0.36)];
 
         // Hamster stands just in front of each building; the road joins those spots.
         this.stands = {

@@ -3,7 +3,9 @@ import { getCharacter } from '../data/characters.js';
 
 // Base for every scene. A scene implements build({ width, height }) instead of create():
 // BaseScene first sets up the pixel camera (PixelUI.setupView), then calls build with the
-// size in game pixels (also kept as this.view), then fades in and rebuilds on resize.
+// stage size in game pixels (always STAGE, also kept as this.view), then fades in and
+// rebuilds on resize. A scene that sets this.fillsWindow = true in its constructor gets
+// the whole window instead of the stage (only OverlayScene does).
 //
 // A scene that needs init(data) must call super.init(data) first.
 export class BaseScene extends Phaser.Scene {
@@ -15,7 +17,8 @@ export class BaseScene extends Phaser.Scene {
     }
 
     create() {
-        this.view = PixelUI.setupView(this);
+        // The stage is a fixed size (STAGE in ui/pixel.js), centred in the window.
+        this.view = PixelUI.setupView(this, { stage: !this.fillsWindow });
         this.build(this.view);
         if (!this.skipIntro) {
             this.intro();

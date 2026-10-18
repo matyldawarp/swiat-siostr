@@ -44,36 +44,30 @@ export class HospitalScene extends BaseScene {
     }
 
     build({ width, height }) {
-        const portrait = height > width;
-        const floorY = Math.round(height * (portrait ? 0.62 : 0.66));
+        const floorY = Math.round(height * 0.66);
         this.floorY = floorY;
 
-        this.drawRoom(width, height, floorY, portrait);
+        this.drawRoom(width, height, floorY);
         this.createDoor(width, floorY);
-        this.createBed(portrait ? Math.round(width / 2) : Math.round(width * 0.46), floorY);
-        // On a narrow phone screen the tools get a row of their own above the other buttons.
-        const narrow = width < S(250);
-        this.createTools(width, narrow ? height - S(78) : height - S(30));
+        this.createBed(Math.round(width * 0.46), floorY);
+        this.createTools(width, height);
 
         this.mapButton = PixelUI.createIconButton(this, S(24), height - S(24), S(32),
             (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
 
-        // Bottom-right: rest in bed, and invite the other hamster (above it, or beside it
-        // in the bottom row on a narrow screen).
+        // Bottom-right: rest in bed, and invite the other hamster.
         PixelUI.createIconButton(this, width - S(26), height - S(26), S(36),
             (g, size) => Icons.moon(g, 0, 0, size), () => this.toggleRest());
         if (this.friend) {
             createHamsterTextures(this, this.friend);
-            const visitX = narrow ? width - S(72) : width - S(26);
-            const visitY = narrow ? height - S(26) : height - S(70);
-            const visit = PixelUI.createIconButton(this, visitX, visitY, S(36), () => {}, () => this.visit());
+            const visit = PixelUI.createIconButton(this, width - S(26), height - S(70), S(36), () => {}, () => this.visit());
             visit.add(this.add.image(0, 0, this.friend.id).setScale(2));
         }
 
         this.updateHints();
     }
 
-    drawRoom(width, height, floorY, portrait) {
+    drawRoom(width, height, floorY) {
         const C = HOSPITAL_COLORS;
         const g = this.add.graphics();
 
@@ -105,7 +99,7 @@ export class HospitalScene extends BaseScene {
         const winW = S(56);
         const winH = S(40);
         // Left of the door on the right wall.
-        const winX = Math.round(width * (portrait ? 0.55 : 0.72) - winW / 2);
+        const winX = Math.round(width * 0.72 - winW / 2);
         const winY = Math.round(floorY * 0.28 - winH / 2);
         PixelUI.drawBox(g, winX, winY, winW, winH, PALETTE.sky[0], PALETTE.outline);
         Icons.cloud(g, winX + Math.round(winW * 0.45), winY + Math.round(winH * 0.5), S(26), S(14));
@@ -232,11 +226,10 @@ export class HospitalScene extends BaseScene {
         front.fillRect(blanketLeft + 2, blanketTop + S(4), blanketW - 4, S(2));
     }
 
-    // A row of the three tool buttons centred at height y.
-    createTools(width, y) {
+    createTools(width, height) {
         const size = S(40);
-        // Packed tighter when the screen is narrow.
-        const gap = Math.min(S(56), Math.floor((width - size - S(8)) / 2));
+        const gap = S(56);
+        const y = height - S(30);
         const draws = {
             thermometer: (g, s) => Icons.thermometer(g, 0, 0, s, 0.3),
             syrup: (g, s) => Icons.spoon(g, 0, 0, s),
@@ -396,8 +389,7 @@ export class HospitalScene extends BaseScene {
     // "Brave patient" sticker, then the map button invites the trip home.
     celebrate() {
         const cx = Math.round(this.view.width / 2);
-        // Below the overlay buttons on a narrow screen.
-        const cy = Math.max(S(44), PixelUI.topClearY(this.view.width, S(54), S(54)));
+        const cy = S(44);
 
         playFanfare(this);
         this.showHearts(5);

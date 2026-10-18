@@ -40,9 +40,17 @@ export function S(n) {
     return Math.round(n * UI_SCALE);
 }
 
-// Device pixels per game pixel, set by fitToWindow() in main.js. The canvas renders at
-// the screen's native resolution and every scene camera zooms by this whole number, so
-// pixel art stays blocky while text can be rasterised at full resolution.
+// Every scene is laid out on a stage of this fixed size in game pixels: the iPad Air
+// (2025) held on its side, in Safari (about 1180x740 CSS px), at 2 CSS px per game pixel.
+// The game is always this landscape shape and looks the same everywhere: on other screens
+// (also a window held upright) the whole stage is scaled to fit and centred, and the space
+// around it stays empty. Only OverlayScene (music and reload buttons) uses the whole
+// window, so its buttons may sit outside the stage.
+export const STAGE = { width: 590, height: 370 };
+
+// Device pixels per game pixel, set by fitToWindow() in main.js: as large as the stage
+// allows. The canvas renders at the screen's native resolution and every scene camera
+// zooms by this, so pixel art stays blocky while text is rasterised at full resolution.
 // Importers see the current value (ES module live binding); only setRenderScale changes it.
 export let RENDER_SCALE = 1;
 
@@ -50,8 +58,19 @@ export function setRenderScale(value) {
     RENDER_SCALE = value;
 }
 
-// OverlayScene's music and reload buttons fill this corner at the top right of every scene.
-export const OVERLAY_CORNER = { width: S(56), height: S(28) };
+// The scale at which the stage fits a window of w x h CSS px at this device pixel ratio.
+// A whole number keeps every game pixel exactly the same size (and the iPad at exactly 4,
+// i.e. 2 CSS px). On a sharp screen (dpr >= 2, phones) where rounding down would shrink the
+// stage by more than 15%, the exact fit is used: pixels then differ by one device pixel,
+// which can't be seen at that density.
+export function fitScale(w, h, dpr) {
+    const fit = Math.min((w * dpr) / STAGE.width, (h * dpr) / STAGE.height);
+    const whole = Math.floor(fit);
+    if (whole >= 1 && (dpr < 2 || (fit - whole) / fit < 0.15)) {
+        return whole;
+    }
+    return Math.max(fit, 0.25);
+}
 
 // Text styles used across scenes; pass the size through S().
 export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}) {
@@ -64,46 +83,29 @@ export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}
 }
 
 export const PixelUI = {
-    // Zooms the scene camera to game pixels and returns the size in game pixels.
-    setupView(scene) {
+    // Zooms the scene camera to game pixels and centres the stage in the window; returns
+    // the stage size, which the scene lays itself out in (0..width, 0..height).
+    // With { stage: false } the view is the whole window instead (OverlayScene).
+    setupView(scene, { stage = true } = {}) {
         const camera = scene.cameras.main;
         camera.setSize(scene.scale.width, scene.scale.height);
         camera.setOrigin(0, 0);
         camera.setZoom(RENDER_SCALE);
-        camera.setScroll(0, 0);
 
-        return {
-            width: Math.round(scene.scale.width / RENDER_SCALE),
-            height: Math.round(scene.scale.height / RENDER_SCALE)
-        };
+        const viewW = scene.scale.width / RENDER_SCALE;
+        const viewH = scene.scale.height / RENDER_SCALE;
+        if (!stage) {
+            camera.setScroll(0, 0);
+            return { width: Math.floor(viewW), height: Math.floor(viewH) };
+        }
+        camera.setScroll(-Math.floor((viewW - STAGE.width) / 2), -Math.floor((viewH - STAGE.height) / 2));
+        return { width: STAGE.width, height: STAGE.height };
     },
 
     // Text rasterised at device resolution so glyph edges stay sharp when zoomed.
     addText(scene, x, y, text, style) {
         return scene.add.text(x, y, text, { ...style, resolution: RENDER_SCALE });
     },
-    // Smallest y for the centre of something `width` x `height` centred at the top of the
-    // view, so it doesn't run into the overlay buttons (top right) or into the scene's own
-    // buttons in the top-left corner (`left` wide, down to `leftBottom`). 0 when it fits
-    // between them; on narrow phone screens it has to go below them.
-    topClearY(viewWidth, width, height, { left = 0, leftBottom = 0 } = {}) {
-        const half = width / 2 + S(4);
-        const cx = viewWidth / 2;
-        if (cx - half >= left && cx + half <= viewWidth - OVERLAY_CORNER.width) {
-            return 0;
-        }
-        return Math.max(OVERLAY_CORNER.height, leftBottom) + height / 2 + S(2);
-    },
-
-    // Shrinks a text's font until it is at most maxWidth wide, e.g. a big title on a phone.
-    fitWidth(text, maxWidth) {
-        if (text.width > maxWidth) {
-            const size = parseFloat(text.style.fontSize);
-            text.setFontSize(`${Math.floor((size * maxWidth) / text.width)}px`);
-        }
-        return text;
-    },
-
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
         for (let dy = -r; dy <= r; dy++) {

@@ -9,6 +9,8 @@ import { BaseScene } from './BaseScene.js';
 export class OverlayScene extends BaseScene {
     constructor() {
         super({ key: 'OverlayScene', active: true });
+        // Buttons sit in the corners of the window, also outside the stage.
+        this.fillsWindow = true;
     }
 
     // Always visible: no fade when the game starts.

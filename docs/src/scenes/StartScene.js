@@ -19,12 +19,10 @@ export class StartScene extends BaseScene {
         const title = PixelUI.addTitle(this, cx, cy - S(34), 'Świat Sióstr', S(40));
         title.setStroke('#ffffff', S(4));
         title.setShadow(S(2), S(2), TEXT_COLORS.titleShadow, 0, true, true);
-        PixelUI.fitWidth(title, width - S(12));
         title.setAlpha(0);
 
         const subtitle = PixelUI.addText(this, cx, cy - S(6), 'opowieść o dwóch siostrach',
             textStyle(S(12), { color: TEXT_COLORS.subtitle })).setOrigin(0.5).setAlpha(0);
-        PixelUI.fitWidth(subtitle, width - S(12));
 
         const buttonY = cy + S(34);
         const button = PixelUI.createButton(this, cx, buttonY, 'Rozpocznij', () => this.startGame());
