@@ -29,23 +29,41 @@ class HospitalScene extends Phaser.Scene {
         this.busy = false;
         this.done = new Set();
         this.toolButtons = {};
+        this.sickBubble = null;
+        this.resting = false;
+        this.visitor = null;
+        this.visitorBusy = false;
+        // The other hamster comes to visit.
+        this.friend = CHARACTERS.find((c) => c.id !== this.character.id) || null;
     }
 
     create() {
         const { width, height } = PixelUI.setupView(this);
         this.viewWidth = width;
+        this.viewHeight = height;
         createHamsterTextures(this, this.character);
         createHeartTexture(this);
 
         const portrait = height > width;
         const floorY = Math.round(height * (portrait ? 0.62 : 0.66));
+        this.floorY = floorY;
 
-        this.drawRoom(width, height, floorY);
+        this.drawRoom(width, height, floorY, portrait);
+        this.createDoor(width, floorY);
         this.createBed(portrait ? Math.round(width / 2) : Math.round(width * 0.46), floorY);
         this.createTools(width, height);
 
         this.mapButton = PixelUI.createIconButton(this, S(24), height - S(24), S(32),
             (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
+
+        // Bottom-right: rest in bed, and invite the other hamster.
+        PixelUI.createIconButton(this, width - S(26), height - S(26), S(36),
+            (g, size) => Icons.moon(g, 0, 0, size), () => this.toggleRest());
+        if (this.friend) {
+            createHamsterTextures(this, this.friend);
+            const visit = PixelUI.createIconButton(this, width - S(26), height - S(70), S(36), () => {}, () => this.visit());
+            visit.add(this.add.image(0, 0, this.friend.id).setScale(2));
+        }
 
         this.updateHints();
 
@@ -55,7 +73,7 @@ class HospitalScene extends Phaser.Scene {
         PixelUI.restartOnResize(this);
     }
 
-    drawRoom(width, height, floorY) {
+    drawRoom(width, height, floorY, portrait) {
         const C = HOSPITAL_COLORS;
         const g = this.add.graphics();
 
@@ -86,13 +104,54 @@ class HospitalScene extends Phaser.Scene {
         // Window with sky and a cloud.
         const winW = S(56);
         const winH = S(40);
-        const winX = Math.round(width * 0.8 - winW / 2);
+        // Left of the door on the right wall.
+        const winX = Math.round(width * (portrait ? 0.55 : 0.72) - winW / 2);
         const winY = Math.round(floorY * 0.28 - winH / 2);
         PixelUI.drawBox(g, winX, winY, winW, winH, PALETTE.sky[0], PALETTE.outline);
         Icons.cloud(g, winX + Math.round(winW * 0.45), winY + Math.round(winH * 0.5), S(26), S(14));
         g.fillStyle(C.windowFrame, 1);
         g.fillRect(winX + Math.round(winW / 2) - 1, winY + 2, 2, winH - 4);
         g.fillRect(winX + 2, winY + Math.round(winH / 2) - 1, winW - 4, 2);
+    }
+
+    createDoor(width, floorY) {
+        this.door = { x: width - S(30), bottom: floorY, w: S(34), h: S(62) };
+        this.doorGraphics = this.add.graphics();
+        this.drawDoor(false);
+    }
+
+    drawDoor(open) {
+        const g = this.doorGraphics;
+        const { x, bottom, w, h } = this.door;
+        const left = Math.round(x - w / 2);
+        const top = bottom - h;
+
+        g.clear();
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 2, top - 2, w + 4, h + 2);
+
+        if (open) {
+            // Doorway with the corridor beyond.
+            g.fillStyle(ICON_COLORS.lavender, 1);
+            g.fillRect(left, top, w, h);
+            g.fillStyle(HOSPITAL_COLORS.tileB, 1);
+            g.fillRect(left, bottom - S(8), w, S(8));
+            // Door swung open against the wall.
+            g.fillStyle(PALETTE.outline, 1);
+            g.fillRect(left - S(8) - 1, top, S(8) + 1, h);
+            g.fillStyle(ICON_COLORS.pink, 1);
+            g.fillRect(left - S(8), top + 1, S(8) - 1, h - 2);
+            return;
+        }
+
+        g.fillStyle(ICON_COLORS.pink, 1);
+        g.fillRect(left, top, w, h);
+        g.fillStyle(ICON_COLORS.cream, 1);
+        g.fillRect(left + S(5), top + S(6), w - S(10), S(14));
+        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        g.fillRect(left + S(5), top + S(26), w - S(10), S(28));
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        PixelUI.fillCircle(g, left + w - S(7), top + Math.round(h * 0.55), S(2));
     }
 
     createBed(cx, floorY) {
@@ -105,6 +164,7 @@ class HospitalScene extends Phaser.Scene {
         const bottom = floorY + S(14);
         const frameTop = bottom - legH - frameH;
         const mattressTop = frameTop - mattressH;
+        this.bed = { left, right: left + bedW, mattressTop, bottom };
 
         const back = this.add.graphics();
         // Headboard on the left.
@@ -131,6 +191,10 @@ class HospitalScene extends Phaser.Scene {
         this.hamster.add(this.hamsterImage);
         this.hamsterImage.setInteractive({ useHandCursor: true });
         this.hamsterImage.on('pointerdown', () => {
+            if (this.resting) {
+                this.wakeFromRest();
+                return;
+            }
             playCharacterSound(this, this.character.sound);
             this.showHearts(1);
         });
@@ -383,6 +447,170 @@ class HospitalScene extends Phaser.Scene {
 
         this.registry.set('stickers', (this.registry.get('stickers') || 0) + 1);
         PixelUI.pulse(this, this.mapButton);
+    }
+
+    // --- Resting in bed --------------------------------------------------------
+
+    toggleRest() {
+        if (this.resting) {
+            this.wakeFromRest();
+        } else if (!this.busy) {
+            this.rest();
+        }
+    }
+
+    rest() {
+        this.busy = true;
+        this.resting = true;
+        this.hamsterImage.setTexture(`${this.character.id}-blink`);
+
+        // Soft lavender dimming, never dark.
+        this.restOverlay = this.add.rectangle(0, 0, this.viewWidth, this.viewHeight, ICON_COLORS.lavender, 0)
+            .setOrigin(0)
+            .setDepth(15);
+        this.tweens.add({ targets: this.restOverlay, fillAlpha: 0.35, duration: 600 });
+
+        playLullaby(this);
+        let count = 0;
+        this.zzzTimer = this.time.addEvent({ delay: 900, loop: true, callback: () => this.floatZ(count++) });
+        this.restTimer = this.time.delayedCall(7000, () => this.wakeFromRest());
+    }
+
+    floatZ(index) {
+        const big = index % 3 === 2;
+        const z = PixelUI.addText(this, this.hamster.x + S(26), this.hamster.y - S(28), big ? 'Z' : 'z', {
+            fontFamily: FONT,
+            fontStyle: '700',
+            fontSize: `${big ? S(12) : S(9)}px`,
+            color: TEXT_COLORS.title
+        }).setOrigin(0.5).setDepth(16);
+        this.tweens.add({
+            targets: z,
+            x: z.x + S(14),
+            y: z.y - S(24),
+            alpha: 0,
+            duration: 1800,
+            ease: 'Stepped',
+            easeParams: [6],
+            onComplete: () => z.destroy()
+        });
+    }
+
+    wakeFromRest() {
+        if (!this.resting) {
+            return;
+        }
+        this.resting = false;
+        this.zzzTimer.remove();
+        this.restTimer.remove();
+
+        const overlay = this.restOverlay;
+        this.tweens.add({ targets: overlay, fillAlpha: 0, duration: 500, onComplete: () => overlay.destroy() });
+
+        this.hamsterImage.setTexture(this.character.id);
+        this.showHearts(3);
+        this.tweens.add({
+            targets: this.hamster,
+            y: this.hamster.y - S(6),
+            duration: 140,
+            yoyo: true,
+            onComplete: () => {
+                this.busy = false;
+            }
+        });
+    }
+
+    // --- Visits from the other hamster ----------------------------------------
+
+    visit() {
+        if (!this.friend || this.visitorBusy) {
+            return;
+        }
+        if (this.visitor) {
+            this.greet();
+            return;
+        }
+        this.visitorBusy = true;
+
+        playDoorbell(this);
+        this.time.delayedCall(500, () => {
+            this.drawDoor(true);
+
+            const scale = HOSPITAL_HAMSTER_SCALE;
+            const groundY = this.floorY + S(8) - 8 * scale;
+            this.visitor = this.add.container(this.door.x, groundY).setDepth(12);
+            this.visitorImage = this.add.image(0, 0, this.friend.id).setScale(scale);
+            this.visitor.add(this.visitorImage);
+            this.visitorImage.setInteractive({ useHandCursor: true });
+            this.visitorImage.on('pointerdown', () => this.greet());
+            startBlinking(this, this.visitorImage, this.friend);
+
+            const targetX = Math.min(this.bed.right + S(6) + 8 * scale, this.door.x);
+            const hop = this.tweens.add({
+                targets: this.visitorImage,
+                y: -S(2),
+                duration: 120,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Stepped',
+                easeParams: [1]
+            });
+            this.tweens.add({
+                targets: this.visitor,
+                x: targetX,
+                duration: Math.max(400, (this.door.x - targetX) * 14),
+                onComplete: () => {
+                    hop.stop();
+                    this.visitorImage.y = 0;
+                    this.drawDoor(false);
+                    this.giveGift();
+                }
+            });
+        });
+    }
+
+    // The visitor hands over a flower that stays on the blanket.
+    giveGift() {
+        const gift = this.add.graphics({ x: this.visitor.x, y: this.visitor.y }).setDepth(13);
+        Icons.flower(gift, 0, 0, S(20));
+        const to = { x: Math.round(this.hamster.x + S(34)), y: Math.round(this.bed.mattressTop - S(14)) };
+
+        playCharacterSound(this, this.friend.sound);
+        this.tweens.add({
+            targets: gift,
+            x: to.x,
+            y: to.y,
+            duration: 500,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                this.time.delayedCall(250, () => playCharacterSound(this, this.character.sound));
+                this.showHearts(3);
+                this.heartAt(this.visitor.x, this.visitor.y - S(30));
+                this.visitorBusy = false;
+            }
+        });
+    }
+
+    greet() {
+        if (this.visitorBusy) {
+            return;
+        }
+        playCharacterSound(this, this.friend.sound);
+        this.heartAt(this.visitor.x, this.visitor.y - S(30));
+        this.tweens.add({ targets: this.visitor, y: this.visitor.y - S(6), duration: 120, yoyo: true });
+    }
+
+    heartAt(x, y) {
+        const heart = this.add.image(x, y, 'heart').setScale(3).setDepth(20);
+        this.tweens.add({
+            targets: heart,
+            y: y - S(24),
+            alpha: 0,
+            duration: 800,
+            ease: 'Stepped',
+            easeParams: [6],
+            onComplete: () => heart.destroy()
+        });
     }
 
     goToMap() {

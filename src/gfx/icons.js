@@ -245,6 +245,54 @@ const Icons = {
         Icons.fillPolygon(g, points(r));
     },
 
+    // Crescent moon with a small star: "rest / sleep".
+    moon(g, cx, cy, size) {
+        const r = Math.round(size * 0.38);
+        const cut = { x: Math.round(r * 0.6), y: -Math.round(r * 0.35), r: Math.round(r * 0.85) };
+        const inside = (dx, dy, rr) => dx * dx + dy * dy <= rr * rr;
+
+        for (let dy = -r - 1; dy <= r + 1; dy++) {
+            for (let dx = -r - 1; dx <= r + 1; dx++) {
+                const inMoon = inside(dx, dy, r) && !inside(dx - cut.x, dy - cut.y, cut.r);
+                const inEdge = inside(dx, dy, r + 1) && !inside(dx - cut.x, dy - cut.y, cut.r - 1);
+                if (inMoon) {
+                    g.fillStyle(ICON_COLORS.gold, 1);
+                } else if (inEdge) {
+                    g.fillStyle(PALETTE.outline, 1);
+                } else {
+                    continue;
+                }
+                g.fillRect(cx - Math.round(size * 0.08) + dx, cy + dy, 1, 1);
+            }
+        }
+
+        // Twinkle star top right.
+        const sx = Math.round(cx + size * 0.32);
+        const sy = Math.round(cy - size * 0.28);
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        g.fillRect(sx, sy - 2, 1, 5);
+        g.fillRect(sx - 2, sy, 5, 1);
+    },
+
+    // Little flower on a stem: the visitor's gift.
+    flower(g, cx, cy, size) {
+        const petalR = Math.max(2, Math.round(size * 0.16));
+        const ring = Math.round(size * 0.2);
+        const headY = Math.round(cy - size * 0.18);
+
+        g.fillStyle(0x9fd6b8, 1);
+        g.fillRect(cx, headY, 2, Math.round(size * 0.62));
+        g.fillRect(cx + 2, Math.round(cy + size * 0.12), Math.round(size * 0.16), 2);
+
+        const petals = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+        g.fillStyle(PALETTE.outline, 1);
+        petals.forEach(([dx, dy]) => PixelUI.fillCircle(g, cx + dx * ring, headY + dy * ring, petalR + 1));
+        g.fillStyle(ICON_COLORS.pink, 1);
+        petals.forEach(([dx, dy]) => PixelUI.fillCircle(g, cx + dx * ring, headY + dy * ring, petalR));
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        PixelUI.fillCircle(g, cx, headY, Math.max(1, petalR - 1));
+    },
+
     // Tiny tree for map decoration.
     tree(g, cx, bottom, size) {
         const trunkH = Math.round(size * 0.3);

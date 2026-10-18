@@ -66,6 +66,24 @@ function playNotes(scene, notes, wave = 'triangle', volume = 0.15) {
     });
 }
 
+// Soft lullaby while resting in the hospital bed.
+function playLullaby(scene) {
+    playNotes(scene, [
+        { freq: 392, duration: 0.5 },
+        { freq: 330, duration: 0.5 },
+        { freq: 392, duration: 0.5 },
+        { freq: 330, duration: 0.5 },
+        { freq: 349, duration: 0.5 },
+        { freq: 294, duration: 0.5 },
+        { freq: 262, duration: 0.9 }
+    ], 'sine', 0.08);
+}
+
+// "Ding-dong" when a visitor arrives.
+function playDoorbell(scene) {
+    playNotes(scene, [{ freq: 784, duration: 0.35 }, { freq: 622, duration: 0.6 }], 'sine', 0.12);
+}
+
 // Thermometer "done" chime.
 function playDing(scene) {
     playNotes(scene, [{ freq: 1319, duration: 0.18 }, { freq: 1760, duration: 0.35 }], 'sine', 0.12);
