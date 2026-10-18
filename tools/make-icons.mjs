@@ -1,5 +1,5 @@
-// Generates the app icons (assets/icons/*.png): Mordka the hamster as pixel art on a
-// pastel background, scaled up by whole numbers so every pixel stays sharp.
+// Generates the app icons (assets/icons/*.png): Mordka and Mysia side by side with a
+// heart above them, as pixel art on a pastel background.
 // No dependencies: PNG files are encoded by hand with node:zlib.
 //
 // Usage: node tools/make-icons.mjs
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const OUT_DIR = fileURLToPath(new URL('../assets/icons/', import.meta.url));
 
-// Same art and colours as Mordka in src/gfx/hamster.js and src/data/characters.js.
+// Same art and colours as the hamsters in src/gfx/hamster.js and src/data/characters.js.
 const HAMSTER = [
     '................',
     '..OO........OO..',
@@ -30,25 +30,40 @@ const HAMSTER = [
     '..OOBBBBBBBBOO..',
     '....OOOOOOOO....'
 ];
-const COLORS = {
-    O: 0x6b4a5e,
-    B: 0xf2b880,
-    L: 0xfff1e0,
-    P: 0xf7a8b8,
-    E: 0x3d2b3d,
-    W: 0xffffff
-};
+const SHARED = { O: 0x6b4a5e, E: 0x3d2b3d, W: 0xffffff };
+const MORDKA = { ...SHARED, B: 0xf2b880, L: 0xfff1e0, P: 0xf7a8b8 };
+const MYSIA = { ...SHARED, B: 0xc9c3d6, L: 0xfbf8ff, P: 0xf7a8c4 };
+
+const HEART = [
+    '.PP.PP.',
+    'PPPPPPP',
+    'PPPPPPP',
+    '.PPPPP.',
+    '..PPP..',
+    '...P...'
+];
+const HEART_COLORS = { P: 0xf59bbd };
+
 const BACKGROUND = 0xffe1ec;
 
-// The hamster sits in the middle half of a 32x32 grid, inside the "safe zone" that
-// Android may crop to a circle or rounded square (maskable icon).
-const GRID = 32;
-const OFFSET = 8;
+// 48x48 grid. Everything stays inside the central circle (radius ~19) that Android may
+// keep when it crops the icon to a circle or rounded square (maskable icon).
+const GRID = 48;
+const LAYERS = [
+    { rows: HAMSTER, colors: MORDKA, x: 7, y: 16 },
+    { rows: HAMSTER, colors: MYSIA, x: 25, y: 16 },
+    { rows: HEART, colors: HEART_COLORS, x: 21, y: 9 }
+];
 
 function pixelColor(gx, gy) {
-    const row = HAMSTER[gy - OFFSET];
-    const ch = row && row[gx - OFFSET];
-    return ch && COLORS[ch] !== undefined ? COLORS[ch] : BACKGROUND;
+    for (const { rows, colors, x, y } of LAYERS) {
+        const row = rows[gy - y];
+        const ch = row && row[gx - x];
+        if (ch && colors[ch] !== undefined) {
+            return colors[ch];
+        }
+    }
+    return BACKGROUND;
 }
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
@@ -105,7 +120,8 @@ function encodePng(size) {
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
-// Sizes are whole multiples of the 32px grid: 192 = 6x, 512 = 16x.
+// 192 is exactly 4x the grid; at 512 a few rows/columns are one pixel wider, invisible
+// at that size.
 for (const size of [192, 512]) {
     writeFileSync(join(OUT_DIR, `icon-${size}.png`), encodePng(size));
     console.log(`wrote assets/icons/icon-${size}.png`);
