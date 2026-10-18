@@ -5,10 +5,10 @@ Gra w przeglądarce oparta na [Phaser 4](https://phaser.io) (ładowanym z CDN, b
 ## Uruchomienie
 
 ```bash
-python -m http.server 8080 --bind 0.0.0.0
+python tools/dev_server.py 8080
 ```
 
-Następnie otwórz http://localhost:8080. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
+Następnie otwórz http://localhost:8080. Serwer obserwuje pliki projektu i po każdej zmianie sam przeładowuje wszystkie podłączone przeglądarki. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
 
 ## Struktura
 

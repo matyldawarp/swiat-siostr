@@ -1,6 +1,6 @@
 # Świat Sióstr
 
-Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `python -m http.server 8080`.
+Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `python tools/dev_server.py 8080`. Ten serwer nasłuchuje w sieci lokalnej, żeby dało się grać z iPada, i po każdej zmianie pliku sam przeładowuje wszystkie podłączone przeglądarki, więc po zmianach nie trzeba niczego odświeżać ręcznie.
 
 ## Praca z repo
 
