@@ -5,7 +5,7 @@
 // reads as pixel art; with `color` it tells songs apart for those who can't read.
 const MUSIC = [
     {
-        file: 'assets/music/descendants-cast-rotten-to-the-core.m_p_3',
+        file: 'assets/music/descendants-cast-rotten-to-the-core.bin',
         thumb: 'assets/music/descendants-cast-rotten-to-the-core.jpg',
         artist: 'Descendants – Cast',
         title: 'Rotten to the Core',
@@ -15,7 +15,7 @@ const MUSIC = [
         color: 0xd9ccf5
     },
     {
-        file: 'assets/music/dove-cameron-if-only.m_p_3',
+        file: 'assets/music/dove-cameron-if-only.bin',
         thumb: 'assets/music/dove-cameron-if-only.jpg',
         artist: 'Dove Cameron',
         title: 'If Only',
@@ -25,7 +25,7 @@ const MUSIC = [
         color: 0xf7b2cc
     },
     {
-        file: 'assets/music/descendants-cast-set-it-off.m_p_3',
+        file: 'assets/music/descendants-cast-set-it-off.bin',
         thumb: 'assets/music/descendants-cast-set-it-off.jpg',
         artist: 'Descendants – Cast',
         title: 'Set It Off',

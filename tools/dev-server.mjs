@@ -36,8 +36,6 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml',
     '.ico': 'image/x-icon',
     '.mp3': 'audio/mpeg',
-    // Game music is stored as MP3 under a disguised extension.
-    '.m_p_3': 'audio/mpeg',
     '.ogg': 'audio/ogg',
     '.wav': 'audio/wav',
     '.md': 'text/markdown; charset=utf-8',

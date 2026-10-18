@@ -1,7 +1,7 @@
 // Background music player built on a plain <audio> element.
 //
-// Song files use the .m_p_3 extension, which an ordinary HTTP server doesn't know, so it
-// may send them with the wrong content type and Safari would refuse to play them. The game
+// Song files are MP3s with a .bin extension, so an ordinary HTTP server sends them with a
+// generic content type and Safari would refuse to play them. The game
 // therefore downloads each song itself and plays it from an in-memory Blob labelled
 // audio/mpeg, which works on any static server.
 //

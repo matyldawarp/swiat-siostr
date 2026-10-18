@@ -3,6 +3,7 @@
 # freely licensed track.
 assets/music/*.mp3
 assets/music/*.m_p_3
+assets/music/*.bin
 assets/music/*.jpg
 
 # Logs
