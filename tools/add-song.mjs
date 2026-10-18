@@ -1,4 +1,4 @@
-// Adds a song from YouTube to the game, following the music rules in CLAUDE.md.
+// Adds a song from YouTube to the game, following the music rules in notes/muzyka.md.
 //
 // Step 1, look up who made it (prints the video title, channel and description):
 //   node tools/add-song.mjs <youtube-url>
