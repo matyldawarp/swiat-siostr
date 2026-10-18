@@ -14,17 +14,17 @@ Następnie otwórz http://localhost:8080. Serwer ([tools/dev-server.mjs](tools/d
 
 ## Instalacja jako aplikacja
 
-Gra ma manifest (`public/manifest.webmanifest`), service worker (`public/sw.js`) i ikony (`public/assets/icons/`, generowane przez `node tools/make-icons.mjs`). Chrome proponuje „Zainstaluj aplikację” tylko dla stron z HTTPS albo z `localhost`. Żeby zainstalować grę z telefonu w sieci domowej, w Chrome na Androidzie otwórz `chrome://flags`, w opcji **Insecure origins treated as secure** wpisz `http://<IP komputera>:8080`, ustaw **Enabled** i uruchom Chrome ponownie.
+Gra ma manifest (`docs/manifest.webmanifest`), service worker (`docs/sw.js`) i ikony (`docs/assets/icons/`, generowane przez `node tools/make-icons.mjs`). Chrome proponuje „Zainstaluj aplikację” tylko dla stron z HTTPS albo z `localhost`. Żeby zainstalować grę z telefonu w sieci domowej, w Chrome na Androidzie otwórz `chrome://flags`, w opcji **Insecure origins treated as secure** wpisz `http://<IP komputera>:8080`, ustaw **Enabled** i uruchom Chrome ponownie.
 
 ## GitHub Pages
 
-Workflow [.github/workflows/pages.yml](.github/workflows/pages.yml) publikuje grę przy każdym pushu do `main`. Na stronę trafia tylko folder `public/`, w którym są wszystkie pliki gry. Notatki, skany rysunków (`assets/scans/`) i narzędzia (`tools/`) leżą poza nim, więc zostają poza stroną. Muzyka chroniona prawami autorskimi nie jest w repozytorium, więc na stronie jej nie ma, a gra wtedy ukrywa przycisk nutki.
+GitHub Pages publikuje grę prosto z folderu `docs/` na gałęzi `main`, przy każdym pushu. Na stronę trafia tylko ten folder, w którym są wszystkie pliki gry. Notatki, skany rysunków (`assets/scans/`) i narzędzia (`tools/`) leżą poza nim, więc zostają poza stroną. Muzyka chroniona prawami autorskimi nie jest w repozytorium, więc na stronie jej nie ma, a gra wtedy ukrywa przycisk nutki.
 
-Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, gałąź **main**, folder **/docs**.
 
 ## Struktura
 
-- `public/` – cała gra, publikowana na GitHub Pages
+- `docs/` – cała gra, publikowana na GitHub Pages
   - `index.html` – strona gry, ładuje Phaser i skrypty
   - `src/main.js` – konfiguracja `Phaser.Game`
   - `src/scenes/` – ekrany gry (start, postacie, terrarium, mapa, szpital, kuchnia)

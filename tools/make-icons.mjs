@@ -1,4 +1,4 @@
-// Generates the app icons (public/assets/icons/*.png): Mordka and Mysia side by side with a
+// Generates the app icons (docs/assets/icons/*.png): Mordka and Mysia side by side with a
 // heart above them, as pixel art on a pastel background.
 // No dependencies: PNG files are encoded by hand with node:zlib.
 //
@@ -9,7 +9,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const OUT_DIR = fileURLToPath(new URL('../public/assets/icons/', import.meta.url));
+const OUT_DIR = fileURLToPath(new URL('../docs/assets/icons/', import.meta.url));
 
 // Same art and colours as the hamsters in src/gfx/hamster.js and src/data/characters.js.
 const HAMSTER = [
@@ -124,5 +124,5 @@ mkdirSync(OUT_DIR, { recursive: true });
 // at that size.
 for (const size of [192, 512]) {
     writeFileSync(join(OUT_DIR, `icon-${size}.png`), encodePng(size));
-    console.log(`wrote public/assets/icons/icon-${size}.png`);
+    console.log(`wrote docs/assets/icons/icon-${size}.png`);
 }
