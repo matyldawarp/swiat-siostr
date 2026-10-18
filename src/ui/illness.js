@@ -55,7 +55,8 @@ const Illness = {
     },
 
     // Squints, jolts and puffs; used wherever a sick hamster is shown.
-    sneeze(scene, image, container, character, mouth) {
+    // groundY is where the container rests, so the jolt can't add up over time.
+    sneeze(scene, image, container, character, mouth, groundY) {
         image.setTexture(`${character.id}-blink`);
         scene.time.delayedCall(350, () => {
             if (image.active) {
@@ -63,16 +64,7 @@ const Illness = {
             }
         });
 
-        const baseY = container.y;
-        scene.tweens.add({
-            targets: container,
-            y: baseY - S(3),
-            duration: 80,
-            yoyo: true,
-            onComplete: () => {
-                container.y = baseY;
-            }
-        });
+        PixelUI.hop(scene, container, groundY, S(3), { duration: 80 });
 
         playSneeze(scene);
 

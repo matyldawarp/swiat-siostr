@@ -171,6 +171,41 @@ const PixelUI = {
         return button;
     },
 
+    // Single hop of `target` from `groundY`. Always starts from the ground, and a new hop
+    // replaces one still in the air (finishing its onComplete), so quick repeated taps
+    // can't make the target creep upwards.
+    hop(scene, target, groundY, height, { duration = 120, repeat = 0, onComplete } = {}) {
+        if (target.hopTween) {
+            target.hopTween.stop();
+            const pending = target.hopDone;
+            target.hopTween = null;
+            target.hopDone = null;
+            if (pending) {
+                pending();
+            }
+        }
+
+        target.y = groundY;
+        target.hopDone = onComplete || null;
+        target.hopTween = scene.tweens.add({
+            targets: target,
+            y: groundY - height,
+            duration,
+            yoyo: true,
+            repeat,
+            ease: 'Sine.easeOut',
+            onComplete: () => {
+                target.y = groundY;
+                target.hopTween = null;
+                const done = target.hopDone;
+                target.hopDone = null;
+                if (done) {
+                    done();
+                }
+            }
+        });
+    },
+
     // Gentle "tap me" pulse; returns the tween so it can be stopped.
     pulse(scene, target, amount = 0.12) {
         return scene.tweens.add({

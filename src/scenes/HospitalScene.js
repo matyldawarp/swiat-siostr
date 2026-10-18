@@ -186,6 +186,7 @@ class HospitalScene extends Phaser.Scene {
         const hx = left + S(52);
         // Sits on the mattress; the blanket then covers only up to its paws.
         const hy = mattressTop - 8 * scale - S(2);
+        this.hamsterGroundY = hy;
         this.hamster = this.add.container(hx, hy);
         this.hamsterImage = this.add.image(0, 0, this.character.id).setScale(scale);
         this.hamster.add(this.hamsterImage);
@@ -209,7 +210,7 @@ class HospitalScene extends Phaser.Scene {
                 loop: true,
                 callback: () => {
                     if (!this.busy) {
-                        Illness.sneeze(this, this.hamsterImage, this.hamster, this.character, this.spots.mouth);
+                        Illness.sneeze(this, this.hamsterImage, this.hamster, this.character, this.spots.mouth, this.hamsterGroundY);
                     }
                 }
             });
@@ -362,11 +363,8 @@ class HospitalScene extends Phaser.Scene {
             tool.setPosition(tool.x - this.hamster.x, tool.y - this.hamster.y);
             this.hamster.add(tool);
             playPat(this);
-            this.tweens.add({
-                targets: this.hamster,
-                y: this.hamster.y - S(3),
+            PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(3), {
                 duration: 100,
-                yoyo: true,
                 onComplete: () => this.finishStep('plaster')
             });
         });
@@ -436,14 +434,7 @@ class HospitalScene extends Phaser.Scene {
         const label = PixelUI.addTitle(this, cx, cy + S(36), 'Dzielny pacjent!', S(14)).setDepth(30).setAlpha(0);
         this.tweens.add({ targets: label, alpha: 1, delay: 300, duration: 400 });
 
-        this.tweens.add({
-            targets: this.hamster,
-            y: this.hamster.y - S(8),
-            duration: 160,
-            yoyo: true,
-            repeat: 2,
-            ease: 'Sine.easeOut'
-        });
+        PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(8), { duration: 160, repeat: 2 });
 
         this.registry.set('stickers', (this.registry.get('stickers') || 0) + 1);
         PixelUI.pulse(this, this.mapButton);
@@ -509,11 +500,8 @@ class HospitalScene extends Phaser.Scene {
 
         this.hamsterImage.setTexture(this.character.id);
         this.showHearts(3);
-        this.tweens.add({
-            targets: this.hamster,
-            y: this.hamster.y - S(6),
+        PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(6), {
             duration: 140,
-            yoyo: true,
             onComplete: () => {
                 this.busy = false;
             }
@@ -538,6 +526,7 @@ class HospitalScene extends Phaser.Scene {
 
             const scale = HOSPITAL_HAMSTER_SCALE;
             const groundY = this.floorY + S(8) - 8 * scale;
+            this.visitorGroundY = groundY;
             this.visitor = this.add.container(this.door.x, groundY).setDepth(12);
             this.visitorImage = this.add.image(0, 0, this.friend.id).setScale(scale);
             this.visitor.add(this.visitorImage);
@@ -597,7 +586,7 @@ class HospitalScene extends Phaser.Scene {
         }
         playCharacterSound(this, this.friend.sound);
         this.heartAt(this.visitor.x, this.visitor.y - S(30));
-        this.tweens.add({ targets: this.visitor, y: this.visitor.y - S(6), duration: 120, yoyo: true });
+        PixelUI.hop(this, this.visitor, this.visitorGroundY, S(6));
     }
 
     heartAt(x, y) {

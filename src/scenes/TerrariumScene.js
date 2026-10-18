@@ -665,7 +665,7 @@ class TerrariumScene extends Phaser.Scene {
         Illness.sneeze(this, this.hamsterImage, this.hamster, this.character, {
             x: this.hamster.x,
             y: this.hamster.y + 2 * this.hamsterImage.scaleY
-        });
+        }, this.hamsterGroundY);
     }
 
     update() {
@@ -896,18 +896,7 @@ class TerrariumScene extends Phaser.Scene {
         }
 
         // Little jump; the walking hop keeps animating the image, so jump the container.
-        // Restart from the ground so quick repeated taps don't make it drift upwards.
-        if (this.jumpTween) {
-            this.jumpTween.stop();
-        }
-        this.hamster.y = this.hamsterGroundY;
-        this.jumpTween = this.tweens.add({
-            targets: this.hamster,
-            y: this.hamsterGroundY - S(8),
-            duration: 120,
-            yoyo: true,
-            ease: 'Sine.easeOut'
-        });
+        PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(8));
 
         this.showHeart();
     }
