@@ -23,5 +23,15 @@ const MUSIC = [
         youtubeUrl: 'https://www.youtube.com/watch?v=JFYedt-KnB0',
         license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
         color: 0xf7b2cc
+    },
+    {
+        file: 'assets/music/descendants-cast-set-it-off.mp3',
+        thumb: 'assets/music/descendants-cast-set-it-off.jpg',
+        artist: 'Descendants – Cast',
+        title: 'Set It Off',
+        album: 'Descendants (Original TV Movie Soundtrack)',
+        youtubeUrl: 'https://www.youtube.com/watch?v=E-e7U_JqWco',
+        license: 'Disney, prawa zastrzeżone – tylko do prywatnego użytku, nie w repozytorium',
+        color: 0xbfe8d6
     }
 ];
