@@ -1,16 +1,23 @@
 const PALETTE = {
-    skyTop: 0xcfe8ff,
-    skyBottom: 0xffe1ec,
+    sky: [0xcfe8ff, 0xd9e6fb, 0xe4e3f7, 0xefe0f2, 0xf8deee, 0xffe1ec],
     sun: 0xfff1c9,
+    sunGlow: 0xfff7e0,
     cloud: 0xffffff,
+    cloudShade: 0xe6eefc,
     hillBack: 0xd9ccf5,
+    hillBackShade: 0xcbbcef,
     hillFront: 0xbfe8d6,
+    hillFrontLight: 0xd4f2e4,
+    sparkles: [0xffffff, 0xffd6e5, 0xfff1c9],
     button: 0xf7b2cc,
     buttonHover: 0xf59bbd,
-    buttonBorder: 0xffffff,
+    buttonLight: 0xfbd3e2,
+    buttonBorder: 0x7a3f63,
     // Fade colour as RGB for camera effects.
     fade: [255, 244, 248]
 };
+
+const FONT = '"Pixelify Sans", monospace';
 
 class StartScene extends Phaser.Scene {
     constructor() {
@@ -26,87 +33,122 @@ class StartScene extends Phaser.Scene {
         const cx = width / 2;
 
         this.drawSky(width, height);
-        this.drawSun(width * 0.8, height * 0.22);
-        this.drawClouds(width, height);
+        this.drawSun(318, 42);
+        this.drawClouds();
         this.drawHills(width, height);
         this.drawSparkles(width, height);
 
-        const title = this.add.text(cx, height * 0.36, 'Świat Sióstr', {
-            fontFamily: '"Playfair Display", Georgia, serif',
-            fontStyle: 'bold',
-            fontSize: '110px',
+        const title = this.add.text(cx, 70, 'Świat Sióstr', {
+            fontFamily: FONT,
+            fontStyle: '700',
+            fontSize: '40px',
             color: '#8a5c9e',
             stroke: '#ffffff',
-            strokeThickness: 10,
-            shadow: { offsetX: 0, offsetY: 6, color: '#e7c8e8', blur: 16, fill: true, stroke: true }
+            strokeThickness: 4,
+            shadow: { offsetX: 2, offsetY: 2, color: '#e3c2e6', blur: 0, fill: true, stroke: true }
         }).setOrigin(0.5).setAlpha(0);
 
-        const subtitle = this.add.text(cx, height * 0.36 + 90, 'opowieść o dwóch siostrach', {
-            fontFamily: '"Playfair Display", Georgia, serif',
-            fontStyle: 'italic',
-            fontSize: '30px',
+        const subtitle = this.add.text(cx, 102, 'opowieść o dwóch siostrach', {
+            fontFamily: FONT,
+            fontSize: '12px',
             color: '#a07aa8'
         }).setOrigin(0.5).setAlpha(0);
 
-        const button = this.createButton(cx, height * 0.68, 'Rozpocznij');
+        const button = this.createButton(cx, 142, 'Rozpocznij');
         button.setAlpha(0);
 
-        const hint = this.add.text(cx, height - 40, 'Kliknij lub naciśnij Enter', {
-            fontFamily: 'Nunito, sans-serif',
-            fontSize: '18px',
-            color: '#6f9c8a'
+        const hint = this.add.text(cx, height - 10, 'Kliknij lub naciśnij Enter', {
+            fontFamily: FONT,
+            fontSize: '8px',
+            color: '#5f8f7c'
         }).setOrigin(0.5).setAlpha(0);
 
-        this.tweens.add({ targets: title, alpha: 1, y: title.y - 10, duration: 1400, ease: 'Sine.easeOut' });
-        this.tweens.add({ targets: subtitle, alpha: 1, duration: 1200, delay: 600 });
-        this.tweens.add({ targets: [button, hint], alpha: 1, duration: 900, delay: 1100 });
+        this.tweens.add({ targets: title, alpha: 1, y: title.y - 4, duration: 1200, ease: 'Sine.easeOut' });
+        this.tweens.add({ targets: subtitle, alpha: 1, duration: 1000, delay: 500 });
+        this.tweens.add({ targets: [button, hint], alpha: 1, duration: 800, delay: 900 });
 
         this.input.keyboard.once('keydown-ENTER', () => this.startGame());
         this.input.keyboard.once('keydown-SPACE', () => this.startGame());
 
-        this.cameras.main.fadeIn(800, ...PALETTE.fade);
+        this.cameras.main.fadeIn(600, ...PALETTE.fade);
+    }
+
+    // Filled circle made of 1px rows, so its edge stays on the pixel grid.
+    fillPixelCircle(g, cx, cy, r) {
+        for (let dy = -r; dy <= r; dy++) {
+            const dx = Math.round(Math.sqrt(r * r - dy * dy));
+            g.fillRect(cx - dx, cy + dy, dx * 2 + 1, 1);
+        }
     }
 
     drawSky(width, height) {
         const sky = this.add.graphics();
-        sky.fillGradientStyle(PALETTE.skyTop, PALETTE.skyTop, PALETTE.skyBottom, PALETTE.skyBottom, 1);
-        sky.fillRect(0, 0, width, height);
-    }
+        const bands = PALETTE.sky;
+        const bandHeight = Math.ceil(height / bands.length);
 
-    drawSun(x, y) {
-        const glow = this.add.circle(x, y, 110, PALETTE.sun, 0.45);
-        this.add.circle(x, y, 60, PALETTE.sun);
+        bands.forEach((color, i) => {
+            const y = i * bandHeight;
+            sky.fillStyle(color, 1);
+            sky.fillRect(0, y, width, bandHeight);
 
-        this.tweens.add({
-            targets: glow,
-            scale: 1.12,
-            alpha: 0.25,
-            duration: 3000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
+            // Checkerboard dither row blends each band into the next one.
+            if (i < bands.length - 1) {
+                sky.fillStyle(bands[i + 1], 1);
+                for (let x = 0; x < width; x += 2) {
+                    sky.fillRect(x, y + bandHeight - 2, 1, 1);
+                    sky.fillRect(x + 1, y + bandHeight - 1, 1, 1);
+                }
+            }
         });
     }
 
-    drawClouds(width, height) {
+    drawSun(x, y) {
+        const glow = this.add.graphics({ x, y });
+        glow.fillStyle(PALETTE.sunGlow, 1);
+        this.fillPixelCircle(glow, 0, 0, 20);
+
+        const sun = this.add.graphics({ x, y });
+        sun.fillStyle(PALETTE.sun, 1);
+        this.fillPixelCircle(sun, 0, 0, 14);
+
+        this.tweens.add({
+            targets: glow,
+            alpha: 0.3,
+            duration: 2400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Stepped',
+            easeParams: [4]
+        });
+    }
+
+    drawClouds() {
+        if (!this.textures.exists('cloud')) {
+            const g = this.make.graphics({ x: 0, y: 0 }, false);
+            g.fillStyle(PALETTE.cloudShade, 1);
+            g.fillRect(2, 10, 44, 6);
+            g.fillStyle(PALETTE.cloud, 1);
+            g.fillRect(4, 8, 40, 6);
+            g.fillRect(8, 4, 14, 6);
+            g.fillRect(20, 0, 16, 10);
+            g.fillRect(34, 4, 8, 6);
+            g.generateTexture('cloud', 48, 16);
+            g.destroy();
+        }
+
         const clouds = [
-            { x: width * 0.15, y: height * 0.14, scale: 1 },
-            { x: width * 0.55, y: height * 0.09, scale: 0.7 },
-            { x: width * 0.9, y: height * 0.42, scale: 0.85 }
+            { x: 50, y: 22, scale: 1 },
+            { x: 190, y: 14, scale: 1 },
+            { x: 350, y: 92, scale: 1 }
         ];
 
-        clouds.forEach(({ x, y, scale }, i) => {
-            const cloud = this.add.graphics({ x, y });
-            cloud.fillStyle(PALETTE.cloud, 0.9);
-            cloud.fillEllipse(0, 0, 160, 60);
-            cloud.fillEllipse(-45, -18, 90, 70);
-            cloud.fillEllipse(35, -25, 100, 80);
-            cloud.setScale(scale);
+        clouds.forEach(({ x, y }, i) => {
+            const cloud = this.add.image(x, y, 'cloud');
 
             this.tweens.add({
                 targets: cloud,
-                x: x + 40,
-                duration: 7000 + i * 1500,
+                x: x + 16,
+                duration: 6000 + i * 1500,
                 yoyo: true,
                 repeat: -1,
                 ease: 'Sine.easeInOut'
@@ -116,55 +158,76 @@ class StartScene extends Phaser.Scene {
 
     drawHills(width, height) {
         const back = this.add.graphics();
-        back.fillStyle(PALETTE.hillBack, 1);
-        back.fillEllipse(width * 0.25, height + 40, width * 0.9, 300);
-        back.fillEllipse(width * 0.8, height + 60, width * 0.9, 320);
-
         const front = this.add.graphics();
-        front.fillStyle(PALETTE.hillFront, 1);
-        front.fillEllipse(width * 0.5, height + 90, width * 1.4, 260);
+
+        for (let x = 0; x < width; x++) {
+            const backTop = Math.round(height - 46 + Math.sin(x / 38) * 8 + Math.sin(x / 13) * 2);
+            back.fillStyle(PALETTE.hillBack, 1);
+            back.fillRect(x, backTop, 1, height - backTop);
+            back.fillStyle(PALETTE.hillBackShade, 1);
+            back.fillRect(x, backTop + 3, 1, 1);
+
+            const frontTop = Math.round(height - 24 + Math.sin(x / 55 + 1.5) * 6);
+            front.fillStyle(PALETTE.hillFront, 1);
+            front.fillRect(x, frontTop, 1, height - frontTop);
+            front.fillStyle(PALETTE.hillFrontLight, 1);
+            front.fillRect(x, frontTop, 1, 2);
+        }
     }
 
     drawSparkles(width, height) {
-        const colors = [0xffffff, 0xffd6e5, 0xfff1c9, 0xd9ccf5];
+        for (let i = 0; i < 24; i++) {
+            const x = Phaser.Math.Between(4, width - 4);
+            const y = Phaser.Math.Between(4, height - 60);
+            const color = Phaser.Utils.Array.GetRandom(PALETTE.sparkles);
 
-        for (let i = 0; i < 40; i++) {
-            const x = Phaser.Math.Between(0, width);
-            const y = Phaser.Math.Between(0, height * 0.75);
-            const r = Phaser.Math.FloatBetween(1.5, 3.5);
-            const sparkle = this.add.circle(x, y, r, Phaser.Utils.Array.GetRandom(colors), 0.9);
+            // Small plus-shaped sparkle.
+            const sparkle = this.add.graphics({ x, y });
+            sparkle.fillStyle(color, 1);
+            sparkle.fillRect(0, -1, 1, 3);
+            sparkle.fillRect(-1, 0, 3, 1);
 
             this.tweens.add({
                 targets: sparkle,
-                alpha: 0.15,
-                y: y - 12,
-                duration: Phaser.Math.Between(1500, 3500),
+                alpha: 0,
+                duration: Phaser.Math.Between(1200, 3000),
                 delay: Phaser.Math.Between(0, 2000),
                 yoyo: true,
                 repeat: -1,
-                ease: 'Sine.easeInOut'
+                ease: 'Stepped',
+                easeParams: [3]
             });
         }
     }
 
     createButton(x, y, label) {
-        const w = 300;
-        const h = 72;
+        const w = 100;
+        const h = 24;
 
         const bg = this.add.graphics();
         const draw = (fill) => {
+            const left = -w / 2;
+            const top = -h / 2;
             bg.clear();
+
+            // Border with cut corners for a pixel "rounded" look.
+            bg.fillStyle(PALETTE.buttonBorder, 1);
+            bg.fillRect(left + 2, top, w - 4, h);
+            bg.fillRect(left, top + 2, w, h - 4);
+            bg.fillRect(left + 1, top + 1, w - 2, h - 2);
+
             bg.fillStyle(fill, 1);
-            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 36);
-            bg.lineStyle(4, PALETTE.buttonBorder, 1);
-            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 36);
+            bg.fillRect(left + 2, top + 2, w - 4, h - 4);
+
+            bg.fillStyle(PALETTE.buttonLight, 1);
+            bg.fillRect(left + 3, top + 2, w - 6, 2);
         };
         draw(PALETTE.button);
 
-        const text = this.add.text(0, 0, label, {
-            fontFamily: 'Nunito, sans-serif',
-            fontStyle: '800',
-            fontSize: '32px',
+        const text = this.add.text(0, 1, label, {
+            fontFamily: FONT,
+            fontStyle: '700',
+            fontSize: '12px',
             color: '#7a3f63'
         }).setOrigin(0.5);
 
@@ -178,11 +241,12 @@ class StartScene extends Phaser.Scene {
 
         this.tweens.add({
             targets: button,
-            scale: 1.05,
-            duration: 900,
+            y: y - 2,
+            duration: 800,
             yoyo: true,
             repeat: -1,
-            ease: 'Sine.easeInOut'
+            ease: 'Stepped',
+            easeParams: [2]
         });
 
         return button;
@@ -195,7 +259,7 @@ class StartScene extends Phaser.Scene {
         this.starting = true;
 
         // No gameplay scene yet: fade out and back in as a placeholder.
-        this.cameras.main.fadeOut(600, ...PALETTE.fade);
+        this.cameras.main.fadeOut(500, ...PALETTE.fade);
         this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart());
     }
 }
