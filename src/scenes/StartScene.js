@@ -1,31 +1,10 @@
-const PALETTE = {
-    sky: [0xcfe8ff, 0xd9e6fb, 0xe4e3f7, 0xefe0f2, 0xf8deee, 0xffe1ec],
-    sun: 0xfff1c9,
-    sunGlow: 0xfff7e0,
-    cloud: 0xffffff,
-    cloudShade: 0xe6eefc,
-    hillBack: 0xd9ccf5,
-    hillBackShade: 0xcbbcef,
-    hillFront: 0xbfe8d6,
-    hillFrontLight: 0xd4f2e4,
-    sparkles: [0xffffff, 0xffd6e5, 0xfff1c9],
-    button: 0xf7b2cc,
-    buttonHover: 0xf59bbd,
-    buttonLight: 0xfbd3e2,
-    buttonBorder: 0x7a3f63,
-    // Fade colour as RGB for camera effects.
-    fade: [255, 244, 248]
-};
-
-const FONT = '"Pixelify Sans", monospace';
-
 class StartScene extends Phaser.Scene {
     constructor() {
         super('StartScene');
     }
 
     init(data) {
-        this.starting = false;
+        this.leaving = false;
         this.skipIntro = Boolean(data.resized);
     }
 
@@ -36,35 +15,40 @@ class StartScene extends Phaser.Scene {
 
         this.cameras.main.setSize(width, height);
 
-        this.drawSky(width, height);
+        PixelUI.drawSky(this, width, height);
         this.drawSun(width - 66, 42);
         this.drawClouds(width, height);
         this.drawHills(width, height);
         this.drawSparkles(width, height);
 
-        const title = this.add.text(cx, cy - 34, 'Świat Sióstr', {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: '40px',
-            color: '#8a5c9e',
-            stroke: '#ffffff',
-            strokeThickness: 4,
-            shadow: { offsetX: 2, offsetY: 2, color: '#e3c2e6', blur: 0, fill: true, stroke: true }
-        }).setOrigin(0.5).setAlpha(0);
+        const title = PixelUI.addTitle(this, cx, cy - 34, 'Świat Sióstr', 40);
+        title.setStroke('#ffffff', 4);
+        title.setShadow(2, 2, TEXT_COLORS.titleShadow, 0, true, true);
+        title.setAlpha(0);
 
-        const subtitle = this.add.text(cx, cy - 6,'opowieść o dwóch siostrach', {
+        const subtitle = this.add.text(cx, cy - 6, 'opowieść o dwóch siostrach', {
             fontFamily: FONT,
             fontSize: '12px',
-            color: '#a07aa8'
+            color: TEXT_COLORS.subtitle
         }).setOrigin(0.5).setAlpha(0);
 
-        const button = this.createButton(cx, cy + 34, 'Rozpocznij');
+        const buttonY = cy + 34;
+        const button = PixelUI.createButton(this, cx, buttonY, 'Rozpocznij', () => this.startGame());
         button.setAlpha(0);
+        this.tweens.add({
+            targets: button,
+            y: buttonY - 2,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Stepped',
+            easeParams: [2]
+        });
 
         const hint = this.add.text(cx, height - 10, 'Kliknij lub naciśnij Enter', {
             fontFamily: FONT,
             fontSize: '8px',
-            color: '#5f8f7c'
+            color: TEXT_COLORS.hint
         }).setOrigin(0.5).setAlpha(0);
 
         if (this.skipIntro) {
@@ -82,55 +66,17 @@ class StartScene extends Phaser.Scene {
         this.input.keyboard.once('keydown-ENTER', () => this.startGame());
         this.input.keyboard.once('keydown-SPACE', () => this.startGame());
 
-        // Rebuild the layout for the new game size whenever the window changes.
-        const onResize = () => {
-            if (!this.starting) {
-                this.scene.restart({ resized: true });
-            }
-        };
-        this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
-        });
-    }
-
-    // Filled circle made of 1px rows, so its edge stays on the pixel grid.
-    fillPixelCircle(g, cx, cy, r) {
-        for (let dy = -r; dy <= r; dy++) {
-            const dx = Math.round(Math.sqrt(r * r - dy * dy));
-            g.fillRect(cx - dx, cy + dy, dx * 2 + 1, 1);
-        }
-    }
-
-    drawSky(width, height) {
-        const sky = this.add.graphics();
-        const bands = PALETTE.sky;
-        const bandHeight = Math.ceil(height / bands.length);
-
-        bands.forEach((color, i) => {
-            const y = i * bandHeight;
-            sky.fillStyle(color, 1);
-            sky.fillRect(0, y, width, bandHeight);
-
-            // Checkerboard dither row blends each band into the next one.
-            if (i < bands.length - 1) {
-                sky.fillStyle(bands[i + 1], 1);
-                for (let x = 0; x < width; x += 2) {
-                    sky.fillRect(x, y + bandHeight - 2, 1, 1);
-                    sky.fillRect(x + 1, y + bandHeight - 1, 1, 1);
-                }
-            }
-        });
+        PixelUI.restartOnResize(this);
     }
 
     drawSun(x, y) {
         const glow = this.add.graphics({ x, y });
         glow.fillStyle(PALETTE.sunGlow, 1);
-        this.fillPixelCircle(glow, 0, 0, 20);
+        PixelUI.fillCircle(glow, 0, 0, 20);
 
         const sun = this.add.graphics({ x, y });
         sun.fillStyle(PALETTE.sun, 1);
-        this.fillPixelCircle(sun, 0, 0, 14);
+        PixelUI.fillCircle(sun, 0, 0, 14);
 
         this.tweens.add({
             targets: glow,
@@ -221,66 +167,7 @@ class StartScene extends Phaser.Scene {
         }
     }
 
-    createButton(x, y, label) {
-        const w = 100;
-        const h = 24;
-
-        const bg = this.add.graphics();
-        const draw = (fill) => {
-            const left = -w / 2;
-            const top = -h / 2;
-            bg.clear();
-
-            // Border with cut corners for a pixel "rounded" look.
-            bg.fillStyle(PALETTE.buttonBorder, 1);
-            bg.fillRect(left + 2, top, w - 4, h);
-            bg.fillRect(left, top + 2, w, h - 4);
-            bg.fillRect(left + 1, top + 1, w - 2, h - 2);
-
-            bg.fillStyle(fill, 1);
-            bg.fillRect(left + 2, top + 2, w - 4, h - 4);
-
-            bg.fillStyle(PALETTE.buttonLight, 1);
-            bg.fillRect(left + 3, top + 2, w - 6, 2);
-        };
-        draw(PALETTE.button);
-
-        const text = this.add.text(0, 1, label, {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: '12px',
-            color: '#7a3f63'
-        }).setOrigin(0.5);
-
-        const button = this.add.container(x, y, [bg, text]);
-        button.setSize(w, h);
-        button.setInteractive({ useHandCursor: true });
-
-        button.on('pointerover', () => draw(PALETTE.buttonHover));
-        button.on('pointerout', () => draw(PALETTE.button));
-        button.on('pointerup', () => this.startGame());
-
-        this.tweens.add({
-            targets: button,
-            y: y - 2,
-            duration: 800,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Stepped',
-            easeParams: [2]
-        });
-
-        return button;
-    }
-
     startGame() {
-        if (this.starting) {
-            return;
-        }
-        this.starting = true;
-
-        // No gameplay scene yet: fade out and back in as a placeholder.
-        this.cameras.main.fadeOut(500, ...PALETTE.fade);
-        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({}));
+        PixelUI.fadeTo(this, 'CharacterScene');
     }
 }

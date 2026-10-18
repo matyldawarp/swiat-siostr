@@ -15,7 +15,7 @@ const config = {
         width: BASE_WIDTH,
         height: BASE_HEIGHT
     },
-    scene: [StartScene]
+    scene: [StartScene, CharacterScene, TerrariumScene]
 };
 
 function fitToWindow(game) {
