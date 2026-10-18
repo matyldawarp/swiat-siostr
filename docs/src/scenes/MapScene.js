@@ -14,10 +14,32 @@ const MAP_COLORS = {
     flowers: [0xf7b2cc, 0xfff1c9, 0xd9ccf5, 0xffffff]
 };
 
-// Places on the map and the scene each one opens.
+// Places on the map. `at` is where the building stands, as fractions of the map; every
+// road starts at home and passes through `bends` on its way to the place. Going between
+// two places other than home walks past home. `trees` are offsets of trees around it.
+// To add a place: an entry here, its scene in main.js, and the scene's map button setting
+// registry 'mapLocation' to the key.
 const MAP_PLACES = {
-    home: 'TerrariumScene',
-    hospital: 'HospitalScene'
+    home: {
+        scene: 'TerrariumScene',
+        at: [0.16, 0.74],
+        draw: (g, x, y) => Icons.house(g, x, y - S(18), S(44)),
+        trees: [[-40, -6], [38, -14]]
+    },
+    hospital: {
+        scene: 'HospitalScene',
+        at: [0.8, 0.36],
+        bends: [[0.42, 0.82], [0.58, 0.36]],
+        draw: (g, x, y) => Icons.hospital(g, x, y, S(64), S(54)),
+        trees: [[48, -4], [-46, 2]]
+    },
+    bakery: {
+        scene: 'BakeryScene',
+        at: [0.84, 0.86],
+        bends: [[0.4, 0.95], [0.64, 0.92]],
+        draw: (g, x, y) => Icons.bakery(g, x, y, S(60), S(50)),
+        trees: [[-48, 0]]
+    }
 };
 
 export class MapScene extends BaseScene {
@@ -43,34 +65,37 @@ export class MapScene extends BaseScene {
         createHamsterTextures(this, this.character);
 
         // Where things sit, as fractions of the map so it fits any window.
-        const at = (fx, fy) => ({ x: Math.round(width * fx), y: Math.round(height * fy) });
-        const homePos = at(0.16, 0.74);
-        const hospitalPos = at(0.8, 0.36);
-        const bends = [at(0.42, 0.82), at(0.58, 0.36)];
-
-        // Hamster stands just in front of each building; the road joins those spots.
-        this.stands = {
-            home: { x: homePos.x, y: homePos.y + S(10) },
-            hospital: { x: hospitalPos.x, y: hospitalPos.y + S(10) }
-        };
-        this.road = new Phaser.Curves.Spline([
-            this.stands.home, ...bends, this.stands.hospital
-        ].map((p) => new Phaser.Math.Vector2(p.x, p.y)));
+        const at = ([fx, fy]) => ({ x: Math.round(width * fx), y: Math.round(height * fy) });
+        const positions = {};
+        this.stands = {};
+        Object.entries(MAP_PLACES).forEach(([key, place]) => {
+            positions[key] = at(place.at);
+            // The hamster stands just in front of each building; roads join those spots.
+            this.stands[key] = { x: positions[key].x, y: positions[key].y + S(10) };
+        });
+        this.roads = {};
+        Object.entries(MAP_PLACES).filter(([, place]) => place.bends).forEach(([key, place]) => {
+            this.roads[key] = new Phaser.Curves.Spline([this.stands.home, ...place.bends.map(at), this.stands[key]]
+                .map((p) => new Phaser.Math.Vector2(p.x, p.y)));
+        });
 
         this.drawGround(this.view.bleed);
-        const roadPoints = this.drawRoad();
+        const roadPoints = Object.values(this.roads).flatMap((road) => this.drawRoad(road));
 
-        this.createPlace('home', homePos, (g) => Icons.house(g, homePos.x, homePos.y - S(18), S(44)));
-        this.createPlace('hospital', hospitalPos, (g) => Icons.hospital(g, hospitalPos.x, hospitalPos.y, S(64), S(54)));
+        Object.entries(MAP_PLACES).forEach(([key, place]) => {
+            const { x, y } = positions[key];
+            this.createPlace(key, positions[key], (g) => place.draw(g, x, y));
+        });
 
-        this.drawTrees(homePos, hospitalPos, width, height);
-        this.createClouds(width, height, [homePos, hospitalPos], roadPoints);
+        this.drawTrees(positions, width, height);
+        this.createClouds(width, height, Object.values(positions), roadPoints);
         this.createHamster();
 
-        // The place you can travel to gently pulses; a sick hamster's hospital pulses harder.
+        // The places you can travel to gently pulse; a sick hamster's hospital pulses harder.
         const sick = Illness.isSick(this);
-        const target = this.location === 'home' ? 'hospital' : 'home';
-        PixelUI.pulse(this, this.places[target], sick && target === 'hospital' ? 0.14 : 0.06);
+        Object.keys(MAP_PLACES).filter((key) => key !== this.location).forEach((key) => {
+            PixelUI.pulse(this, this.places[key], sick && key === 'hospital' ? 0.14 : 0.06);
+        });
         if (sick) {
             this.sickBubble = Illness.createBubble(this, S(20)).setDepth(11);
         }
@@ -92,10 +117,10 @@ export class MapScene extends BaseScene {
         }
     }
 
-    // Sandy road along the spline; returns its sample points for spacing other things.
-    drawRoad() {
+    // Sandy road along a spline; returns its sample points for spacing other things.
+    drawRoad(road) {
         const g = this.add.graphics();
-        const points = this.road.getSpacedPoints(Math.round(this.road.getLength() / 2));
+        const points = road.getSpacedPoints(Math.round(road.getLength() / 2));
         const r = S(5);
 
         g.fillStyle(MAP_COLORS.roadEdge, 1);
@@ -125,14 +150,10 @@ export class MapScene extends BaseScene {
         zone.on('pointerup', () => this.goTo(key));
     }
 
-    drawTrees(homePos, hospitalPos, width, height) {
+    drawTrees(positions, width, height) {
         const g = this.add.graphics();
-        const spots = [
-            { x: homePos.x - S(40), y: homePos.y - S(6) },
-            { x: homePos.x + S(38), y: homePos.y - S(14) },
-            { x: hospitalPos.x + S(48), y: hospitalPos.y - S(4) },
-            { x: hospitalPos.x - S(46), y: hospitalPos.y + S(2) }
-        ];
+        const spots = Object.entries(MAP_PLACES).flatMap(([key, place]) => (place.trees || [])
+            .map(([dx, dy]) => ({ x: positions[key].x + S(dx), y: positions[key].y + S(dy) })));
         spots
             .filter((p) => p.x > S(12) && p.x < width - S(12) && p.y > S(30) && p.y < height - S(4))
             .forEach((p) => Icons.tree(g, p.x, p.y, S(22)));
@@ -239,35 +260,48 @@ export class MapScene extends BaseScene {
 
         this.traveling = true;
         this.idleBob.stop();
-        const forward = place === 'hospital';
-        const progress = { t: forward ? 0 : 1 };
         const lift = S(6);
-
         let hop = 0;
         const steps = this.time.addEvent({ delay: 200, loop: true, callback: () => playStep(this) });
 
-        this.tweens.add({
-            targets: progress,
-            t: forward ? 1 : 0,
-            duration: 2600,
-            ease: 'Sine.easeInOut',
-            onUpdate: () => {
-                const p = this.road.getPointAt(progress.t);
-                // Little bounce while walking.
-                hop++;
-                this.hamster.setPosition(Math.round(p.x), Math.round(p.y) - lift - (Math.floor(hop / 6) % 2) * S(2));
-            },
-            onComplete: () => {
+        // Roads all start at home: walk back home along the current place's road, then out
+        // along the new one.
+        const legs = [];
+        if (this.location !== 'home') {
+            legs.push({ road: this.roads[this.location], from: 1, to: 0 });
+        }
+        if (place !== 'home') {
+            legs.push({ road: this.roads[place], from: 0, to: 1 });
+        }
+
+        const walk = (i) => {
+            if (i === legs.length) {
                 steps.remove();
                 this.location = place;
-                this.registry.set('mapLocation', place);
                 this.enter(place);
+                return;
             }
-        });
+            const { road, from, to } = legs[i];
+            const progress = { t: from };
+            this.tweens.add({
+                targets: progress,
+                t: to,
+                duration: Math.max(1200, road.getLength() * 6),
+                ease: legs.length === 1 ? 'Sine.easeInOut' : (i === 0 ? 'Sine.easeIn' : 'Sine.easeOut'),
+                onUpdate: () => {
+                    const p = road.getPointAt(progress.t);
+                    // Little bounce while walking.
+                    hop++;
+                    this.hamster.setPosition(Math.round(p.x), Math.round(p.y) - lift - (Math.floor(hop / 6) % 2) * S(2));
+                },
+                onComplete: () => walk(i + 1)
+            });
+        };
+        walk(0);
     }
 
     enter(place) {
         this.registry.set('mapLocation', place);
-        PixelUI.fadeTo(this, MAP_PLACES[place]);
+        PixelUI.fadeTo(this, MAP_PLACES[place].scene);
     }
 }

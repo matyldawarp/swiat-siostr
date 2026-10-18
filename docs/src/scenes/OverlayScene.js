@@ -80,8 +80,13 @@ export class OverlayScene extends BaseScene {
             `ekran ${window.screen.width}x${window.screen.height}`,
             `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`
         ];
-        this.debugInfo = PixelUI.addText(this, S(6), this.view.height - S(6), lines.join('\n'),
-            textStyle(S(9), { bold: true, color: TEXT_COLORS.button }))
+        // A plain sans-serif font, large enough to read and copy off a photo.
+        this.debugInfo = PixelUI.addText(this, S(6), this.view.height - S(6), lines.join('\n'), {
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: `${S(13)}px`,
+            color: TEXT_COLORS.button,
+            padding: { x: S(4), y: S(3) }
+        })
             .setOrigin(0, 1)
             .setBackgroundColor('#ffffff')
             .setDepth(200);

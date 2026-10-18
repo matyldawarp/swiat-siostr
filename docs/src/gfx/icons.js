@@ -623,6 +623,119 @@ export const Icons = {
         }
     },
 
+    // --- Bakery ------------------------------------------------------------------
+
+    // Cupcake in a striped paper cup; (cx, bottom) is the middle of the cup's base.
+    // design: { cream: colour or null, sprinkles: bool, topping: CAKE_TOPPINGS key or null }.
+    // Without cream it shows the bare sponge top.
+    cupcake(g, cx, bottom, w, { cream = null, sprinkles = false, topping = null } = {}) {
+        const cupH = Math.round(w * 0.42);
+        const cupTop = bottom - cupH;
+        const topHalf = w * 0.4;
+        const bottomHalf = w * 0.3;
+        const halfAt = (r) => Math.round(topHalf + (bottomHalf - topHalf) * (r / cupH));
+
+        // Paper cup with vertical pleats.
+        g.fillStyle(PALETTE.outline, 1);
+        for (let r = -1; r <= cupH; r++) {
+            const half = halfAt(Math.max(0, r)) + 1;
+            g.fillRect(Math.round(cx - half), cupTop + r, half * 2 + 1, 1);
+        }
+        for (let r = 0; r < cupH; r++) {
+            const half = halfAt(r);
+            g.fillStyle(ICON_COLORS.plaster, 1);
+            g.fillRect(Math.round(cx - half), cupTop + r, half * 2 + 1, 1);
+            g.fillStyle(0xf5c09a, 1);
+            for (let x = -half + 2; x < half - 1; x += 4) {
+                g.fillRect(Math.round(cx + x), cupTop + r, 1, 1);
+            }
+        }
+
+        if (!cream) {
+            // Bare sponge dome.
+            g.fillStyle(PALETTE.outline, 1);
+            Icons.fillEllipse(g, cx, cupTop, Math.round(topHalf) + 1, Math.round(w * 0.18) + 1);
+            g.fillStyle(0xf6d098, 1);
+            Icons.fillEllipse(g, cx, cupTop, Math.round(topHalf), Math.round(w * 0.18));
+            g.fillStyle(PALETTE.outline, 1);
+            g.fillRect(Math.round(cx - topHalf) - 1, cupTop, Math.round(topHalf * 2) + 3, 1);
+            return;
+        }
+
+        // Swirl of cream: three blobs getting smaller towards the top.
+        const blobs = [
+            { y: cupTop - Math.round(w * 0.04), rx: Math.round(w * 0.46), ry: Math.round(w * 0.14) },
+            { y: cupTop - Math.round(w * 0.17), rx: Math.round(w * 0.34), ry: Math.round(w * 0.12) },
+            { y: cupTop - Math.round(w * 0.28), rx: Math.round(w * 0.2), ry: Math.round(w * 0.1) }
+        ];
+        g.fillStyle(PALETTE.outline, 1);
+        blobs.forEach((b) => Icons.fillEllipse(g, cx, b.y, b.rx + 1, b.ry + 1));
+        g.fillStyle(cream, 1);
+        blobs.forEach((b) => Icons.fillEllipse(g, cx, b.y, b.rx, b.ry));
+        g.fillStyle(ICON_COLORS.white, 1);
+        blobs.forEach((b) => g.fillRect(Math.round(cx - b.rx * 0.5), b.y - Math.round(b.ry * 0.4), 2, 1));
+        const creamTop = blobs[2].y - blobs[2].ry;
+
+        if (sprinkles) {
+            const colors = [ICON_COLORS.pinkDark, ICON_COLORS.mintDark, ICON_COLORS.goldDark, ICON_COLORS.lavenderDark];
+            [[-0.3, -0.04], [0.22, -0.06], [-0.08, -0.16], [0.18, -0.2], [-0.22, -0.18], [0.02, -0.28], [0.32, -0.02], [-0.02, -0.06]]
+                .forEach(([fx, fy], i) => {
+                    g.fillStyle(colors[i % colors.length], 1);
+                    g.fillRect(Math.round(cx + fx * w), Math.round(cupTop + fy * w), 2, 1);
+                });
+        }
+        if (topping && CAKE_TOPPINGS[topping]) {
+            CAKE_TOPPINGS[topping](g, cx, creamTop - Math.round(w * 0.08), Math.round(w * 0.42));
+        }
+    },
+
+    // Little sweet shop for the map: striped awning and a cupcake sign; (cx, bottom) is the
+    // middle of its base.
+    bakery(g, cx, bottom, w, h) {
+        const left = Math.round(cx - w / 2);
+        const top = bottom - h;
+        const roofH = Math.round(h * 0.14);
+
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, top - 1, w + 2, h + 1);
+        g.fillStyle(ICON_COLORS.cream, 1);
+        g.fillRect(left, top, w, h);
+        g.fillStyle(ICON_COLORS.mint, 1);
+        g.fillRect(left, top, w, roofH);
+        g.fillStyle(ICON_COLORS.mintDark, 1);
+        g.fillRect(left, top + roofH - 1, w, 1);
+
+        // Striped awning with a scalloped edge.
+        const awnTop = top + roofH;
+        const awnH = Math.round(h * 0.16);
+        const stripe = Math.max(3, Math.round(w / 8));
+        for (let x = 0; x < w; x++) {
+            g.fillStyle(Math.floor(x / stripe) % 2 ? ICON_COLORS.white : ICON_COLORS.pink, 1);
+            const scallop = Math.round(Math.abs(Math.sin((x / stripe) * Math.PI)) * 2);
+            g.fillRect(left + x, awnTop, 1, awnH + scallop);
+        }
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, awnTop - 1, w + 2, 1);
+
+        // Shop window with a cupcake, and the door.
+        const winY = awnTop + awnH + 4;
+        const winW = Math.round(w * 0.42);
+        const winH = bottom - winY - 3;
+        PixelUI.drawBox(g, left + 3, winY, winW, winH, ICON_COLORS.sky, PALETTE.outline);
+        Icons.cupcake(g, left + 3 + Math.round(winW / 2), winY + winH - 3, Math.round(winW * 0.55), { cream: ICON_COLORS.pink, topping: 'cherry' });
+        const doorW = Math.round(w * 0.26);
+        const doorX = left + w - doorW - 4;
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(doorX - 1, winY - 1, doorW + 2, bottom - winY + 1);
+        g.fillStyle(ICON_COLORS.lavenderDark, 1);
+        g.fillRect(doorX, winY, doorW, bottom - winY);
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        g.fillRect(doorX + doorW - 3, winY + Math.round((bottom - winY) / 2), 2, 2);
+
+        // Cupcake sign on the roof.
+        Icons.cupcake(g, cx, top + 2, Math.round(w * 0.3), { cream: ICON_COLORS.lavender, sprinkles: true, topping: 'cherry' });
+    },
+
     // Tiny tree for map decoration.
     tree(g, cx, bottom, size) {
         const trunkH = Math.round(size * 0.3);

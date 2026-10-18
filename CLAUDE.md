@@ -15,7 +15,7 @@ Kod to moduły ES bez kroku budowania: `index.html` ładuje tylko `src/main.js`,
 
 - `main.js` – konfiguracja gry, lista scen (`OverlayScene` ostatnia), `fitToWindow`.
 - `scenes/BaseScene.js` – baza każdej sceny. Scena implementuje `build({ width, height })` zamiast `create()`, a `init(data)` zaczyna od `super.init(data)`. BaseScene ustawia kamerę na stałą scenę `STAGE`, robi fade-in (`intro()`, można nadpisać) i przebudowuje scenę po zmianie rozmiaru okna (wtedy zmienia się tylko skala). `this.selectedCharacter()` daje wybraną postać.
-- `scenes/*Scene.js` – ekrany: start, wybór postaci, terrarium, mapa, szpital, kuchnia, overlay (przyciski muzyki i przeładowania). Przejście między scenami: `PixelUI.fadeTo(this, 'NazwaScene')`.
+- `scenes/*Scene.js` – ekrany: start, wybór postaci, terrarium, mapa, szpital, kuchnia, cukiernia (`BakeryScene`: dekorowanie babeczek i wystawa zapamiętana w `localStorage`), overlay (przyciski ustawień, muzyki i przeładowania). Miejsca na mapie i drogi do nich opisuje `MAP_PLACES` w `MapScene.js`. Wszystkie drogi zaczynają się w domu. Przejście między scenami: `PixelUI.fadeTo(this, 'NazwaScene')`.
 - `scenes/terrarium/` – części terrarium: `tank.js` rysuje akwarium, a `Wheel.js`, `Bath.js` i `House.js` to aktywności chomika. Cykl aktywności i sposób dodania nowej opisuje `Activity.js`.
 - `ui/pixel.js` – paleta (`PALETTE`, `TEXT_COLORS`), `S()`, `textStyle()`, `PixelUI` (tekst, przyciski, ramki, kółka, podskok `hop`, `pulse`, przejścia).
 - `ui/effects.js` – `floatHeart` (nagroda po stuknięciu), `floatZ` (sen), `floatAway`, `walkBob` (podskakiwanie w marszu).

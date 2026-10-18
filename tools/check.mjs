@@ -215,6 +215,13 @@ if (charactersModule) {
     });
 }
 
+const bakeryModule = loaded['docs/src/scenes/BakeryScene.js'];
+if (bakeryModule && iconsModule) {
+    bakeryModule.BAKERY_TOPPINGS.filter((key) => !iconsModule.CAKE_TOPPINGS[key]).forEach((key) => {
+        fail(join(SRC, 'scenes', 'BakeryScene.js'), `BAKERY_TOPPINGS: unknown topping "${key}" (see CAKE_TOPPINGS in gfx/icons.js)`);
+    });
+}
+
 const personalitiesModule = loaded['docs/src/data/personalities.js'];
 const personalitiesFile = join(SRC, 'data', 'personalities.js');
 if (personalitiesModule) {
