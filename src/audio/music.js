@@ -45,9 +45,15 @@ const Music = {
     // Song index -> object URL of the downloaded song, or a pending download.
     urls: {},
     downloads: {},
+    // Indexes of songs whose file is on the server. Copyrighted music stays out of git, so
+    // e.g. on GitHub Pages there are none and the note button is hidden.
+    available: [],
+    checked: false,
+    checkedCallbacks: [],
 
     init() {
         if (MUSIC.length === 0) {
+            this.markChecked();
             return;
         }
         this.current = this.loadChoice();
@@ -56,9 +62,7 @@ const Music = {
         this.audio.volume = MUSIC_VOLUME;
         this.audio.loop = true;
 
-        if (this.current >= 0) {
-            this.download(this.current);
-        }
+        this.checkAvailable();
 
         const start = () => {
             if (!this.started) {
@@ -68,6 +72,40 @@ const Music = {
         };
         document.addEventListener('touchend', start, { passive: true });
         document.addEventListener('click', start);
+    },
+
+    // Asks the server which song files exist (HEAD, nothing is downloaded), then starts
+    // fetching the chosen song if it is one of them.
+    checkAvailable() {
+        const checks = MUSIC.map((song, i) => fetch(song.file, { method: 'HEAD' })
+            .then((res) => (res.ok ? i : null))
+            .catch(() => null));
+
+        Promise.all(checks).then((results) => {
+            this.available = results.filter((i) => i !== null);
+            if (this.current >= 0 && !this.available.includes(this.current)) {
+                this.current = this.available.length > 0 ? this.available[0] : -1;
+            }
+            if (this.current >= 0) {
+                this.download(this.current);
+            }
+            this.markChecked();
+        });
+    },
+
+    markChecked() {
+        this.checked = true;
+        this.checkedCallbacks.forEach((cb) => cb());
+        this.checkedCallbacks = [];
+    },
+
+    // Runs `cb` once it is known which songs are available.
+    whenChecked(cb) {
+        if (this.checked) {
+            cb();
+        } else {
+            this.checkedCallbacks.push(cb);
+        }
     },
 
     loadChoice() {

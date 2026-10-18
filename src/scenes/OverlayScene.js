@@ -9,15 +9,6 @@ class OverlayScene extends Phaser.Scene {
         this.leaving = false;
     }
 
-    // Song thumbnails for the chooser. A missing file just falls back to the song's number.
-    preload() {
-        MUSIC.forEach((song, i) => {
-            if (song.thumb && !this.textures.exists(`music-thumb-${i}`)) {
-                this.load.image(`music-thumb-${i}`, song.thumb);
-            }
-        });
-    }
-
     create() {
         const { width, height } = PixelUI.setupView(this);
         this.view = { width, height };
@@ -26,11 +17,31 @@ class OverlayScene extends Phaser.Scene {
         const size = S(22);
         const margin = S(6);
         this.createReloadButton(width - margin - size / 2, margin + size / 2, size);
-        if (MUSIC.length > 0) {
+
+        // The note button appears only once some song file is known to exist.
+        const thisRun = {};
+        this.run = thisRun;
+        Music.whenChecked(() => {
+            if (this.run !== thisRun || Music.available.length === 0) {
+                return;
+            }
+            this.loadThumbnails();
             this.createMusicButton(width - margin - size * 1.5 - S(4), margin + size / 2, size);
-        }
+        });
 
         PixelUI.restartOnResize(this);
+    }
+
+    // Song thumbnails for the chooser, only for songs that exist; a song without one shows
+    // its number instead.
+    loadThumbnails() {
+        Music.available.forEach((i) => {
+            const song = MUSIC[i];
+            if (song.thumb && !this.textures.exists(`music-thumb-${i}`)) {
+                this.load.image(`music-thumb-${i}`, song.thumb);
+            }
+        });
+        this.load.start();
     }
 
     // Opens the song chooser; the note is crossed out while it's silent.
@@ -56,7 +67,9 @@ class OverlayScene extends Phaser.Scene {
         const gap = S(6);
         const pad = S(10);
         const panelW = Math.min(width - S(24), S(260));
-        const rows = MUSIC.length + 1;
+        // Available songs, then silence (-1).
+        const songs = [...Music.available, -1];
+        const rows = songs.length;
         const panelH = pad * 2 + rows * rowH + (rows - 1) * gap;
         const panelX = Math.round((width - panelW) / 2);
         const panelY = Math.max(S(36), Math.round((height - panelH) / 2));
@@ -77,11 +90,10 @@ class OverlayScene extends Phaser.Scene {
         PixelUI.drawBox(panel, panelX, panelY, panelW, panelH, ICON_COLORS.cream, PALETTE.buttonBorder, 0xffffff);
         this.menu.add(panel);
 
-        for (let i = 0; i < rows; i++) {
-            const index = i < MUSIC.length ? i : -1;
+        songs.forEach((index, i) => {
             const y = panelY + pad + i * (rowH + gap) + rowH / 2;
             this.menu.add(this.createSongRow(index, panelX + pad, y, panelW - pad * 2, rowH));
-        }
+        });
     }
 
     createSongRow(index, left, cy, w, h) {
