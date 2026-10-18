@@ -41,6 +41,56 @@ function playCrunch(scene) {
     source.start();
 }
 
+// Plays a sequence of soft tones: [{ freq, duration }], each starting after the previous one.
+function playNotes(scene, notes, wave = 'triangle', volume = 0.15) {
+    const audio = getAudio(scene);
+    if (!audio) {
+        return;
+    }
+    const { ctx, output } = audio;
+    let t = ctx.currentTime + 0.01;
+
+    notes.forEach(({ freq, duration }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = wave;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(volume, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.connect(gain);
+        gain.connect(output);
+        osc.start(t);
+        osc.stop(t + duration + 0.02);
+        t += duration * 0.8;
+    });
+}
+
+// Thermometer "done" chime.
+function playDing(scene) {
+    playNotes(scene, [{ freq: 1319, duration: 0.18 }, { freq: 1760, duration: 0.35 }], 'sine', 0.12);
+}
+
+// Happy rising arpeggio for the sticker.
+function playFanfare(scene) {
+    playNotes(scene, [
+        { freq: 523, duration: 0.14 },
+        { freq: 659, duration: 0.14 },
+        { freq: 784, duration: 0.14 },
+        { freq: 1047, duration: 0.4 }
+    ]);
+}
+
+// Soft pat when the plaster sticks.
+function playPat(scene) {
+    playNotes(scene, [{ freq: 330, duration: 0.08 }, { freq: 440, duration: 0.12 }], 'sine', 0.12);
+}
+
+// Short tick for a step on the map.
+function playStep(scene) {
+    playNotes(scene, [{ freq: 900 + Math.random() * 200, duration: 0.03 }], 'square', 0.03);
+}
+
 // Little rising "blup" of a bath bubble.
 function playBubble(scene) {
     const audio = getAudio(scene);

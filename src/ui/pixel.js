@@ -149,6 +149,41 @@ const PixelUI = {
         return button;
     },
 
+    // Square button showing a drawn icon instead of a word, for players who can't read yet.
+    // drawIcon(g, size) draws centred on (0, 0).
+    createIconButton(scene, x, y, size, drawIcon, onClick) {
+        const bg = scene.add.graphics();
+        const draw = (fill) => {
+            bg.clear();
+            PixelUI.drawBox(bg, -size / 2, -size / 2, size, size, fill, PALETTE.buttonBorder, PALETTE.buttonLight);
+        };
+        draw(PALETTE.button);
+
+        const icon = scene.add.graphics();
+        drawIcon(icon, Math.round(size * 0.7));
+
+        const button = scene.add.container(x, y, [bg, icon]);
+        button.setSize(size, size);
+        button.setInteractive({ useHandCursor: true });
+        button.on('pointerover', () => draw(PALETTE.buttonHover));
+        button.on('pointerout', () => draw(PALETTE.button));
+        button.on('pointerup', onClick);
+        return button;
+    },
+
+    // Gentle "tap me" pulse; returns the tween so it can be stopped.
+    pulse(scene, target, amount = 0.12) {
+        return scene.tweens.add({
+            targets: target,
+            scale: 1 + amount,
+            duration: 450,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Stepped',
+            easeParams: [2]
+        });
+    },
+
     // Fade out and start another scene; ignores repeated calls while leaving.
     fadeTo(scene, key, data = {}) {
         if (scene.leaving) {

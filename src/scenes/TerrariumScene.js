@@ -107,6 +107,12 @@ class TerrariumScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         PixelUI.createButton(this, S(36), height - S(14), 'Wróć', () => this.back(), { width: S(56), height: S(18), fontSize: S(10) });
+
+        // Map to travel to other places, e.g. the hospital.
+        PixelUI.createIconButton(this, S(20), S(20), S(28), (g, size) => Icons.map(g, 0, 0, size), () => {
+            this.registry.set('mapLocation', 'home');
+            PixelUI.fadeTo(this, 'MapScene');
+        });
         this.input.keyboard.on('keydown-ESC', () => this.back());
 
         if (!this.skipIntro) {
