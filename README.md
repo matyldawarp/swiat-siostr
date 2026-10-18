@@ -10,7 +10,7 @@ Potrzebny jest Node.js (bez dodatkowych pakietów).
 npm start
 ```
 
-Następnie otwórz http://localhost:8080. Serwer ([tools/dev-server.mjs](tools/dev-server.mjs)) wyłącza cache, więc przycisk przeładowania w prawym górnym rogu gry zawsze wczytuje najnowsze pliki. `npm run dev` włącza auto-przeładowanie: serwer sam odświeża wszystkie podłączone przeglądarki po każdej zmianie pliku. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
+Następnie otwórz http://localhost:8080. Serwer ([tools/dev-server.mjs](tools/dev-server.mjs)) wyłącza cache, więc przycisk przeładowania w prawym górnym rogu gry zawsze wczytuje najnowsze pliki. `npm run dev` włącza auto-przeładowanie (serwer sam odświeża podłączone przeglądarki po każdej zmianie pliku), ale na co dzień go nie używamy. Na innym urządzeniu w tej samej sieci Wi-Fi (np. iPad) otwórz `http://<IP komputera>:8080`.
 
 ## Instalacja jako aplikacja
 
@@ -18,7 +18,7 @@ Gra ma manifest (`docs/manifest.webmanifest`), service worker (`docs/sw.js`) i i
 
 ## GitHub Pages
 
-GitHub Pages publikuje grę prosto z folderu `docs/` na gałęzi `main`, przy każdym pushu. Na stronę trafia tylko ten folder, w którym są wszystkie pliki gry. Notatki, skany rysunków (`assets/scans/`) i narzędzia (`tools/`) leżą poza nim, więc zostają poza stroną. Muzyka chroniona prawami autorskimi nie jest w repozytorium, więc na stronie jej nie ma, a gra wtedy ukrywa przycisk nutki.
+GitHub Pages publikuje grę prosto z folderu `docs/` na gałęzi `main`, przy każdym pushu. Na stronę trafia tylko ten folder, w którym są wszystkie pliki gry. Notatki, skany rysunków (`assets/scans/`) i narzędzia (`tools/`) leżą poza nim, więc zostają poza stroną. Muzyka z `docs/assets/music/` jest w repozytorium, więc trafia też na stronę. Jeśli żadnego pliku piosenki nie ma, gra ukrywa przycisk nutki.
 
 Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, gałąź **main**, folder **/docs**.
 
