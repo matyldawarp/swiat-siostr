@@ -1,3 +1,13 @@
+import { setRenderScale, RENDER_SCALE } from './ui/pixel.js';
+import { Music } from './audio/music.js';
+import { StartScene } from './scenes/StartScene.js';
+import { CharacterScene } from './scenes/CharacterScene.js';
+import { TerrariumScene } from './scenes/TerrariumScene.js';
+import { MapScene } from './scenes/MapScene.js';
+import { HospitalScene } from './scenes/HospitalScene.js';
+import { KitchenScene } from './scenes/KitchenScene.js';
+import { OverlayScene } from './scenes/OverlayScene.js';
+
 // Reference area in game pixels (long x short side, either orientation). The zoom is the
 // largest integer that fits it, and the game area then grows to fill the window.
 // Larger values mean smaller, finer pixels on screen. 512 keeps an iPad in portrait with
@@ -31,7 +41,7 @@ function fitToWindow(game) {
 
     // Game pixel size in CSS pixels, then in whole device pixels.
     const zoom = Math.max(1, Math.floor(Math.min(long / BASE_LONG, short / BASE_SHORT)));
-    RENDER_SCALE = Math.max(1, Math.round(zoom * dpr));
+    setRenderScale(Math.max(1, Math.round(zoom * dpr)));
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
     const gameW = Math.ceil((w * dpr) / RENDER_SCALE);
@@ -83,6 +93,7 @@ function startGame() {
         resizeTimer = setTimeout(() => fitToWindow(game), 100);
     });
 
+    // For debugging in the console, e.g. game.scene.start('KitchenScene').
     window.game = game;
 }
 

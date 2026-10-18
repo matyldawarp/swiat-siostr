@@ -1,3 +1,7 @@
+import { FONT, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { CHARACTERS, CHARACTER_SLOTS, getCharacter } from '../data/characters.js';
+import { createHamsterTextures } from '../gfx/hamster.js';
+
 const SLOT_COLORS = {
     fill: 0xfff7fb,
     border: 0xd9b8d0,
@@ -7,7 +11,7 @@ const SLOT_COLORS = {
     lockedBorder: 0xd9ccf5
 };
 
-class CharacterScene extends Phaser.Scene {
+export class CharacterScene extends Phaser.Scene {
     constructor() {
         super('CharacterScene');
     }

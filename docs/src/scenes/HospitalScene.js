@@ -1,3 +1,10 @@
+import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { CHARACTERS, getCharacter } from '../data/characters.js';
+import { createHamsterTextures, createHeartTexture, startBlinking } from '../gfx/hamster.js';
+import { ICON_COLORS, Icons } from '../gfx/icons.js';
+import { Illness } from '../ui/illness.js';
+import { playCharacterSound, playDing, playDoorbell, playFanfare, playLullaby, playPat } from '../audio/sfx.js';
+
 const HOSPITAL_COLORS = {
     wall: 0xe4f1ff,
     wainscot: 0xf7d6e4,
@@ -17,7 +24,7 @@ const HOSPITAL_HAMSTER_SCALE = 4;
 // Treatment steps, suggested in this order (the next one pulses) but any order works.
 const TREATMENTS = ['thermometer', 'syrup', 'plaster'];
 
-class HospitalScene extends Phaser.Scene {
+export class HospitalScene extends Phaser.Scene {
     constructor() {
         super('HospitalScene');
     }

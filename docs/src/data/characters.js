@@ -1,7 +1,7 @@
 // The character screen has room for this many characters; unfilled slots show as locked.
-const CHARACTER_SLOTS = 20;
+export const CHARACTER_SLOTS = 20;
 
-const CHARACTERS = [
+export const CHARACTERS = [
     {
         id: 'mordka',
         name: 'Mordka',
@@ -255,7 +255,7 @@ CHARACTERS.push({
 
 // Every character has its own cake: sponge and icing colours and a topping on top.
 // Shown on the "bake a cake" button and baked in the kitchen.
-const CHARACTER_CAKES = {
+export const CHARACTER_CAKES = {
     mordka: { sponge: 0xf6d098, icing: 0xffd6b8, topping: 'seed' },
     mysia: { sponge: 0xf6d098, icing: 0xd9ccf5, topping: 'blueberry' },
     postac1: { sponge: 0xf6d098, icing: 0xc3b3ea, topping: 'star' },
@@ -267,10 +267,10 @@ const CHARACTER_CAKES = {
 };
 const DEFAULT_CAKE = { sponge: 0xf6d098, icing: 0xf7b2cc, topping: 'strawberry' };
 
-function getCake(character) {
+export function getCake(character) {
     return CHARACTER_CAKES[character.id] || DEFAULT_CAKE;
 }
 
-function getCharacter(id) {
+export function getCharacter(id) {
     return CHARACTERS.find((c) => c.id === id) || CHARACTERS[0];
 }

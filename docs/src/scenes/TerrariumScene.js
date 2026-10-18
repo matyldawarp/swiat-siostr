@@ -1,3 +1,10 @@
+import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { getCharacter } from '../data/characters.js';
+import { createHamsterTextures, createHeartTexture, createSeedTexture, startBlinking } from '../gfx/hamster.js';
+import { Icons } from '../gfx/icons.js';
+import { ILLNESS, Illness } from '../ui/illness.js';
+import { playBubble, playCharacterSound, playCrunch, playSnore, playWheelTick } from '../audio/sfx.js';
+
 const TERRARIUM_COLORS = {
     glass: 0xeef8ff,
     glassTop: 0xddeefa,
@@ -44,7 +51,7 @@ const DEPTH = {
     effects: 13
 };
 
-class TerrariumScene extends Phaser.Scene {
+export class TerrariumScene extends Phaser.Scene {
     constructor() {
         super('TerrariumScene');
     }

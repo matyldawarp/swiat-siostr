@@ -1,6 +1,6 @@
 // Shared pastel palette and pixel-art drawing helpers used by every scene.
 
-const PALETTE = {
+export const PALETTE = {
     sky: [0xcfe8ff, 0xd9e6fb, 0xe4e3f7, 0xefe0f2, 0xf8deee, 0xffe1ec],
     sun: 0xfff1c9,
     sunGlow: 0xfff7e0,
@@ -21,7 +21,7 @@ const PALETTE = {
     fade: [255, 244, 248]
 };
 
-const TEXT_COLORS = {
+export const TEXT_COLORS = {
     title: '#8a5c9e',
     titleShadow: '#e3c2e6',
     subtitle: '#a07aa8',
@@ -29,23 +29,38 @@ const TEXT_COLORS = {
     hint: '#5f8f7c'
 };
 
-const FONT = '"Pixelify Sans", monospace';
+export const FONT = '"Pixelify Sans", monospace';
 
 // Layout sizes are written in design units and scaled by S(). The game renders with
 // fine pixels (see main.js), so UI_SCALE keeps text and shapes comfortably large while
 // they still get more pixels of detail. Sprite scales stay whole numbers instead.
-const UI_SCALE = 1.5;
+export const UI_SCALE = 1.5;
 
-function S(n) {
+export function S(n) {
     return Math.round(n * UI_SCALE);
 }
 
 // Device pixels per game pixel, set by fitToWindow() in main.js. The canvas renders at
 // the screen's native resolution and every scene camera zooms by this whole number, so
 // pixel art stays blocky while text can be rasterised at full resolution.
-let RENDER_SCALE = 1;
+// Importers see the current value (ES module live binding); only setRenderScale changes it.
+export let RENDER_SCALE = 1;
 
-const PixelUI = {
+export function setRenderScale(value) {
+    RENDER_SCALE = value;
+}
+
+// Text styles used across scenes; pass the size through S().
+export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}) {
+    return {
+        fontFamily: FONT,
+        fontStyle: bold ? '700' : '',
+        fontSize: `${size}px`,
+        color
+    };
+}
+
+export const PixelUI = {
     // Zooms the scene camera to game pixels and returns the size in game pixels.
     setupView(scene) {
         const camera = scene.cameras.main;

@@ -1,7 +1,11 @@
 // Pixel-art icons drawn straight into a Graphics object, centred on (cx, cy).
 // Sizes are in game pixels; callers pass S()-scaled values.
 
-const ICON_COLORS = {
+import { PALETTE, PixelUI } from '../ui/pixel.js';
+import { SEED_PIXELS, SEED_COLORS } from './hamster.js';
+import { getCake } from '../data/characters.js';
+
+export const ICON_COLORS = {
     mint: 0xbfe8d6,
     mintDark: 0xa6dcc4,
     peach: 0xffe1c4,
@@ -18,7 +22,7 @@ const ICON_COLORS = {
     plasterPad: 0xfff1e0
 };
 
-const Icons = {
+export const Icons = {
     // Fills every pixel whose centre lies inside the polygon, so edges stay on the grid.
     fillPolygon(g, points) {
         const poly = new Phaser.Geom.Polygon(points);
@@ -476,82 +480,11 @@ const Icons = {
         g.fillRect(cx, top - 3, 2, 3);
     },
 
-    // A cake topping centred on (cx, cy): one of the keys used in CHARACTER_CAKES.
+    // A cake topping centred on (cx, cy): one of the keys of CAKE_TOPPINGS.
     topping(g, key, cx, cy, size) {
-        switch (key) {
-            case 'strawberry':
-                Icons.strawberry(g, cx, cy, size);
-                break;
-            case 'seed': {
-                // The sunflower seed hamsters eat in the terrarium.
-                const s = Math.max(1, Math.round(size / 9));
-                const colors = { O: PALETTE.outline, G: 0x8d7f99, W: 0xf3eef8 };
-                SEED_PIXELS.forEach((row, y) => [...row].forEach((ch, x) => {
-                    if (colors[ch] !== undefined) {
-                        g.fillStyle(colors[ch], 1);
-                        g.fillRect(Math.round(cx - 2.5 * s) + x * s, Math.round(cy - 3.5 * s) + y * s, s, s);
-                    }
-                }));
-                break;
-            }
-            case 'blueberry': {
-                const r = Math.max(2, Math.round(size * 0.17));
-                [[-1, 0.5], [1, 0.5], [0, -0.6]].forEach(([fx, fy]) => {
-                    const bx = Math.round(cx + fx * r * 1.1);
-                    const by = Math.round(cy + fy * r * 1.1);
-                    g.fillStyle(PALETTE.outline, 1);
-                    PixelUI.fillCircle(g, bx, by, r + 1);
-                    g.fillStyle(0x9aa8e8, 1);
-                    PixelUI.fillCircle(g, bx, by, r);
-                    g.fillStyle(0xd9e0fa, 1);
-                    g.fillRect(bx - 1, by - 1, 1, 1);
-                });
-                break;
-            }
-            case 'cherry': {
-                const r = Math.max(2, Math.round(size * 0.24));
-                const by = Math.round(cy + r * 0.4);
-                g.fillStyle(0x9fd6b8, 1);
-                for (let i = 0; i < Math.round(size * 0.4); i++) {
-                    g.fillRect(cx + Math.round(i * 0.5), by - r - i, 1, 1);
-                }
-                g.fillStyle(PALETTE.outline, 1);
-                PixelUI.fillCircle(g, cx, by, r + 1);
-                g.fillStyle(0xf28aa5, 1);
-                PixelUI.fillCircle(g, cx, by, r);
-                g.fillStyle(0xffffff, 1);
-                g.fillRect(cx - Math.round(r / 2), by - Math.round(r / 2), 2, 1);
-                break;
-            }
-            case 'star':
-                Icons.star(g, cx, cy, Math.round(size * 0.42));
-                break;
-            case 'heart':
-                Icons.heart(g, cx, cy, Math.round(size * 0.8));
-                break;
-            case 'candle': {
-                const w = Math.max(3, Math.round(size * 0.18));
-                const h = Math.round(size * 0.5);
-                const left = Math.round(cx - w / 2);
-                const top = Math.round(cy - h / 2 + size * 0.12);
-                g.fillStyle(PALETTE.outline, 1);
-                g.fillRect(left - 1, top - 1, w + 2, h + 1);
-                for (let y = 0; y < h; y++) {
-                    g.fillStyle(Math.floor(y / 2) % 2 ? ICON_COLORS.pink : 0xffffff, 1);
-                    g.fillRect(left, top + y, w, 1);
-                }
-                // Flame.
-                g.fillStyle(ICON_COLORS.goldDark, 1);
-                Icons.fillEllipse(g, cx, top - Math.round(size * 0.14), Math.max(1, Math.round(w / 2)), Math.round(size * 0.12));
-                g.fillStyle(0xfff7e0, 1);
-                g.fillRect(cx, top - Math.round(size * 0.14), 1, 2);
-                break;
-            }
-            case 'flower':
-                Icons.flower(g, cx, cy + Math.round(size * 0.1), size);
-                break;
-            default:
-                break;
+        const draw = CAKE_TOPPINGS[key];
+        if (draw) {
+            draw(g, cx, cy, size);
         }
     },
 
@@ -633,5 +566,83 @@ const Icons = {
         PixelUI.fillCircle(g, cx, bottom - trunkH - Math.round(size * 0.3), Math.round(size * 0.36));
         g.fillStyle(ICON_COLORS.mint, 1);
         PixelUI.fillCircle(g, cx - 2, bottom - trunkH - Math.round(size * 0.36), Math.round(size * 0.16));
+    }
+};
+
+// Cake toppings by key, as used in CHARACTER_CAKES (data/characters.js). To add a topping,
+// add a drawing function here; `npm run check` verifies every cake uses a known key.
+export const CAKE_TOPPINGS = {
+    strawberry(g, cx, cy, size) {
+        Icons.strawberry(g, cx, cy, size);
+    },
+
+    // The sunflower seed hamsters eat in the terrarium.
+    seed(g, cx, cy, size) {
+        const s = Math.max(1, Math.round(size / 9));
+        SEED_PIXELS.forEach((row, y) => [...row].forEach((ch, x) => {
+            if (SEED_COLORS[ch] !== undefined) {
+                g.fillStyle(SEED_COLORS[ch], 1);
+                g.fillRect(Math.round(cx - 2.5 * s) + x * s, Math.round(cy - 3.5 * s) + y * s, s, s);
+            }
+        }));
+    },
+
+    blueberry(g, cx, cy, size) {
+        const r = Math.max(2, Math.round(size * 0.17));
+        [[-1, 0.5], [1, 0.5], [0, -0.6]].forEach(([fx, fy]) => {
+            const bx = Math.round(cx + fx * r * 1.1);
+            const by = Math.round(cy + fy * r * 1.1);
+            g.fillStyle(PALETTE.outline, 1);
+            PixelUI.fillCircle(g, bx, by, r + 1);
+            g.fillStyle(0x9aa8e8, 1);
+            PixelUI.fillCircle(g, bx, by, r);
+            g.fillStyle(0xd9e0fa, 1);
+            g.fillRect(bx - 1, by - 1, 1, 1);
+        });
+    },
+
+    cherry(g, cx, cy, size) {
+        const r = Math.max(2, Math.round(size * 0.24));
+        const by = Math.round(cy + r * 0.4);
+        g.fillStyle(0x9fd6b8, 1);
+        for (let i = 0; i < Math.round(size * 0.4); i++) {
+            g.fillRect(cx + Math.round(i * 0.5), by - r - i, 1, 1);
+        }
+        g.fillStyle(PALETTE.outline, 1);
+        PixelUI.fillCircle(g, cx, by, r + 1);
+        g.fillStyle(0xf28aa5, 1);
+        PixelUI.fillCircle(g, cx, by, r);
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(cx - Math.round(r / 2), by - Math.round(r / 2), 2, 1);
+    },
+
+    star(g, cx, cy, size) {
+        Icons.star(g, cx, cy, Math.round(size * 0.42));
+    },
+
+    heart(g, cx, cy, size) {
+        Icons.heart(g, cx, cy, Math.round(size * 0.8));
+    },
+
+    candle(g, cx, cy, size) {
+        const w = Math.max(3, Math.round(size * 0.18));
+        const h = Math.round(size * 0.5);
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2 + size * 0.12);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, top - 1, w + 2, h + 1);
+        for (let y = 0; y < h; y++) {
+            g.fillStyle(Math.floor(y / 2) % 2 ? ICON_COLORS.pink : 0xffffff, 1);
+            g.fillRect(left, top + y, w, 1);
+        }
+        // Flame.
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        Icons.fillEllipse(g, cx, top - Math.round(size * 0.14), Math.max(1, Math.round(w / 2)), Math.round(size * 0.12));
+        g.fillStyle(0xfff7e0, 1);
+        g.fillRect(cx, top - Math.round(size * 0.14), 1, 2);
+    },
+
+    flower(g, cx, cy, size) {
+        Icons.flower(g, cx, cy + Math.round(size * 0.1), size);
     }
 };

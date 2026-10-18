@@ -1,3 +1,10 @@
+import { FONT, PixelUI, S } from '../ui/pixel.js';
+import { getCharacter } from '../data/characters.js';
+import { createHamsterTextures, startBlinking } from '../gfx/hamster.js';
+import { Icons } from '../gfx/icons.js';
+import { Illness } from '../ui/illness.js';
+import { playStep } from '../audio/sfx.js';
+
 const MAP_COLORS = {
     grass: 0xd4f2e4,
     grassLight: 0xe2f7ec,
@@ -13,7 +20,7 @@ const MAP_PLACES = {
     hospital: 'HospitalScene'
 };
 
-class MapScene extends Phaser.Scene {
+export class MapScene extends Phaser.Scene {
     constructor() {
         super('MapScene');
     }

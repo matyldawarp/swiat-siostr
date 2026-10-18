@@ -10,7 +10,7 @@ function getAudio(scene) {
 }
 
 // Short crunch: a burst of band-passed noise, like a seed shell cracking.
-function playCrunch(scene) {
+export function playCrunch(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -42,7 +42,7 @@ function playCrunch(scene) {
 }
 
 // Plays a sequence of soft tones: [{ freq, duration }], each starting after the previous one.
-function playNotes(scene, notes, wave = 'triangle', volume = 0.15) {
+export function playNotes(scene, notes, wave = 'triangle', volume = 0.15) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -67,7 +67,7 @@ function playNotes(scene, notes, wave = 'triangle', volume = 0.15) {
 }
 
 // Soft lullaby while resting in the hospital bed.
-function playLullaby(scene) {
+export function playLullaby(scene) {
     playNotes(scene, [
         { freq: 392, duration: 0.5 },
         { freq: 330, duration: 0.5 },
@@ -80,12 +80,12 @@ function playLullaby(scene) {
 }
 
 // "Ding-dong" when a visitor arrives.
-function playDoorbell(scene) {
+export function playDoorbell(scene) {
     playNotes(scene, [{ freq: 784, duration: 0.35 }, { freq: 622, duration: 0.6 }], 'sine', 0.12);
 }
 
 // Soft "plop" when an ingredient lands in the bowl.
-function playPlop(scene) {
+export function playPlop(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -107,7 +107,7 @@ function playPlop(scene) {
 }
 
 // Swish of the whisk in the batter.
-function playWhisk(scene) {
+export function playWhisk(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -134,7 +134,7 @@ function playWhisk(scene) {
 }
 
 // Little sparkle for a cake decoration.
-function playSparkle(scene) {
+export function playSparkle(scene) {
     playNotes(scene, [
         { freq: 1568, duration: 0.08 },
         { freq: 2093, duration: 0.08 },
@@ -143,12 +143,12 @@ function playSparkle(scene) {
 }
 
 // Thermometer "done" chime.
-function playDing(scene) {
+export function playDing(scene) {
     playNotes(scene, [{ freq: 1319, duration: 0.18 }, { freq: 1760, duration: 0.35 }], 'sine', 0.12);
 }
 
 // Happy rising arpeggio for the sticker.
-function playFanfare(scene) {
+export function playFanfare(scene) {
     playNotes(scene, [
         { freq: 523, duration: 0.14 },
         { freq: 659, duration: 0.14 },
@@ -158,17 +158,17 @@ function playFanfare(scene) {
 }
 
 // Soft pat when the plaster sticks.
-function playPat(scene) {
+export function playPat(scene) {
     playNotes(scene, [{ freq: 330, duration: 0.08 }, { freq: 440, duration: 0.12 }], 'sine', 0.12);
 }
 
 // Short tick for a step on the map.
-function playStep(scene) {
+export function playStep(scene) {
     playNotes(scene, [{ freq: 900 + Math.random() * 200, duration: 0.03 }], 'square', 0.03);
 }
 
 // "A-psik!": a short rising "a" followed by a hissy burst.
-function playSneeze(scene) {
+export function playSneeze(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -209,7 +209,7 @@ function playSneeze(scene) {
 }
 
 // Little rising "blup" of a bath bubble.
-function playBubble(scene) {
+export function playBubble(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -234,7 +234,7 @@ function playBubble(scene) {
 }
 
 // Soft, low breath for each floating "z" while sleeping.
-function playSnore(scene) {
+export function playSnore(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -258,7 +258,7 @@ function playSnore(scene) {
 }
 
 // Quiet click of the spinning wheel.
-function playWheelTick(scene) {
+export function playWheelTick(scene) {
     const audio = getAudio(scene);
     if (!audio) {
         return;
@@ -281,7 +281,7 @@ function playWheelTick(scene) {
 
 // Synthesised character sounds, so the game needs no audio files.
 // Each chirp is a short oscillator sweep described in the character data.
-function playCharacterSound(scene, sound) {
+export function playCharacterSound(scene, sound) {
     const audio = getAudio(scene);
     if (!audio) {
         return;

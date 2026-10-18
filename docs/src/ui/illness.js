@@ -1,7 +1,11 @@
 // The hamster sometimes catches a cold. It never gets worse: it just sneezes and shows a
 // thermometer bubble until the girls take it to the hospital.
 
-const ILLNESS = {
+import { PALETTE, PixelUI, S } from './pixel.js';
+import { Icons } from '../gfx/icons.js';
+import { playSneeze } from '../audio/sfx.js';
+
+export const ILLNESS = {
     // A fresh cold can't start this soon after being healed.
     cooldownMs: 60000,
     // Time spent in the terrarium before a cold may start.
@@ -9,7 +13,7 @@ const ILLNESS = {
     maxDelayMs: 90000
 };
 
-const Illness = {
+export const Illness = {
     isSick(scene) {
         return Boolean(scene.registry.get('sick'));
     },

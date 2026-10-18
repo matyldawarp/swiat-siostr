@@ -1,3 +1,9 @@
+import { PALETTE, PixelUI, S } from '../ui/pixel.js';
+import { getCake, getCharacter } from '../data/characters.js';
+import { createHamsterTextures, createHeartTexture, startBlinking } from '../gfx/hamster.js';
+import { Icons } from '../gfx/icons.js';
+import { playCharacterSound, playCrunch, playDing, playFanfare, playPlop, playSparkle, playStep, playWhisk } from '../audio/sfx.js';
+
 const KITCHEN_COLORS = {
     wall: 0xfff1e6,
     tileA: 0xffffff,
@@ -39,7 +45,7 @@ function cakeDecorations(style) {
 
 // Baking a cake for the chosen character, all by tapping:
 // ingredients -> mix -> bake -> decorate -> serve. The next step pulses, nothing can fail.
-class KitchenScene extends Phaser.Scene {
+export class KitchenScene extends Phaser.Scene {
     constructor() {
         super('KitchenScene');
     }

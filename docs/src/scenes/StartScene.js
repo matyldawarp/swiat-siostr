@@ -1,4 +1,6 @@
-class StartScene extends Phaser.Scene {
+import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+
+export class StartScene extends Phaser.Scene {
     constructor() {
         super('StartScene');
     }

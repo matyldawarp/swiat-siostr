@@ -1,6 +1,11 @@
+import { FONT, PALETTE, PixelUI, S, TEXT_COLORS } from '../ui/pixel.js';
+import { ICON_COLORS, Icons } from '../gfx/icons.js';
+import { Music } from '../audio/music.js';
+import { MUSIC } from '../data/music.js';
+
 // Always-on-top scene with controls that stay visible on every screen.
 // It is last in the scene list, so it renders above the others and gets input first.
-class OverlayScene extends Phaser.Scene {
+export class OverlayScene extends Phaser.Scene {
     constructor() {
         super({ key: 'OverlayScene', active: true });
     }

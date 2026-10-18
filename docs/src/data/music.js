@@ -2,7 +2,7 @@
 // `youtubeUrl` is the original YouTube link each song was downloaded from.
 // a missing file just stays silent. `thumb` is the YouTube thumbnail shrunk to 48x27 so it
 // reads as pixel art; with `color` it tells songs apart for those who can't read.
-const MUSIC = [
+export const MUSIC = [
     {
         file: 'assets/music/descendants-cast-rotten-to-the-core.bin',
         thumb: 'assets/music/descendants-cast-rotten-to-the-core.jpg',

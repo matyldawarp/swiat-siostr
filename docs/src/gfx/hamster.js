@@ -1,3 +1,13 @@
+import { PALETTE } from '../ui/pixel.js';
+
+// Every character sprite is 16x16 pixels, drawn around its centre.
+export const SPRITE_SIZE = 16;
+
+// Distance from a character's centre to its top or bottom edge at the given sprite scale.
+export function spriteHalf(scale) {
+    return (SPRITE_SIZE / 2) * scale;
+}
+
 // 16x16 front-facing hamster. O outline, B body, L belly/muzzle, P pink,
 // E eye, W eye shine, '.' transparent.
 const HAMSTER_PIXELS = [
@@ -32,7 +42,7 @@ const HAMSTER_CHEW_ROWS = {
 };
 
 // Sunflower seed: grey shell with a pale stripe. O outline, G shell, W stripe.
-const SEED_PIXELS = [
+export const SEED_PIXELS = [
     '..O..',
     '.OGO.',
     '.GWG.',
@@ -89,7 +99,7 @@ function outlineMask(rows) {
 }
 
 // Creates `<id>`, `<id>-blink` and `<id>-chew` textures for a character.
-function createHamsterTextures(scene, character) {
+export function createHamsterTextures(scene, character) {
     const colors = {
         O: PALETTE.outline,
         B: character.colors.body,
@@ -117,16 +127,18 @@ function createHamsterTextures(scene, character) {
     paintPixels(scene, `${character.id}-chew`, chewRows, colors);
 }
 
-function createHeartTexture(scene) {
+export function createHeartTexture(scene) {
     paintPixels(scene, 'heart', HEART_PIXELS, { P: PALETTE.heart });
 }
 
-function createSeedTexture(scene) {
-    paintPixels(scene, 'seed', SEED_PIXELS, { O: PALETTE.outline, G: 0x8d7f99, W: 0xf3eef8 });
+export const SEED_COLORS = { O: PALETTE.outline, G: 0x8d7f99, W: 0xf3eef8 };
+
+export function createSeedTexture(scene) {
+    paintPixels(scene, 'seed', SEED_PIXELS, SEED_COLORS);
 }
 
 // Swaps to the blink texture for a moment at random intervals while the image lives.
-function startBlinking(scene, image, character) {
+export function startBlinking(scene, image, character) {
     const blink = () => {
         if (!image.active) {
             return;

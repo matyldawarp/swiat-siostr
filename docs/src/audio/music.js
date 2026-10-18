@@ -10,6 +10,8 @@
 // songs whenever their download finishes. The chosen song is fetched as soon as the game
 // loads, repeats, and the choice (or silence) is remembered per device.
 
+import { MUSIC } from '../data/music.js';
+
 const MUSIC_VOLUME = 0.35;
 const MUSIC_STORAGE_KEY = 'swiat-siostr-music';
 
@@ -36,7 +38,7 @@ function silentWavUrl() {
     return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
 }
 
-const Music = {
+export const Music = {
     audio: null,
     // Index into MUSIC of the chosen song, or -1 for silence.
     current: -1,
@@ -45,7 +47,8 @@ const Music = {
     // Song index -> object URL of the downloaded song, or a pending download.
     urls: {},
     downloads: {},
-    available: [0, 1, 2],
+    // Indexes of songs whose files exist; filled in by checkAvailable().
+    available: [],
     checked: false,
     checkedCallbacks: [],
 

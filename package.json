@@ -1,9 +1,11 @@
 {
   "name": "swiat-siostr",
   "private": true,
+  "type": "module",
   "description": "Świat Sióstr – gra w Phaser 4",
   "scripts": {
     "start": "node tools/dev-server.mjs 8080",
-    "dev": "node tools/dev-server.mjs 8080 --livereload"
+    "dev": "node tools/dev-server.mjs 8080 --livereload",
+    "check": "node tools/check.mjs"
   }
 }
