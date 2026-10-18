@@ -75,6 +75,19 @@ function paintPixels(scene, key, rows, colors) {
     texture.refresh();
 }
 
+// Characters drawn by the girls come as a fill mask: '#' body, 'E' pen detail, 'W' white,
+// 'O' a loose pen line, '.' empty. Body pixels touching empty space become the outline.
+function outlineMask(rows) {
+    const at = (x, y) => (rows[y] && rows[y][x]) || '.';
+    return rows.map((row, y) => [...row].map((ch, x) => {
+        if (ch !== '#') {
+            return ch;
+        }
+        const edge = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].includes('.');
+        return edge ? 'O' : 'B';
+    }).join(''));
+}
+
 // Creates `<id>`, `<id>-blink` and `<id>-chew` textures for a character.
 function createHamsterTextures(scene, character) {
     const colors = {
@@ -85,6 +98,13 @@ function createHamsterTextures(scene, character) {
         E: 0x3d2b3d,
         W: 0xffffff
     };
+
+    // Drawn characters have no separate blink or chew frames.
+    if (character.pixels) {
+        const rows = outlineMask(character.pixels);
+        ['', '-blink', '-chew'].forEach((suffix) => paintPixels(scene, character.id + suffix, rows, colors));
+        return;
+    }
 
     paintPixels(scene, character.id, HAMSTER_PIXELS, colors);
 

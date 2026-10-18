@@ -101,7 +101,7 @@ class TerrariumScene extends Phaser.Scene {
             this.dropSeed(Phaser.Math.Between(minX, maxX), tank.y + S(10));
         }, { width: S(64), height: S(18), fontSize: S(10) });
 
-        PixelUI.addText(this, cx, height - S(14), 'Dotknij chomika albo szyby', {
+        PixelUI.addText(this, cx, height - S(14), 'Dotknij postaci albo szyby', {
             fontFamily: FONT,
             fontSize: `${S(8)}px`,
             color: TEXT_COLORS.hint
