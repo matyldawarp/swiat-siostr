@@ -1,10 +1,10 @@
 # Music stays only on this computer: the tracks are copyrighted (private use, not for
-# GitHub), and so are their YouTube thumbnails. Add "!assets/music/<file>" lines for a
-# freely licensed track.
-assets/music/*.mp3
-assets/music/*.m_p_3
-assets/music/*.bin
-assets/music/*.jpg
+# GitHub), and so are their YouTube thumbnails. Add "!public/assets/music/<file>" lines
+# for a freely licensed track.
+public/assets/music/*.mp3
+public/assets/music/*.m_p_3
+public/assets/music/*.bin
+public/assets/music/*.jpg
 
 # Logs
 logs

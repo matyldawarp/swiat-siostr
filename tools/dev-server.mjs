@@ -1,9 +1,9 @@
 // Static dev server with optional live reload.
 //
-// Serves the project root without caching, on all network interfaces so the game can be
-// played from an iPad on the same Wi-Fi. With --livereload it also injects a small
-// EventSource client into index.html and tells every connected browser to reload when a
-// file in the project changes.
+// Serves the game in public/ (the same files GitHub Pages publishes) without caching, on
+// all network interfaces so the game can be played from an iPad on the same Wi-Fi. With
+// --livereload it also injects a small EventSource client into index.html and tells every
+// connected browser to reload when a game file changes.
 //
 // Usage: node tools/dev-server.mjs [port] [--livereload]
 
@@ -13,7 +13,7 @@ import { watch } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const ROOT = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const args = process.argv.slice(2);
 const PORT = Number(args.find((a) => !a.startsWith('--')) || 8080);
 const LIVE_RELOAD = args.includes('--livereload');

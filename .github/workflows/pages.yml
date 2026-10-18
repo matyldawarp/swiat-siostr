@@ -1,7 +1,7 @@
 # Publishes the game to GitHub Pages on every push to main.
-# Only the files the game needs are copied into the site (an allowlist), so notes like
-# CLAUDE.md and README, the scanned drawings in assets/scans and the dev tools stay off
-# the public website.
+# Only the public/ folder is published: it holds everything the game needs, while notes
+# like CLAUDE.md and README, the scanned drawings in assets/scans and the dev tools live
+# outside it and stay off the public website.
 
 name: GitHub Pages
 
@@ -25,22 +25,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Collect game files
-        run: |
-          mkdir -p _site/assets
-          cp index.html style.css manifest.webmanifest sw.js .nojekyll _site/
-          cp -r src _site/
-          cp -r assets/icons _site/assets/
-          # Only songs committed to git (freely licensed ones) end up here; the game
-          # hides the note button when there are none.
-          if [ -d assets/music ]; then cp -r assets/music _site/assets/; fi
-          find _site -type f | sort
+      - name: List published files
+        run: find public -type f | sort
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: public
 
   deploy:
     needs: build
