@@ -30,6 +30,9 @@ export const TEXT_COLORS = {
 };
 
 export const FONT = '"Handjet", monospace';
+// Handjet is much narrower than most fonts at the same size, so every FONT text is drawn
+// this much larger than its fontSize asks for (applied in PixelUI.addText).
+export const FONT_SCALE = 1.25;
 
 // Layout sizes are written in design units and scaled by S(). The game renders with
 // fine pixels (see main.js), so UI_SCALE keeps text and shapes comfortably large while
@@ -119,9 +122,14 @@ export const PixelUI = {
         };
     },
 
-    // Text rasterised at device resolution so glyph edges stay sharp when zoomed.
+    // Text rasterised at device resolution so glyph edges stay sharp when zoomed. Text in
+    // FONT gets FONT_SCALE times its fontSize.
     addText(scene, x, y, text, style) {
-        return scene.add.text(x, y, text, { ...style, resolution: RENDER_SCALE });
+        const sized = { ...style };
+        if (style.fontFamily === FONT && style.fontSize) {
+            sized.fontSize = `${Math.round(parseFloat(style.fontSize) * FONT_SCALE)}px`;
+        }
+        return scene.add.text(x, y, text, { ...sized, resolution: RENDER_SCALE });
     },
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
