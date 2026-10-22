@@ -13,6 +13,7 @@ Kod to moduły ES bez kroku budowania: `index.html` ładuje tylko `src/main.js`,
 - `ui/pixel.js` – paleta (`PALETTE`, `TEXT_COLORS`), `S()`, `textStyle()`, `STAGE`, `fitScale`, `PixelUI` (tekst, przyciski, ramki, kółka, podskok `hop`, `pulse`, przejścia).
 - `ui/effects.js` – `floatHeart` (nagroda po stuknięciu), `floatZ` (sen), `floatAway`, `walkBob` (podskakiwanie w marszu), `addPersonalityBadge`.
 - `ui/settings.js` – ustawienia z okna Ustawień, zapamiętane w `localStorage`. Tryb debug pokazuje w lewym dolnym rogu rozmiar okna, gry i ekranu. Przydaje się, gdy scena nie pasuje do jakiegoś urządzenia.
+- Limit czasu gry (`PlayTime` w `ui/settings.js`): rodzic wybiera w Ustawieniach 5–30 minut albo „Wył.”. Koniec jest zapisany jako godzina, więc przeładowanie go nie kasuje. Po czasie `OverlayScene` zakrywa grę komunikatem „KONIEC GRY. Minął czas i musisz już wyłączyć ekran” i wstrzymuje inne sceny. Zostaje tylko zębatka, a w Ustawieniach widać też, ile czasu zostało.
 - `ui/illness.js` – przeziębienie chomika (stan w `registry`, dymek, kichanie).
 - `ui/sweets.js` – licznik słodyczy zjedzonych od ostatniej wizyty u dentysty.
 - `gfx/hamster.js` – sprite'y postaci z tablic pikseli (`createHamsterTextures`), `addCharacter` (postać na scenie: kontener do ruchu i obrazek do stukania, z mruganiem), `CHARACTER_SCALE`, `spriteHalf()`.
