@@ -111,7 +111,8 @@ function startGame() {
     window.game = game;
 }
 
-// Text objects use canvas fillText, so web fonts must be ready before the game boots.
-document.fonts.load('16px "Pixelify Sans"', 'Świat Sióstr')
+// Text objects use canvas fillText, so web fonts must be ready before the game boots:
+// both weights the game uses (FONT in ui/pixel.js), with Polish letters.
+Promise.all(['400', '700'].map((weight) => document.fonts.load(`${weight} 16px "Handjet"`, 'Świat Sióstr ąęłńóśźż')))
     .catch(() => {})
     .finally(startGame);

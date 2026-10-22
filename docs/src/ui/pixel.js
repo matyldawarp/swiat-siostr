@@ -29,7 +29,7 @@ export const TEXT_COLORS = {
     hint: '#5f8f7c'
 };
 
-export const FONT = '"Pixelify Sans", monospace';
+export const FONT = '"Handjet", monospace';
 
 // Layout sizes are written in design units and scaled by S(). The game renders with
 // fine pixels (see main.js), so UI_SCALE keeps text and shapes comfortably large while
