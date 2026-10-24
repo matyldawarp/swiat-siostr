@@ -8,7 +8,7 @@ export const COLORING_PAGES = [
     {
         id: 'strus-pedziwiatr',
         title: 'Struś pędziwiatr',
-        blank: [[220, 20, 500, 90], [550, 910, 170, 20]]
+        blank: [[232, 30, 488, 68],[550, 910, 170, 20]]
     },
     {
         id: 'looney-tunes',
