@@ -29,7 +29,7 @@ const MAP_PLACES = {
     hospital: {
         scene: 'HospitalScene',
         at: [0.8, 0.36],
-        bends: [[0.42, 0.82], [0.58, 0.36]],
+        bends: [[0.45, 0.8], [0.66, 0.62]],
         draw: (g, x, y) => Icons.hospital(g, x, y, S(64), S(54)),
         trees: [[48, -4], [-46, 2]]
     },
@@ -46,6 +46,13 @@ const MAP_PLACES = {
         bends: [[0.1, 0.56], [0.2, 0.42]],
         draw: (g, x, y) => Icons.dentist(g, x, y, S(56), S(52)),
         trees: [[44, -2]]
+    },
+    studio: {
+        scene: 'ColoringScene',
+        at: [0.56, 0.3],
+        bends: [[0.3, 0.6], [0.45, 0.45]],
+        draw: (g, x, y) => Icons.studio(g, x, y, S(60), S(50)),
+        trees: [[46, 0]]
     }
 };
 

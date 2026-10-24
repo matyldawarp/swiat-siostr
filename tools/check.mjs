@@ -222,6 +222,25 @@ if (bakeryModule && iconsModule) {
     });
 }
 
+const coloringModule = loaded['docs/src/data/coloring.js'];
+if (coloringModule) {
+    const coloringFile = join(SRC, 'data', 'coloring.js');
+    const ids = new Set();
+    coloringModule.COLORING_PAGES.forEach((page, i) => {
+        const where = `COLORING_PAGES[${i}] (${page.id || '?'})`;
+        if (!/^[a-z0-9-]+$/.test(page.id || '') || ids.has(page.id)) {
+            fail(coloringFile, `${where}: id must be unique, lowercase letters, digits and dashes`);
+        }
+        ids.add(page.id);
+        if (!page.title) {
+            fail(coloringFile, `${where}: missing title`);
+        }
+        if (!page.image || !existsSync(join(DOCS, page.image))) {
+            fail(coloringFile, `${where}: image ${page.image} does not exist (make it with tools/make-coloring.mjs)`);
+        }
+    });
+}
+
 const personalitiesModule = loaded['docs/src/data/personalities.js'];
 const personalitiesFile = join(SRC, 'data', 'personalities.js');
 if (personalitiesModule) {

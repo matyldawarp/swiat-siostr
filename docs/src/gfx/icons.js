@@ -867,6 +867,102 @@ export const Icons = {
         g.fillRect(Math.round(cx - doorW / 2), bottom - doorH, doorW, doorH);
     },
 
+    // --- Art studio ----------------------------------------------------------------
+
+    // Curved arrow turning back to the left: "undo".
+    undo(g, cx, cy, size, color = PALETTE.buttonBorder) {
+        const r = Math.round(size * 0.32);
+        const t = Math.max(2, Math.round(size / 8));
+        g.fillStyle(color, 1);
+        // Upper half ring from the right end over the top to the left.
+        for (let dy = -r - 1; dy <= 1; dy++) {
+            for (let dx = -r - 1; dx <= r + 1; dx++) {
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d <= r + 0.5 && d >= r + 0.5 - t && !(dx < 0 && dy > -t)) {
+                    g.fillRect(cx + dx, cy + Math.round(size * 0.1) + dy, 1, 1);
+                }
+            }
+        }
+        // Arrowhead at the left end, pointing down.
+        const ax = cx - r + Math.round(t / 2);
+        const ay = cy + Math.round(size * 0.1) - t + 1;
+        const half = t + 2;
+        for (let k = 0; k <= half; k++) {
+            g.fillRect(ax - (half - k), ay + k, (half - k) * 2 + 1, 1);
+        }
+    },
+
+    // Painter's palette with blobs of paint.
+    palette(g, cx, cy, size) {
+        const rx = Math.round(size * 0.46);
+        const ry = Math.round(size * 0.36);
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillEllipse(g, cx, cy, rx + 1, ry + 1);
+        g.fillStyle(0xf3dcc4, 1);
+        Icons.fillEllipse(g, cx, cy, rx, ry);
+        // Thumb hole.
+        g.fillStyle(PALETTE.outline, 1);
+        PixelUI.fillCircle(g, Math.round(cx + rx * 0.45), Math.round(cy + ry * 0.35), Math.max(2, Math.round(size * 0.08)) + 1);
+        g.fillStyle(ICON_COLORS.cream, 1);
+        PixelUI.fillCircle(g, Math.round(cx + rx * 0.45), Math.round(cy + ry * 0.35), Math.max(2, Math.round(size * 0.08)));
+        const blob = Math.max(2, Math.round(size * 0.09));
+        [[-0.5, -0.1, 0xf28aa5], [-0.18, -0.45, 0xfff09a], [0.22, -0.4, 0x9fd0f5], [-0.35, 0.4, 0x7fcf9a], [0.5, -0.05, 0xc3b3ea]]
+            .forEach(([fx, fy, color]) => {
+                g.fillStyle(color, 1);
+                PixelUI.fillCircle(g, Math.round(cx + fx * rx), Math.round(cy + fy * ry), blob);
+            });
+    },
+
+    // Art studio for the map: rainbow awning and a palette on the sign; (cx, bottom) is the
+    // middle of its base.
+    studio(g, cx, bottom, w, h) {
+        const left = Math.round(cx - w / 2);
+        const top = bottom - h;
+        const roofH = Math.round(h * 0.14);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, top - 1, w + 2, h + 1);
+        g.fillStyle(ICON_COLORS.cream, 1);
+        g.fillRect(left, top, w, h);
+        g.fillStyle(ICON_COLORS.lavender, 1);
+        g.fillRect(left, top, w, roofH);
+
+        // Rainbow-striped awning.
+        const awnTop = top + roofH;
+        const awnH = Math.round(h * 0.14);
+        const colors = [0xf28aa5, 0xffc08a, 0xfff09a, 0x7fcf9a, 0x9fd0f5, 0xc3b3ea];
+        const stripe = Math.max(2, Math.round(w / colors.length));
+        for (let x = 0; x < w; x++) {
+            g.fillStyle(colors[Math.floor(x / stripe) % colors.length], 1);
+            g.fillRect(left + x, awnTop, 1, awnH);
+        }
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, awnTop + awnH, w + 2, 1);
+
+        // Big window with an easel, and the door.
+        const winY = awnTop + awnH + 4;
+        const winW = Math.round(w * 0.46);
+        const winH = bottom - winY - 3;
+        PixelUI.drawBox(g, left + 3, winY, winW, winH, ICON_COLORS.sky, PALETTE.outline);
+        const ex = left + 3 + Math.round(winW / 2);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(ex - Math.round(winW * 0.22), winY + 4, Math.round(winW * 0.44), Math.round(winH * 0.5));
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(ex - Math.round(winW * 0.22) + 1, winY + 5, Math.round(winW * 0.44) - 2, Math.round(winH * 0.5) - 2);
+        g.fillStyle(0xf28aa5, 1);
+        PixelUI.fillCircle(g, ex - 2, winY + Math.round(winH * 0.25), 2);
+        g.fillStyle(0x9fd0f5, 1);
+        PixelUI.fillCircle(g, ex + 3, winY + Math.round(winH * 0.3), 2);
+        const doorW = Math.round(w * 0.24);
+        const doorX = left + w - doorW - 4;
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(doorX - 1, winY - 1, doorW + 2, bottom - winY + 1);
+        g.fillStyle(ICON_COLORS.pink, 1);
+        g.fillRect(doorX, winY, doorW, bottom - winY);
+
+        // Palette sign on the roof.
+        Icons.palette(g, cx, top - Math.round(h * 0.08), Math.round(w * 0.42));
+    },
+
     // Tiny tree for map decoration.
     tree(g, cx, bottom, size) {
         const trunkH = Math.round(size * 0.3);

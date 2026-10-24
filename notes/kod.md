@@ -7,6 +7,7 @@ Kod to moduły ES bez kroku budowania: `index.html` ładuje tylko `src/main.js`,
 - `scenes/*Scene.js` – ekrany: start, wybór postaci, terrarium, mapa, szpital, kuchnia, cukiernia, dentysta i overlay (przyciski ustawień, muzyki i przeładowania). Przejście między scenami: `PixelUI.fadeTo(this, 'NazwaScene')`.
   - `BakeryScene` – dekorowanie babeczek i wystawa zapamiętana w `localStorage`.
   - `DentistScene` – lusterko, szczotkowanie palcem okruszków słodyczy, płukanie i naklejka. Okruszków jest tym więcej, im więcej słodyczy zjedzono (licznik w `ui/sweets.js`).
+  - `ColoringScene` – pracownia z kolorowankami: półka z kartami stron, potem kolorowanie jak w „Painting Books” (farby i wzory w panelu po prawej, stuknięcie wlewa farbę w pole, cofanie, kolory zapamiętane w `localStorage`). Strony są w `data/coloring.js`, a podział na pola, farby i zapis w `gfx/coloring.js`. Nową stronę robi `tools/make-coloring.mjs` ze źródła w `assets/coloring-src/`.
   - `MapScene` – miejsca na mapie i drogi do nich opisuje `MAP_PLACES`. Wszystkie drogi zaczynają się w domu.
   - `OverlayScene` – zębatka Ustawień tylko na ekranach z `SETTINGS_SCENES` (start, wybór postaci).
 - `scenes/terrarium/` – części terrarium: `tank.js` rysuje akwarium, `Wheel.js`, `Bath.js` i `House.js` to aktywności chomika, a `Poops.js` to kupki do sprzątania palcem. Cykl aktywności i sposób dodania nowej opisuje `Activity.js`.
