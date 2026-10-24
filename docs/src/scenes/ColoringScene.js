@@ -1,7 +1,7 @@
 import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { COLORING_PAGES, coloringImage, coloringOriginal, getColoringPage } from '../data/coloring.js';
-import { PAINTS, PaintLayer, areaAt, makeLineArt, pageAreas, paintColor, preparePrint } from '../gfx/coloring.js';
+import { PAINTS, PaintLayer, areaAt, makeLineArt, pageAreas, paintColor, preparePrint, printBlankPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
@@ -211,7 +211,7 @@ export class ColoringScene extends BaseScene {
             this.createToolButton('brush', toolsX, toolY + button + S(8), button, Icons.brush)
         ];
         this.refreshTools();
-        preparePrint(this, originalTexture(this.page), this.page.make?.blank);
+        preparePrint(this, originalTexture(this.page), this.page.make?.blank, this.page.id);
         this.printButton = PixelUI.createIconButton(this, toolsX, height - S(6) - button / 2, button,
             (gfx, size) => Icons.printer(gfx, 0, 0, size), () => this.print());
         this.printButton.baseY = this.printButton.y;
@@ -329,9 +329,9 @@ export class ColoringScene extends BaseScene {
 
     // The blank page on paper, to color with crayons (prepared in buildPage).
     print() {
+        printBlankPage();
         playSparkle(this);
         PixelUI.hop(this, this.printButton, this.printButton.baseY, S(3), { duration: 80 });
-        window.print();
     }
 
     // --- Tools --------------------------------------------------------------------------

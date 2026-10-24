@@ -232,12 +232,15 @@ export function makeLineArt(scene, page, originalKey, blank = []) {
 
 // --- Printing -------------------------------------------------------------------------
 
+// The blank page as a PNG file, for the share sheet (see printBlankPage).
+let printFile = null;
+
 // Gets the blank page ready to print on paper: the original picture as drawn (with the
 // `make.blank` boxes whited out), as large as the sheet allows. The game hides itself for
 // printing (print stylesheet below), so only the picture is on the sheet. Done when the
-// page opens, so the print button can call window.print() straight from the tap: iPad
-// Safari ignores it later on.
-export function preparePrint(scene, originalKey, blank = []) {
+// page opens, so the print button can print straight from the tap: iPad ignores print
+// and share calls made later on.
+export function preparePrint(scene, originalKey, blank = [], name = 'kolorowanka') {
     const img = scene.textures.get(originalKey).getSourceImage();
     const canvas = document.createElement('canvas');
     canvas.width = img.width;
@@ -267,6 +270,26 @@ export function preparePrint(scene, originalKey, blank = []) {
             #print-sheet img { display: block; width: 100%; height: 100%; object-fit: contain; }
         }`;
     sheet.querySelector('img').src = canvas.toDataURL('image/png');
+    printFile = null;
+    canvas.toBlob((blob) => {
+        printFile = blob ? new File([blob], `${name}.png`, { type: 'image/png' }) : null;
+    }, 'image/png');
+}
+
+// Prints the page prepared by preparePrint; call it straight from a tap. A game started
+// from the iPad's home screen can't open the print window (window.print does nothing
+// there), so it opens the share sheet with the picture instead, which has "Print" and
+// fits the picture to the sheet. In a browser the print window opens.
+export function printBlankPage() {
+    const standalone = navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    const files = printFile ? [printFile] : null;
+    if (standalone && files && navigator.canShare && navigator.canShare({ files })) {
+        navigator.share({ files }).catch(() => {
+            // Closed without printing: nothing to do.
+        });
+        return;
+    }
+    window.print();
 }
 
 // Colors are not kept between visits: every page starts blank when it is opened.
