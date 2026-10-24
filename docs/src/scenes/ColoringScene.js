@@ -1,6 +1,6 @@
 import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
-import { COLORING_PAGES, coloringOriginal, getColoringPage } from '../data/coloring.js';
+import { COLORING_PAGES, coloringImage, getColoringPage } from '../data/coloring.js';
 import { PAINTS, PaintLayer, areaAt, areaBox, coloringInfo, makeLineArt, paintColor, preparePrint, printBlankPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
@@ -22,10 +22,10 @@ const STEPS_KEY = 'coloringSteps';
 // A brush stroke gets a heart at the end once it is this long (page pixels).
 const LONG_STROKE = 80;
 
-// The original picture: its lines are shown, and its areas are found when tapped.
-const originalTexture = (page) => `coloring-original-${page.id}`;
-const lineArt = (scene, page) => makeLineArt(scene, page, originalTexture(page), page.blank);
-const areasOf = (scene, page) => coloringInfo(scene, page, originalTexture(page));
+// The page's picture: its lines are shown, and its areas are found when tapped.
+const pictureTexture = (page) => `coloring-picture-${page.id}`;
+const lineArt = (scene, page) => makeLineArt(scene, page, pictureTexture(page));
+const areasOf = (scene, page) => coloringInfo(scene, page, pictureTexture(page));
 
 // The art studio. First a shelf with a card per coloring page; tapping one opens it.
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
@@ -41,8 +41,8 @@ export class ColoringScene extends BaseScene {
 
     preload() {
         COLORING_PAGES.forEach((page) => {
-            if (!this.textures.exists(originalTexture(page))) {
-                this.load.image(originalTexture(page), coloringOriginal(page));
+            if (!this.textures.exists(pictureTexture(page))) {
+                this.load.image(pictureTexture(page), coloringImage(page));
             }
         });
     }
@@ -196,7 +196,7 @@ export class ColoringScene extends BaseScene {
         this.input.on('pointermove', (pointer) => this.moveStroke(pointer, pointer.worldX - px, pointer.worldY - py));
         this.input.on('pointerup', (pointer) => this.endStroke(pointer));
         this.input.on('pointerupoutside', (pointer) => this.endStroke(pointer));
-        // The original drawing's lines over the paint, smoothly scaled to the page.
+        // The picture's lines over the paint, smoothly scaled to the page.
         this.add.image(px, py, lineArt(this, this.page)).setOrigin(0).setDisplaySize(info.width, info.height);
 
         // Below the music and reload buttons in the top-right corner (OverlayScene).
@@ -210,7 +210,7 @@ export class ColoringScene extends BaseScene {
             this.createToolButton('brush', toolsX, toolY + button + S(8), button, Icons.brush)
         ];
         this.refreshTools();
-        preparePrint(this, originalTexture(this.page), this.page.blank, this.page.id);
+        preparePrint(this, pictureTexture(this.page), this.page.id);
         this.printButton = PixelUI.createIconButton(this, toolsX, height - S(6) - button / 2, button,
             (gfx, size) => Icons.printer(gfx, 0, 0, size), () => this.print());
         this.printButton.baseY = this.printButton.y;

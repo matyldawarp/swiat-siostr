@@ -1,8 +1,8 @@
 // Coloring pages: paints, the areas of a page, the paint layer they are filled on, and the
-// original drawing's lines shown over it.
+// picture's lines shown over it.
 //
-// What you see is the original picture's lines (makeLineArt) over a layer of paint. An
-// area is found in the blank original when a finger taps it (gfx/coloringAreas.js), and
+// What you see is the page picture's lines (makeLineArt) over a layer of paint. An area
+// is found in the uncolored picture when a finger taps it (gfx/coloringAreas.js), and
 // its paint reaches a little under the lines around it.
 
 import { PALETTE } from '../ui/pixel.js';
@@ -54,13 +54,13 @@ const PAGE_HEIGHT = 380;
 const pages = new Map();
 
 // A page ready to color, kept per page while the game runs (so areas found once stay):
-// { width, height } on screen in page pixels, the areas finder over the blank original
+// { width, height } on screen in page pixels, the areas finder over the uncolored picture
 // (gfx/coloringAreas.js; its pixels are `sx` per page pixel) and masks of found areas.
-export function coloringInfo(scene, page, originalKey) {
+export function coloringInfo(scene, page, pictureKey) {
     if (pages.has(page.id)) {
         return pages.get(page.id);
     }
-    const img = scene.textures.get(originalKey).getSourceImage();
+    const img = scene.textures.get(pictureKey).getSourceImage();
     const canvas = document.createElement('canvas');
     canvas.width = img.width;
     canvas.height = img.height;
@@ -68,7 +68,6 @@ export function coloringInfo(scene, page, originalKey) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, img.width, img.height);
     ctx.drawImage(img, 0, 0);
-    (page.blank || []).forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
     const rgba = ctx.getImageData(0, 0, img.width, img.height).data;
     const gray = new Uint8Array(img.width * img.height);
     for (let i = 0; i < gray.length; i++) {
@@ -296,21 +295,18 @@ export class PaintLayer {
 
 // --- Lines ----------------------------------------------------------------------------
 
-// The original drawing's lines as a texture to lay over the paint: full resolution, the
-// page's `make.blank` boxes (printed title, website address) whited out, lines in the
+// The picture's lines as a texture to lay over the paint: full resolution, lines in the
 // outline color with soft edges and the paper transparent. Smooth scaling keeps them as
 // drawn when shown at the page's size. Returns the texture key.
-export function makeLineArt(scene, page, originalKey, blank = []) {
+export function makeLineArt(scene, page, pictureKey) {
     const key = `coloring-lines-${page.id}`;
     if (scene.textures.exists(key)) {
         return key;
     }
-    const img = scene.textures.get(originalKey).getSourceImage();
+    const img = scene.textures.get(pictureKey).getSourceImage();
     const texture = scene.textures.createCanvas(key, img.width, img.height);
     const ctx = texture.getContext();
     ctx.drawImage(img, 0, 0);
-    ctx.fillStyle = '#ffffff';
-    blank.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
 
     const data = ctx.getImageData(0, 0, img.width, img.height);
     const px = data.data;
@@ -335,13 +331,12 @@ export function makeLineArt(scene, page, originalKey, blank = []) {
 // The blank page as a PNG file, for the share sheet (see printBlankPage).
 let printFile = null;
 
-// Gets the blank page ready to print on paper: the original picture as drawn (with the
-// `make.blank` boxes whited out), as large as the sheet allows. The game hides itself for
-// printing (print stylesheet below), so only the picture is on the sheet. Done when the
-// page opens, so the print button can print straight from the tap: iPad ignores print
-// and share calls made later on.
-export function preparePrint(scene, originalKey, blank = [], name = 'kolorowanka') {
-    const img = scene.textures.get(originalKey).getSourceImage();
+// Gets the blank page ready to print on paper: the uncolored picture as drawn, as large as
+// the sheet allows. The game hides itself for printing (print stylesheet below), so only
+// the picture is on the sheet. Done when the page opens, so the print button can print
+// straight from the tap: iPad ignores print and share calls made later on.
+export function preparePrint(scene, pictureKey, name = 'kolorowanka') {
+    const img = scene.textures.get(pictureKey).getSourceImage();
     const canvas = document.createElement('canvas');
     canvas.width = img.width;
     canvas.height = img.height;
@@ -349,7 +344,6 @@ export function preparePrint(scene, originalKey, blank = [], name = 'kolorowanka
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, img.width, img.height);
     ctx.drawImage(img, 0, 0);
-    blank.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
 
     let sheet = document.getElementById('print-sheet');
     if (!sheet) {

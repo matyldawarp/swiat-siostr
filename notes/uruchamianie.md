@@ -6,7 +6,7 @@ Gra w Phaser 4 (ładowany z CDN, bez kroku budowania). Uruchamiana przez `npm st
 
 Auto-przeładowanie (`npm run dev`, flaga `--livereload`) jest na razie wyłączone na życzenie użytkownika. Zamiast niego w prawym górnym rogu na każdym ekranie jest pikselowy przycisk przeładowania (`OverlayScene`, musi zostać ostatnia na liście scen).
 
-Wszystkie pliki gry leżą w `docs/`. To jest dokładnie to, co serwuje `dev-server.mjs` i co publikuje GitHub Pages (tryb „Deploy from a branch”: gałąź `main`, folder `/docs`, bez dodatkowego workflow). Notatki (CLAUDE.md, README, `notes/`), skany rysunków (`assets/scans/`), narzędzia (`tools/`) i konfiguracja zostają poza `docs/`, żeby nie trafiły na publiczną stronę.
+Wszystkie pliki gry leżą w `docs/`. To jest dokładnie to, co serwuje `dev-server.mjs` i co publikuje GitHub Pages (tryb „Deploy from a branch”: gałąź `main`, folder `/docs`, bez dodatkowego workflow). Notatki (CLAUDE.md, README, `notes/`), skany rysunków (`assets/scans/`), oryginały kolorowanek (`assets/coloring/`), narzędzia (`tools/`) i konfiguracja zostają poza `docs/`, żeby nie trafiły na publiczną stronę.
 
 ## Sprawdzanie zmian
 

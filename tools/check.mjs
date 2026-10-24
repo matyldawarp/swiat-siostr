@@ -235,9 +235,12 @@ if (coloringModule) {
         if (!page.title) {
             fail(coloringFile, `${where}: missing title`);
         }
-        const original = coloringModule.coloringOriginal(page);
-        if (!existsSync(join(DOCS, original))) {
-            fail(coloringFile, `${where}: the original ${original} does not exist`);
+        const picture = coloringModule.coloringImage(page);
+        if (!existsSync(join(DOCS, picture))) {
+            fail(coloringFile, `${where}: ${picture} does not exist (run node tools/clean-coloring.mjs)`);
+        }
+        if (!existsSync(join(ROOT, 'assets', 'coloring', `${page.id}.png`))) {
+            fail(coloringFile, `${where}: the original assets/coloring/${page.id}.png does not exist`);
         }
     });
 }

@@ -1,5 +1,5 @@
 // Finds the area of a coloring page to paint, at the moment a finger taps it, from the
-// blank original: no prepared areas. Plain arrays only (no canvas), so it runs anywhere.
+// uncolored picture: no prepared areas. Plain arrays only (no canvas), so it runs anywhere.
 //
 // Lines are the dark pixels; the page edge counts as a line too. An area is a space
 // enclosed by lines for at least MIN_ENCLOSED of its border: the rest may be small gaps
