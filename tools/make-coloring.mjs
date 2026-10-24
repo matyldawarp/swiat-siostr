@@ -1,28 +1,32 @@
-// Makes the pictures the game colors in from the original coloring pages.
+// Makes the areas the game colors from the original coloring pages.
 //
 //   node tools/make-coloring.mjs            remake every page
 //   node tools/make-coloring.mjs <id>       remake one page
 //
 // For each page in docs/src/data/coloring.js, the original docs/assets/coloring/<id>.png
-// (the picture exactly as given) becomes docs/assets/coloring/<id>.coloring.png beside it:
+// (the picture exactly as given) becomes docs/assets/coloring/<id>.coloring.svg beside it:
+// one <path> per area paint fills, no lines (the game shows the original's lines on top).
+// Each area has a pastel fill so the file can be looked at in a browser; the game ignores
+// it. On the way:
 //  - `make.blank` boxes (x, y, w, h in the original's pixels) are painted white first, to
 //    hide things like a printed title or a website address;
-//  - lines get THICKEN pixels fatter on each side, the same for every page, so after
-//    shrinking they stay unbroken (the game then thins them all to the same width);
-//  - the picture shrinks to HEIGHT game pixels, the page area of the coloring screen, so
-//    its lines become pixel-art lines.
+//  - lines get THICKEN pixels fatter so they stay unbroken when the picture shrinks to
+//    HEIGHT pixels, the size of the page on the coloring screen and of the SVG's units;
+//  - tools/coloring-areas.mjs splits it into areas (closing small gaps in the lines).
 // To add a page: save the original as docs/assets/coloring/<id>.png, add it to
 // COLORING_PAGES, run this, and look at the result in the game. Needs ffmpeg on the PATH.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { areaPath, findAreas } from './coloring-areas.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DOCS = join(ROOT, 'docs');
 const HEIGHT = 380;
 const THICKEN = 1;
+const PREVIEW_COLORS = ['#f7b2cc', '#d9ccf5', '#bfe8d6', '#fff1c9', '#cfe8ff', '#ffe1c4', '#c3b3ea', '#a6dcc4'];
 
 const { COLORING_PAGES, coloringImage, coloringOriginal } = await import(pathToFileURL(join(DOCS, 'src', 'data', 'coloring.js')).href);
 
@@ -48,17 +52,35 @@ for (const page of pages) {
     for (let i = 0; i < THICKEN; i++) {
         filters.push('erosion');
     }
-    // Area averaging keeps thin lines as gray pixels instead of dropping them; the game
-    // counts anything darker than its threshold as line.
+    // Area averaging keeps thin lines as gray pixels instead of dropping them.
     filters.push(`scale=-2:${HEIGHT}:flags=area`);
 
-    const out = join(DOCS, coloringImage(page));
-    const result = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', source, '-vf', filters.join(','), '-frames:v', '1', out], { encoding: 'utf8' });
+    // One gray byte per pixel, straight from ffmpeg.
+    const result = spawnSync('ffmpeg', ['-loglevel', 'error', '-i', source, '-vf', filters.join(','),
+        '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'gray', '-'], { maxBuffer: 64 * 1024 * 1024 });
     if (result.error || result.status !== 0) {
         console.error(`${page.id}: ${result.error ? `ffmpeg could not start: ${result.error.message}` : result.stderr}`);
         failed = true;
         continue;
     }
-    console.log(`wrote docs/${coloringImage(page)}`);
+    const gray = result.stdout;
+    const height = HEIGHT;
+    const width = gray.length / height;
+
+    const { labels, count } = findAreas(gray, width, height);
+    const paths = [];
+    for (let id = 0; id < count; id++) {
+        paths.push(`<path id="a${id}" fill="${PREVIEW_COLORS[id % PREVIEW_COLORS.length]}" d="${areaPath(labels, width, height, id)}"/>`);
+    }
+    const svg = [
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" fill-rule="evenodd" shape-rendering="crispEdges">`,
+        `<!-- Areas of the coloring page "${page.title}", made by tools/make-coloring.mjs from ${page.id}.png. -->`,
+        ...paths,
+        '</svg>',
+        ''
+    ].join('\n');
+    const out = join(DOCS, coloringImage(page));
+    writeFileSync(out, svg);
+    console.log(`wrote docs/${coloringImage(page)}: ${count} areas, ${Math.round(svg.length / 1024)} kB`);
 }
 process.exit(failed ? 1 : 0);

@@ -1,17 +1,12 @@
-// Coloring pages: paints, splitting a page into fillable areas, the paint layer, and the
-// original drawing's lines shown over it.
+// Coloring pages: paints, the areas of a page (from its <id>.coloring.svg), the paint layer
+// they are filled on, and the original drawing's lines shown over it.
 //
 // What you see is the original picture's lines (makeLineArt) over a layer of paint. The
-// areas the paint fills come from the small grayscale <id>.coloring.png: they meet along
-// the middle of each drawn stroke, so paint always reaches under the lines.
+// areas come from the SVG made by tools/make-coloring.mjs: one path per area, meeting
+// along the middle of each drawn stroke, so paint always reaches under the lines.
 
 import { PALETTE } from '../ui/pixel.js';
 
-// Darker than this (0-255 gray) counts as line; the rest is paper that can be filled.
-const LINE_THRESHOLD = 200;
-// Gaps in the drawing up to about twice this many pixels wide count as closed, so paint
-// doesn't leak out of a shape whose outline doesn't quite meet.
-const GAP_CLOSE = 3;
 const STORAGE_KEY = 'swiat-siostr-coloring';
 
 // Little repeatable hash of a pixel position, for sparkles that stay put.
@@ -19,8 +14,8 @@ const hash = (x, y) => ((x * 73856093) ^ (y * 19349663)) >>> 0;
 
 const RAINBOW = [0xf28aa5, 0xffc08a, 0xfff09a, 0x7fcf9a, 0x9fd0f5, 0xc3b3ea];
 
-// Paints on the side panel, in two columns. A paint is a solid `color` or a `pattern`
-// giving the color of each pixel (x, y) of the page. `id` is what gets saved.
+// Paints on the side panel, in two columns. A paint is a solid `color`, or a `pattern`
+// giving the color of each pixel (x, y) of the page; a pattern repeats every `tile` pixels.
 export const PAINTS = [
     { id: 'pink', color: 0xf7a8c4 },
     { id: 'red', color: 0xf28aa5 },
@@ -33,249 +28,131 @@ export const PAINTS = [
     { id: 'lavender', color: 0xc3b3ea },
     { id: 'brown', color: 0xc9a07a },
     { id: 'white', color: 0xffffff },
-    { id: 'rainbow', pattern: (x, y) => RAINBOW[Math.floor((x + y) / 6) % RAINBOW.length] },
-    { id: 'dots', pattern: (x, y) => ((x % 6 < 2 && y % 6 < 2) || ((x + 3) % 6 < 2 && (y + 3) % 6 < 2) ? 0xffffff : 0xf7a8c4) },
-    { id: 'sparkle', pattern: (x, y) => (hash(x, y) % 23 === 0 ? 0xffffff : (hash(x, y) % 7 === 0 ? 0xfff7d6 : 0xf6d98b)) }
+    { id: 'rainbow', tile: 36, pattern: (x, y) => RAINBOW[Math.floor((x + y) / 6) % RAINBOW.length] },
+    { id: 'dots', tile: 6, pattern: (x, y) => ((x % 6 < 2 && y % 6 < 2) || ((x + 3) % 6 < 2 && (y + 3) % 6 < 2) ? 0xffffff : 0xf7a8c4) },
+    { id: 'sparkle', tile: 48, pattern: (x, y) => (hash(x, y) % 23 === 0 ? 0xffffff : (hash(x, y) % 7 === 0 ? 0xfff7d6 : 0xf6d98b)) }
 ];
 
 export function paintColor(paint, x, y) {
     return paint.pattern ? paint.pattern(x, y) : paint.color;
 }
 
-const paintById = (id) => PAINTS.find((p) => p.id === id) || null;
+export const paintById = (id) => PAINTS.find((p) => p.id === id) || null;
 
-// 0xRRGGBB -> a pixel value for a Uint32Array view of ImageData (little-endian ABGR).
-const toPixel = (color) => (0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color >> 16) & 0xff)) >>> 0;
+const css = (color) => `#${color.toString(16).padStart(6, '0')}`;
 
-const analysed = new Map();
+// --- Areas ----------------------------------------------------------------------------
 
-// Thins a mask of strokes (1 = ink) in place to their 1-pixel-wide middle, keeping every
-// stroke connected (Zhang–Suen thinning). The result still stops 4-connected paint.
-function thin(mask, width, height) {
-    const at = (x, y) => (x < 0 || y < 0 || x >= width || y >= height ? 0 : mask[y * width + x]);
-    const remove = [];
-    let changed = true;
-    while (changed) {
-        changed = false;
-        for (const pass of [0, 1]) {
-            remove.length = 0;
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    if (!mask[y * width + x]) {
-                        continue;
-                    }
-                    // Neighbours clockwise from the top.
-                    const n = [at(x, y - 1), at(x + 1, y - 1), at(x + 1, y), at(x + 1, y + 1),
-                        at(x, y + 1), at(x - 1, y + 1), at(x - 1, y), at(x - 1, y - 1)];
-                    const filled = n.reduce((a, b) => a + b, 0);
-                    if (filled < 2 || filled > 6) {
-                        continue;
-                    }
-                    let edges = 0;
-                    for (let k = 0; k < 8; k++) {
-                        if (!n[k] && n[(k + 1) % 8]) {
-                            edges++;
-                        }
-                    }
-                    if (edges !== 1) {
-                        continue;
-                    }
-                    const [p2, , p4, , p6, , p8] = n;
-                    const ok = pass === 0
-                        ? !(p2 && p4 && p6) && !(p4 && p6 && p8)
-                        : !(p2 && p4 && p8) && !(p2 && p6 && p8);
-                    if (ok) {
-                        remove.push(y * width + x);
-                    }
-                }
-            }
-            if (remove.length > 0) {
-                changed = true;
-                remove.forEach((i) => {
-                    mask[i] = 0;
-                });
-            }
-        }
+const parsed = new Map();
+
+// The areas of a page from its SVG text: { width, height, areas: [{ path, box }] } with a
+// Path2D per area (fill-rule evenodd, in page pixels) and its bounding box. Kept per page.
+export function pageAreas(pageId, svgText) {
+    if (parsed.has(pageId)) {
+        return parsed.get(pageId);
     }
-}
-
-// A copy of a mask grown by `r` pixels in every direction (a round brush); r = 0 copies.
-function widen(mask, width, height, r) {
-    const out = new Uint8Array(mask.length);
-    for (let i = 0; i < mask.length; i++) {
-        if (!mask[i]) {
-            continue;
-        }
-        const x = i % width;
-        const y = Math.floor(i / width);
-        for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (dx * dx + dy * dy <= r * r && nx >= 0 && ny >= 0 && nx < width && ny < height) {
-                    out[ny * width + nx] = 1;
-                }
-            }
-        }
-    }
-    return out;
-}
-
-// Splits a page (its loaded <id>.coloring.png) into areas. Returns { width, height,
-// labels, areas } where labels[i] is the area of pixel i and areas[n] lists the pixel
-// indexes of area n; every pixel belongs to an area. Kept per page, so this runs once.
-//
-// Drawings often have small gaps where two strokes almost meet, which would let paint
-// leak out. So areas are found with the strokes fattened by GAP_CLOSE pixels (gaps
-// closed). Then each stroke is thinned to its 1-pixel middle, which becomes the border
-// between areas, and everything else (next to and under the strokes) joins the nearest
-// area.
-export function analysePage(scene, page, textureKey) {
-    if (analysed.has(page.id)) {
-        return analysed.get(page.id);
-    }
-    const img = scene.textures.get(textureKey).getSourceImage();
-    const width = img.width;
-    const height = img.height;
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    const pixels = ctx.getImageData(0, 0, width, height).data;
-
-    const count = width * height;
-    const ink = new Uint8Array(count);
-    for (let i = 0; i < count; i++) {
-        ink[i] = pixels[i * 4] < LINE_THRESHOLD && pixels[i * 4 + 3] > 0 ? 1 : 0;
-    }
-    // Areas come from the strokes as drawn, fattened by GAP_CLOSE pixels in every direction
-    // (a round brush) to close gaps. The page's edge counts as a line too.
-    const fat = widen(ink, width, height, GAP_CLOSE);
-    for (let i = 0; i < count; i++) {
-        const x = i % width;
-        const y = Math.floor(i / width);
-        if (x < GAP_CLOSE || y < GAP_CLOSE || x >= width - GAP_CLOSE || y >= height - GAP_CLOSE) {
-            fat[i] = 1;
-        }
-    }
-
-    // The middle of each stroke: the border areas grow up to.
-    thin(ink, width, height);
-    const line = ink;
-
-    const neighboursOf = (i) => {
-        const x = i % width;
-        return [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i >= count - width ? -1 : i + width];
-    };
-
-    // Areas of the paper away from the (fattened) lines, as 4-connected patches.
-    const labels = new Int32Array(count).fill(-1);
-    let areaCount = 0;
-    const stack = new Int32Array(count);
-    for (let start = 0; start < count; start++) {
-        if (fat[start] || labels[start] !== -1) {
-            continue;
-        }
-        const id = areaCount++;
-        let top = 0;
-        stack[top++] = start;
-        labels[start] = id;
-        while (top > 0) {
-            const i = stack[--top];
-            for (const n of neighboursOf(i)) {
-                if (n >= 0 && !fat[n] && labels[n] === -1) {
-                    labels[n] = id;
-                    stack[top++] = n;
-                }
-            }
-        }
-    }
-
-    // The paper next to the lines joins the nearest area, growing out ring by ring.
-    let ring = [];
-    for (let i = 0; i < count; i++) {
-        if (labels[i] !== -1) {
-            ring.push(i);
-        }
-    }
-    while (ring.length > 0) {
-        const next = [];
-        for (const i of ring) {
-            for (const n of neighboursOf(i)) {
-                if (n >= 0 && !line[n] && labels[n] === -1) {
-                    labels[n] = labels[i];
-                    next.push(n);
-                }
-            }
-        }
-        ring = next;
-    }
-
-    // Paper no area reached (a narrow space fully under the fattened strokes, closed in by
-    // the thin lines) becomes areas of its own, so every bit of paper can be painted.
-    for (let start = 0; start < count; start++) {
-        if (line[start] || labels[start] !== -1) {
-            continue;
-        }
-        const id = areaCount++;
-        let top = 0;
-        stack[top++] = start;
-        labels[start] = id;
-        while (top > 0) {
-            const i = stack[--top];
-            for (const n of neighboursOf(i)) {
-                if (n >= 0 && !line[n] && labels[n] === -1) {
-                    labels[n] = id;
-                    stack[top++] = n;
-                }
-            }
-        }
-    }
-
-    // The thin middle lines are only borders between areas: the original drawing's lines
-    // are shown on top (makeLineArt). Each of their pixels joins a neighbouring area, so
-    // paint reaches right under the drawn lines, and a tap on a line fills an area too.
-    ring = [];
-    for (let i = 0; i < count; i++) {
-        if (labels[i] !== -1) {
-            ring.push(i);
-        }
-    }
-    while (ring.length > 0) {
-        const next = [];
-        for (const i of ring) {
-            for (const n of neighboursOf(i)) {
-                if (n >= 0 && labels[n] === -1) {
-                    labels[n] = labels[i];
-                    next.push(n);
-                }
-            }
-        }
-        ring = next;
-    }
-
-    const members = Array.from({ length: areaCount }, () => []);
-    for (let i = 0; i < count; i++) {
-        if (labels[i] !== -1) {
-            members[labels[i]].push(i);
-        }
-    }
-    const areas = members.map((m) => Int32Array.from(m));
-
-    const result = { width, height, labels, areas };
-    analysed.set(page.id, result);
+    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+    const svg = doc.documentElement;
+    const [, , width, height] = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+    const areas = [...doc.querySelectorAll('path')].map((el) => {
+        const d = el.getAttribute('d');
+        const numbers = d.match(/-?\d+(\.\d+)?/g).map(Number);
+        const xs = numbers.filter((_, i) => i % 2 === 0);
+        const ys = numbers.filter((_, i) => i % 2 === 1);
+        const box = { x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
+        return { path: new Path2D(d), box };
+    });
+    const result = { width, height, areas };
+    parsed.set(pageId, result);
     return result;
 }
 
-// The paint layer: untouched paper white, areas in their paints. `fills` maps area number
-// -> paint id. Writes into a Uint32Array view of ImageData. The lines go on top of it.
-export function renderPage(info, fills, out) {
-    out.fill(toPixel(0xffffff));
-    Object.entries(fills).forEach(([area, paintId]) => {
-        paintArea(info, Number(area), paintById(paintId), out);
-    });
+let hitCtx = null;
+
+// The area at (x, y) in page pixels, or -1.
+export function areaAt(info, x, y) {
+    hitCtx = hitCtx || document.createElement('canvas').getContext('2d');
+    return info.areas.findIndex(({ path, box }) => x >= box.x1 && x <= box.x2 && y >= box.y1 && y <= box.y2
+        && hitCtx.isPointInPath(path, x, y, 'evenodd'));
 }
+
+// --- Paint layer ----------------------------------------------------------------------
+
+// A canvas texture the page's paint is drawn on, `scale` device pixels per page pixel so
+// area edges stay smooth. Untouched paper is white; the lines go on top of it.
+export class PaintLayer {
+    constructor(scene, key, info, scale) {
+        if (scene.textures.exists(key)) {
+            scene.textures.remove(key);
+        }
+        this.info = info;
+        this.scale = scale;
+        this.texture = scene.textures.createCanvas(key, Math.ceil(info.width * scale), Math.ceil(info.height * scale));
+        this.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+        this.ctx = this.texture.getContext();
+        // Patterns keep their pixel look.
+        this.ctx.imageSmoothingEnabled = false;
+        this.patterns = new Map();
+    }
+
+    // How a paint fills: a CSS color, or a repeating pattern drawn from its pixels.
+    style(paint) {
+        if (!paint.pattern) {
+            return css(paint.color);
+        }
+        if (!this.patterns.has(paint.id)) {
+            const tile = document.createElement('canvas');
+            tile.width = paint.tile;
+            tile.height = paint.tile;
+            const tctx = tile.getContext('2d');
+            for (let y = 0; y < paint.tile; y++) {
+                for (let x = 0; x < paint.tile; x++) {
+                    tctx.fillStyle = css(paint.pattern(x, y));
+                    tctx.fillRect(x, y, 1, 1);
+                }
+            }
+            this.patterns.set(paint.id, this.ctx.createPattern(tile, 'repeat'));
+        }
+        return this.patterns.get(paint.id);
+    }
+
+    // Everything again: white paper, then every area in its paint (`fills`: area -> paint id).
+    render(fills) {
+        const ctx = this.ctx;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, this.texture.width, this.texture.height);
+        Object.entries(fills).forEach(([area, paintId]) => this.fill(Number(area), paintById(paintId)));
+        this.texture.refresh();
+    }
+
+    // Fills an area; with `circle` ({ x, y, r } in page pixels) only the part inside it,
+    // for paint spreading from a tap.
+    fill(area, paint, circle = null) {
+        if (!paint) {
+            return;
+        }
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+        ctx.fillStyle = this.style(paint);
+        if (circle) {
+            ctx.clip(this.info.areas[area].path, 'evenodd');
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.fill(this.info.areas[area].path, 'evenodd');
+        }
+        ctx.restore();
+    }
+
+    refresh() {
+        this.texture.refresh();
+    }
+}
+
+// --- Lines ----------------------------------------------------------------------------
 
 // The original drawing's lines as a texture to lay over the paint: full resolution, the
 // page's `make.blank` boxes (printed title, website address) whited out, lines in the
@@ -309,46 +186,6 @@ export function makeLineArt(scene, page, originalKey, blank = []) {
     texture.refresh();
     texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     return key;
-}
-
-// Colors the pixels `indexes` (all of an area by default) with a paint.
-export function paintArea(info, area, paint, out, indexes = info.areas[area]) {
-    if (!paint || !indexes) {
-        return;
-    }
-    for (const i of indexes) {
-        out[i] = toPixel(paintColor(paint, i % info.width, Math.floor(i / info.width)));
-    }
-}
-
-// Pixels of an area in the order paint would flow from (x, y): nearest first. An area may
-// hold a few pixels not connected to the rest (paper beside a line that joined it), so
-// whatever the flow didn't reach comes last.
-export function flowOrder(info, area, x, y) {
-    const { width, labels } = info;
-    const start = y * width + x;
-    const seen = new Uint8Array(labels.length);
-    const order = [];
-    const queue = [start];
-    seen[start] = 1;
-    for (let q = 0; q < queue.length; q++) {
-        const i = queue[q];
-        order.push(i);
-        const px = i % width;
-        const neighbours = [px > 0 ? i - 1 : -1, px < width - 1 ? i + 1 : -1, i - width, i + width];
-        for (const n of neighbours) {
-            if (n >= 0 && n < labels.length && !seen[n] && labels[n] === area) {
-                seen[n] = 1;
-                queue.push(n);
-            }
-        }
-    }
-    for (const i of info.areas[area]) {
-        if (!seen[i]) {
-            order.push(i);
-        }
-    }
-    return order;
 }
 
 // Colors are not kept between visits: every page starts blank when it is opened.

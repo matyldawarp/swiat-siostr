@@ -24,7 +24,7 @@ const DIR = 'assets/coloring';
 
 // Paths relative to docs/.
 export const coloringOriginal = (page) => `${DIR}/${page.id}.png`;
-export const coloringImage = (page) => `${DIR}/${page.id}.coloring.png`;
+export const coloringImage = (page) => `${DIR}/${page.id}.coloring.svg`;
 
 export function getColoringPage(id) {
     return COLORING_PAGES.find((p) => p.id === id) || null;

@@ -1,7 +1,7 @@
-import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { COLORING_PAGES, coloringImage, coloringOriginal, getColoringPage } from '../data/coloring.js';
-import { PAINTS, analysePage, flowOrder, makeLineArt, paintArea, paintColor, renderPage } from '../gfx/coloring.js';
+import { PAINTS, PaintLayer, areaAt, makeLineArt, pageAreas, paintColor } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
@@ -21,10 +21,11 @@ const FILLS_KEY = 'coloringFills';
 // Undo steps kept per visit.
 const UNDO_LIMIT = 30;
 
-// The small picture that sets the areas, and the original whose lines are shown.
-const pageTexture = (page) => `coloring-page-${page.id}`;
+// The areas (SVG text) and the original picture whose lines are shown.
+const areasKey = (page) => `coloring-areas-${page.id}`;
 const originalTexture = (page) => `coloring-original-${page.id}`;
 const lineArt = (scene, page) => makeLineArt(scene, page, originalTexture(page), page.make?.blank);
+const areasOf = (scene, page) => pageAreas(page.id, scene.cache.text.get(areasKey(page)));
 
 // The art studio. First a shelf with a card per coloring page; tapping one opens it.
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
@@ -38,8 +39,8 @@ export class ColoringScene extends BaseScene {
 
     preload() {
         COLORING_PAGES.forEach((page) => {
-            if (!this.textures.exists(pageTexture(page))) {
-                this.load.image(pageTexture(page), coloringImage(page));
+            if (!this.cache.text.exists(areasKey(page))) {
+                this.load.text(areasKey(page), coloringImage(page));
             }
             if (!this.textures.exists(originalTexture(page))) {
                 this.load.image(originalTexture(page), coloringOriginal(page));
@@ -106,7 +107,7 @@ export class ColoringScene extends BaseScene {
         const g = this.add.graphics();
         PixelUI.drawBox(g, x, y, w, h, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
 
-        const info = analysePage(this, page, pageTexture(page));
+        const info = areasOf(this, page);
         const lines = this.textures.get(lineArt(this, page)).getSourceImage();
 
         const titleH = S(22);
@@ -152,7 +153,7 @@ export class ColoringScene extends BaseScene {
 
     buildPage(width, height) {
         const panelW = S(84);
-        const info = analysePage(this, this.page, pageTexture(this.page));
+        const info = areasOf(this, this.page);
         this.info = info;
         // The same object stays in the registry, so colors added below survive a rebuild.
         if (!this.registry.get(FILLS_KEY)) {
@@ -168,18 +169,12 @@ export class ColoringScene extends BaseScene {
         PixelUI.drawBox(mat, px - S(8), py - S(6), info.width + S(16), info.height + S(12), STUDIO_COLORS.mat, PALETTE.outline);
         this.pageRect = { x: px, y: py };
 
+        // Paint at the screen's own resolution, so area edges are smooth.
         const key = `coloring-canvas-${this.page.id}`;
-        if (this.textures.exists(key)) {
-            this.textures.remove(key);
-        }
-        this.canvasTexture = this.textures.createCanvas(key, info.width, info.height);
-        this.ctx = this.canvasTexture.getContext();
-        this.imageData = this.ctx.createImageData(info.width, info.height);
-        this.pixels = new Uint32Array(this.imageData.data.buffer);
-        renderPage(info, this.fills, this.pixels);
-        this.refreshCanvas();
+        this.layer = new PaintLayer(this, key, info, Math.max(1, Math.ceil(RENDER_SCALE)));
+        this.layer.render(this.fills);
 
-        const picture = this.add.image(px, py, key).setOrigin(0);
+        const picture = this.add.image(px, py, key).setOrigin(0).setDisplaySize(info.width, info.height);
         picture.setInteractive({ useHandCursor: true });
         picture.on('pointerdown', (pointer) => this.fillAt(pointer.worldX - px, pointer.worldY - py));
         // The original drawing's lines over the paint, smoothly scaled to the page.
@@ -190,22 +185,15 @@ export class ColoringScene extends BaseScene {
         this.createPanel(width - panelW - S(4), panelTop, panelW, height - panelTop - S(4));
     }
 
-    refreshCanvas() {
-        this.ctx.putImageData(this.imageData, 0, 0);
-        this.canvasTexture.refresh();
-    }
-
-    // The tapped area fills with the chosen paint, flowing out from the finger.
-    fillAt(fx, fy) {
-        const x = Math.floor(fx);
-        const y = Math.floor(fy);
+    // The tapped area fills with the chosen paint, spreading out from the finger.
+    fillAt(x, y) {
         const info = this.info;
         if (this.busy || x < 0 || y < 0 || x >= info.width || y >= info.height) {
             return;
         }
-        const area = info.labels[y * info.width + x];
+        const area = areaAt(info, x, y);
         if (area < 0 || this.fills[area] === this.paint.id) {
-            // A line, or already this color: a little bounce of the chosen paint says so.
+            // Already this color: a little bounce of the chosen paint says so.
             PixelUI.hop(this, this.selectedSwatch, this.selectedSwatch.baseY, S(3), { duration: 80 });
             return;
         }
@@ -217,23 +205,26 @@ export class ColoringScene extends BaseScene {
         this.fills[area] = this.paint.id;
         playPlop(this);
 
-        // Paint the area nearest-first over a few frames, like paint spreading.
-        const order = flowOrder(info, area, x, y);
-        const steps = Math.min(12, Math.max(1, Math.ceil(order.length / 400)));
-        const chunk = Math.ceil(order.length / steps);
+        // A growing circle of paint from the finger, clipped to the area, over a few frames.
+        const { box } = info.areas[area];
+        const reach = Math.max(...[[box.x1, box.y1], [box.x2, box.y1], [box.x1, box.y2], [box.x2, box.y2]]
+            .map(([cx, cy]) => Math.hypot(cx - x, cy - y)));
+        const big = (box.x2 - box.x1) * (box.y2 - box.y1) > 600;
+        const steps = big ? 10 : 3;
         const paint = this.paint;
         this.busy = true;
-        let done = 0;
+        let step = 0;
         this.time.addEvent({
             delay: 25,
             repeat: steps - 1,
             callback: () => {
-                paintArea(info, area, paint, this.pixels, order.slice(done, done + chunk));
-                done += chunk;
-                this.refreshCanvas();
-                if (done >= order.length) {
+                step++;
+                const last = step === steps;
+                this.layer.fill(area, paint, last ? null : { x, y, r: (reach * step) / steps });
+                this.layer.refresh();
+                if (last) {
                     this.busy = false;
-                    if (order.length > 300) {
+                    if (big) {
                         playSparkle(this);
                         floatHeart(this, this.pageRect.x + x, this.pageRect.y + y - S(6), { depth: 30, rise: S(18), duration: 600 });
                     }
@@ -253,11 +244,8 @@ export class ColoringScene extends BaseScene {
         } else {
             delete this.fills[step.area];
         }
-        // Back to white first, then the earlier paint if there was one.
-        const white = PAINTS.find((p) => p.id === 'white');
-        paintArea(this.info, step.area, white, this.pixels);
-        paintArea(this.info, step.area, PAINTS.find((p) => p.id === step.before), this.pixels);
-        this.refreshCanvas();
+        // Drawn again from scratch, so no trace of the undone paint stays at the edges.
+        this.layer.render(this.fills);
         playStep(this);
     }
 
