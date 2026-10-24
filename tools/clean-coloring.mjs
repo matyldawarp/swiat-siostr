@@ -28,6 +28,10 @@ const STRIP = {
 // A pixel darker than this belongs to a line (soft edges included, so they go too).
 const LINE = 250;
 
+// Paper left around the drawing on every side, as a share of the page's height: 0.7 cm
+// on the girls' iPad (the page is 760 CSS px tall there, at 132 CSS px per inch).
+const MARGIN = 0.7 / ((760 / 132) * 2.54);
+
 // --- PNG ------------------------------------------------------------------------------
 
 function paeth(a, b, c) {
@@ -214,10 +218,54 @@ function strip({ width, height, rgb }, boxes) {
     return removed;
 }
 
+// Adds paper where the drawing comes closer than MARGIN to an edge; the drawing itself
+// keeps its size. Returns the padded image.
+function pad({ width, height, rgb }) {
+    let x1 = width;
+    let y1 = height;
+    let x2 = -1;
+    let y2 = -1;
+    for (let k = 0; k < width * height; k++) {
+        if (rgb[k * 3] + rgb[k * 3 + 1] + rgb[k * 3 + 2] < LINE * 3) {
+            const x = k % width;
+            const y = (k - x) / width;
+            x1 = Math.min(x1, x);
+            x2 = Math.max(x2, x);
+            y1 = Math.min(y1, y);
+            y2 = Math.max(y2, y);
+        }
+    }
+    // The margin grows with the page, so add paper until it no longer needs more.
+    let add = { left: 0, top: 0, right: 0, bottom: 0 };
+    for (;;) {
+        const m = Math.ceil(MARGIN * (height + add.top + add.bottom));
+        const next = {
+            left: Math.max(0, m - x1),
+            top: Math.max(0, m - y1),
+            right: Math.max(0, m - (width - 1 - x2)),
+            bottom: Math.max(0, m - (height - 1 - y2))
+        };
+        if (next.top + next.bottom === add.top + add.bottom) {
+            add = next;
+            break;
+        }
+        add = next;
+    }
+    const w = width + add.left + add.right;
+    const h = height + add.top + add.bottom;
+    const out = Buffer.alloc(w * h * 3, 255);
+    for (let y = 0; y < height; y++) {
+        rgb.copy(out, ((y + add.top) * w + add.left) * 3, y * width * 3, (y + 1) * width * 3);
+    }
+    return { width: w, height: h, rgb: out, add };
+}
+
 for (const name of readdirSync(IN_DIR).filter((f) => f.endsWith('.png'))) {
     const id = name.slice(0, -4);
     const image = decodePng(join(IN_DIR, name));
     const removed = strip(image, STRIP[id] || []);
-    writeFileSync(join(OUT_DIR, name), encodePng(image));
-    console.log(`wrote docs/assets/coloring/${name} (${removed} lines taken out)`);
+    const padded = pad(image);
+    writeFileSync(join(OUT_DIR, name), encodePng(padded));
+    const { left, top, right, bottom } = padded.add;
+    console.log(`wrote docs/assets/coloring/${name} (${removed} lines taken out, paper added: left ${left}, top ${top}, right ${right}, bottom ${bottom})`);
 }
