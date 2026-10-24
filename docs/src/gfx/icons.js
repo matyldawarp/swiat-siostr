@@ -892,6 +892,105 @@ export const Icons = {
         }
     },
 
+    // Tipped paint bucket with paint pouring out of it: "fill an area".
+    bucket(g, cx, cy, size, paint = 0xf28aa5) {
+        const s = size / 10;
+        // Bucket body, leaning to the right.
+        const body = (grow) => [
+            { x: cx - 4.2 * s - grow, y: cy - 2.6 * s - grow },
+            { x: cx + 0.6 * s + grow, y: cy - 4.4 * s - grow },
+            { x: cx + 2.4 * s + grow, y: cy + 0.4 * s + grow },
+            { x: cx - 2.0 * s - grow, y: cy + 2.2 * s + grow }
+        ];
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, body(1));
+        g.fillStyle(ICON_COLORS.sky, 1);
+        Icons.fillPolygon(g, body(0));
+        // Rim and handle.
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, [
+            { x: cx - 4.6 * s, y: cy - 3.0 * s }, { x: cx + 0.8 * s, y: cy - 5.0 * s },
+            { x: cx + 1.2 * s, y: cy - 4.0 * s }, { x: cx - 4.2 * s, y: cy - 2.0 * s }
+        ]);
+        // Paint pouring from the rim down to a puddle, outlined so any paint shows.
+        const stream = (grow) => [
+            { x: cx + 0.4 * s - grow, y: cy - 4.4 * s - grow }, { x: cx + 2.6 * s + grow, y: cy - 4.6 * s - grow },
+            { x: cx + 4.0 * s + grow, y: cy + 2.8 * s }, { x: cx + 2.2 * s - grow, y: cy + 3.0 * s }
+        ];
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, stream(1));
+        g.fillStyle(paint, 1);
+        Icons.fillPolygon(g, stream(0));
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillEllipse(g, Math.round(cx + 2.8 * s), Math.round(cy + 3.6 * s), Math.round(2.2 * s) + 1, Math.round(0.9 * s) + 1);
+        g.fillStyle(paint, 1);
+        Icons.fillEllipse(g, Math.round(cx + 2.8 * s), Math.round(cy + 3.6 * s), Math.round(2.2 * s), Math.round(0.9 * s));
+    },
+
+    // Round paintbrush, leaning, with paint on its tip: "paint with a finger".
+    brush(g, cx, cy, size, paint = 0xf28aa5) {
+        const s = size / 10;
+        const handle = (grow) => [
+            { x: cx + 4.4 * s + grow, y: cy - 4.8 * s - grow }, { x: cx + 5.0 * s + grow, y: cy - 4.2 * s - grow },
+            { x: cx + 0.4 * s + grow, y: cy + 0.6 * s + grow }, { x: cx - 0.4 * s - grow, y: cy - 0.2 * s - grow }
+        ];
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, handle(1));
+        g.fillStyle(0xc9a07a, 1);
+        Icons.fillPolygon(g, handle(0));
+        // Metal band.
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, [
+            { x: cx - 0.8 * s, y: cy - 0.8 * s }, { x: cx + 0.2 * s, y: cy - 1.4 * s },
+            { x: cx + 1.4 * s, y: cy - 0.2 * s }, { x: cx + 0.8 * s, y: cy + 0.8 * s }
+        ]);
+        g.fillStyle(ICON_COLORS.lavenderDark, 1);
+        Icons.fillPolygon(g, [
+            { x: cx - 0.4 * s, y: cy - 0.6 * s }, { x: cx + 0.2 * s, y: cy - 1.0 * s },
+            { x: cx + 1.0 * s, y: cy - 0.2 * s }, { x: cx + 0.6 * s, y: cy + 0.4 * s }
+        ]);
+        // Bristles ending in a point, dipped in paint.
+        const tip = (grow) => [
+            { x: cx - 0.8 * s - grow, y: cy - 0.4 * s - grow }, { x: cx + 0.8 * s + grow, y: cy + 1.0 * s + grow },
+            { x: cx - 2.4 * s, y: cy + 4.0 * s + grow }, { x: cx - 4.2 * s - grow, y: cy + 4.6 * s + grow },
+            { x: cx - 3.4 * s - grow, y: cy + 2.6 * s }
+        ];
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, tip(1));
+        g.fillStyle(paint, 1);
+        Icons.fillPolygon(g, tip(0));
+    },
+
+    // Printer with a sheet coming out: "print the blank page".
+    printer(g, cx, cy, size) {
+        const w = Math.round(size * 0.8);
+        const h = Math.round(size * 0.36);
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2);
+        const paperW = Math.round(w * 0.6);
+        const paperX = Math.round(cx - paperW / 2);
+        // Sheet waiting at the back.
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(paperX, top - Math.round(size * 0.18), paperW, Math.round(size * 0.18) + 1);
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(paperX + 1, top - Math.round(size * 0.18) + 1, paperW - 2, Math.round(size * 0.18));
+        // Body.
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left, top, w, h);
+        g.fillStyle(ICON_COLORS.lavender, 1);
+        g.fillRect(left + 1, top + 1, w - 2, h - 2);
+        g.fillStyle(ICON_COLORS.mintDark, 1);
+        g.fillRect(left + w - 4, top + 3, 2, 2);
+        // Printed sheet with a little drawing on it.
+        const sheetTop = top + h - 2;
+        const sheetH = Math.round(size * 0.34);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(paperX, sheetTop, paperW, sheetH);
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(paperX + 1, sheetTop, paperW - 2, sheetH - 1);
+        Icons.heart(g, Math.round(cx), sheetTop + Math.round(sheetH / 2), Math.max(5, Math.round(paperW / 2)));
+    },
+
     // Painter's palette with blobs of paint.
     palette(g, cx, cy, size) {
         const rx = Math.round(size * 0.46);

@@ -1,7 +1,7 @@
 import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { COLORING_PAGES, coloringImage, coloringOriginal, getColoringPage } from '../data/coloring.js';
-import { PAINTS, PaintLayer, areaAt, makeLineArt, pageAreas, paintColor } from '../gfx/coloring.js';
+import { PAINTS, PaintLayer, areaAt, makeLineArt, pageAreas, paintColor, preparePrint } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
@@ -15,11 +15,12 @@ const STUDIO_COLORS = {
 
 // The page being colored, kept in the registry so a rebuild (resize) stays on it.
 const PAGE_KEY = 'coloringPage';
-// Its colors so far, in the registry only: they survive a rebuild (e.g. turning the iPad)
-// but not leaving the page or closing the game. Every page starts blank when opened.
-const FILLS_KEY = 'coloringFills';
-// Undo steps kept per visit.
-const UNDO_LIMIT = 30;
+// Its painting so far, as a list of steps (fills and brush strokes, see PaintLayer.render),
+// in the registry only: it survives a rebuild (e.g. turning the iPad) but not leaving the
+// page or closing the game. Every page starts blank when opened. Undo takes the last step.
+const STEPS_KEY = 'coloringSteps';
+// A brush stroke gets a heart at the end once it is this long (page pixels).
+const LONG_STROKE = 80;
 
 // The areas (SVG text) and the original picture whose lines are shown.
 const areasKey = (page) => `coloring-areas-${page.id}`;
@@ -29,9 +30,11 @@ const areasOf = (scene, page) => pageAreas(page.id, scene.cache.text.get(areasKe
 
 // The art studio. First a shelf with a card per coloring page; tapping one opens it.
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
-// dots and glitter), tap an area of the picture and the paint flows into it up to the
-// lines. The curved arrow undoes, the house goes back to the shelf. Colors aren't kept:
-// a page opens blank every time.
+// dots and glitter) and a tool on the left. With the bucket, tapping an area of the
+// picture makes the paint flow into it up to the lines; with the brush, a finger paints a
+// thick line that stays inside the area it started in. The curved arrow undoes, the house
+// goes back to the shelf, and the printer (bottom left) prints the blank page on paper.
+// Colors aren't kept: a page opens blank every time.
 export class ColoringScene extends BaseScene {
     constructor() {
         super('ColoringScene');
@@ -52,8 +55,10 @@ export class ColoringScene extends BaseScene {
         super.init(data);
         this.page = getColoringPage(this.registry.get(PAGE_KEY));
         this.paint = this.paint || PAINTS[0];
-        this.undoStack = [];
+        // 'fill' (bucket) or 'brush'; like the paint, kept while the game runs.
+        this.tool = this.tool || 'fill';
         this.busy = false;
+        this.stroke = null;
     }
 
     // #kolorowanki for the shelf, #kolorowanki/<page id> while coloring a page.
@@ -138,14 +143,14 @@ export class ColoringScene extends BaseScene {
     openPage(page) {
         playPat(this);
         this.registry.set(PAGE_KEY, page.id);
-        this.registry.set(FILLS_KEY, {});
+        this.registry.set(STEPS_KEY, []);
         this.scene.restart({ resized: true });
     }
 
     backToShelf() {
         playStep(this);
         this.registry.set(PAGE_KEY, null);
-        this.registry.set(FILLS_KEY, {});
+        this.registry.set(STEPS_KEY, []);
         this.scene.restart({ resized: true });
     }
 
@@ -155,15 +160,18 @@ export class ColoringScene extends BaseScene {
         const panelW = S(84);
         const info = areasOf(this, this.page);
         this.info = info;
-        // The same object stays in the registry, so colors added below survive a rebuild.
-        if (!this.registry.get(FILLS_KEY)) {
-            this.registry.set(FILLS_KEY, {});
+        // The same array stays in the registry, so steps added below survive a rebuild.
+        if (!this.registry.get(STEPS_KEY)) {
+            this.registry.set(STEPS_KEY, []);
         }
-        this.fills = this.registry.get(FILLS_KEY);
+        this.steps = this.registry.get(STEPS_KEY);
 
-        // The page on a colored mat, in the space left of the paint panel.
-        const areaW = width - panelW - S(8);
-        const px = Math.round((areaW - info.width) / 2);
+        // The page on a colored mat, between the tool buttons and the paint panel.
+        const button = S(30);
+        const toolsX = S(6) + button / 2;
+        const left = S(40);
+        const right = width - panelW - S(8);
+        const px = left + Math.round((right - left - info.width) / 2);
         const py = Math.round((height - info.height) / 2);
         const mat = this.add.graphics();
         PixelUI.drawBox(mat, px - S(8), py - S(6), info.width + S(16), info.height + S(12), STUDIO_COLORS.mat, PALETTE.outline);
@@ -172,17 +180,52 @@ export class ColoringScene extends BaseScene {
         // Paint at the screen's own resolution, so area edges are smooth.
         const key = `coloring-canvas-${this.page.id}`;
         this.layer = new PaintLayer(this, key, info, Math.max(1, Math.ceil(RENDER_SCALE)));
-        this.layer.render(this.fills);
+        this.layer.render(this.steps);
 
         const picture = this.add.image(px, py, key).setOrigin(0).setDisplaySize(info.width, info.height);
         picture.setInteractive({ useHandCursor: true });
-        picture.on('pointerdown', (pointer) => this.fillAt(pointer.worldX - px, pointer.worldY - py));
+        picture.on('pointerdown', (pointer) => {
+            const x = pointer.worldX - px;
+            const y = pointer.worldY - py;
+            if (this.tool === 'brush') {
+                this.startStroke(pointer, x, y);
+            } else {
+                this.fillAt(x, y);
+            }
+        });
+        // The brush follows the finger anywhere; paint stays clipped to its area anyway.
+        this.input.on('pointermove', (pointer) => this.moveStroke(pointer, pointer.worldX - px, pointer.worldY - py));
+        this.input.on('pointerup', (pointer) => this.endStroke(pointer));
+        this.input.on('pointerupoutside', (pointer) => this.endStroke(pointer));
         // The original drawing's lines over the paint, smoothly scaled to the page.
         this.add.image(px, py, lineArt(this, this.page)).setOrigin(0).setDisplaySize(info.width, info.height);
 
         // Below the music and reload buttons in the top-right corner (OverlayScene).
         const panelTop = S(34);
         this.createPanel(width - panelW - S(4), panelTop, panelW, height - panelTop - S(4));
+
+        // Tools on the left, level with the top of the panel; the printer at the bottom.
+        const toolY = panelTop + S(6) + button / 2;
+        this.toolButtons = [
+            this.createToolButton('fill', toolsX, toolY, button, Icons.bucket),
+            this.createToolButton('brush', toolsX, toolY + button + S(8), button, Icons.brush)
+        ];
+        this.refreshTools();
+        preparePrint(this, originalTexture(this.page), this.page.make?.blank);
+        this.printButton = PixelUI.createIconButton(this, toolsX, height - S(6) - button / 2, button,
+            (gfx, size) => Icons.printer(gfx, 0, 0, size), () => this.print());
+        this.printButton.baseY = this.printButton.y;
+    }
+
+    // The paint an area is filled with, or null when brush strokes went over it since.
+    currentFill(area) {
+        for (let i = this.steps.length - 1; i >= 0; i--) {
+            const step = this.steps[i];
+            if (step.area === area) {
+                return step.points ? null : step.paint;
+            }
+        }
+        return null;
     }
 
     // The tapped area fills with the chosen paint, spreading out from the finger.
@@ -192,17 +235,13 @@ export class ColoringScene extends BaseScene {
             return;
         }
         const area = areaAt(info, x, y);
-        if (area < 0 || this.fills[area] === this.paint.id) {
+        if (area < 0 || this.currentFill(area) === this.paint.id) {
             // Already this color: a little bounce of the chosen paint says so.
             PixelUI.hop(this, this.selectedSwatch, this.selectedSwatch.baseY, S(3), { duration: 80 });
             return;
         }
 
-        this.undoStack.push({ area, before: this.fills[area] || null });
-        if (this.undoStack.length > UNDO_LIMIT) {
-            this.undoStack.shift();
-        }
-        this.fills[area] = this.paint.id;
+        this.steps.push({ area, paint: this.paint.id });
         playPlop(this);
 
         // A growing circle of paint from the finger, clipped to the area, over a few frames.
@@ -233,20 +272,105 @@ export class ColoringScene extends BaseScene {
         });
     }
 
+    // Brush: the line stays in the area under the finger where it started.
+    startStroke(pointer, x, y) {
+        const area = this.busy || this.stroke ? -1 : areaAt(this.info, x, y);
+        if (area < 0) {
+            return;
+        }
+        const round = (n) => Math.round(n * 10) / 10;
+        this.stroke = { pointerId: pointer.id, area, paint: this.paint.id, points: [round(x), round(y)], length: 0 };
+        this.steps.push({ area, paint: this.paint.id, points: this.stroke.points });
+        this.layer.stroke(area, this.paint, this.stroke.points);
+        this.layer.refresh();
+        playPat(this);
+    }
+
+    moveStroke(pointer, x, y) {
+        const stroke = this.stroke;
+        if (!stroke || pointer.id !== stroke.pointerId || !pointer.isDown) {
+            return;
+        }
+        const points = stroke.points;
+        const moved = Math.hypot(x - points[points.length - 2], y - points[points.length - 1]);
+        if (moved < 2) {
+            return;
+        }
+        stroke.length += moved;
+        points.push(Math.round(x * 10) / 10, Math.round(y * 10) / 10);
+        this.layer.stroke(stroke.area, this.paint, points, points.length / 2 - 1);
+        this.layer.refresh();
+    }
+
+    endStroke(pointer) {
+        const stroke = this.stroke;
+        if (!stroke || pointer.id !== stroke.pointerId) {
+            return;
+        }
+        this.stroke = null;
+        if (stroke.length >= LONG_STROKE) {
+            const points = stroke.points;
+            playSparkle(this);
+            floatHeart(this, this.pageRect.x + points[points.length - 2], this.pageRect.y + points[points.length - 1] - S(6),
+                { depth: 30, rise: S(18), duration: 600 });
+        }
+    }
+
     undo() {
-        const step = this.undoStack.pop();
-        if (!step || this.busy) {
+        if (this.steps.length === 0 || this.busy || this.stroke) {
             PixelUI.hop(this, this.undoButton, this.undoButton.baseY, S(3), { duration: 80 });
             return;
         }
-        if (step.before) {
-            this.fills[step.area] = step.before;
-        } else {
-            delete this.fills[step.area];
-        }
+        this.steps.pop();
         // Drawn again from scratch, so no trace of the undone paint stays at the edges.
-        this.layer.render(this.fills);
+        this.layer.render(this.steps);
         playStep(this);
+    }
+
+    // The blank page on paper, to color with crayons (prepared in buildPage).
+    print() {
+        playSparkle(this);
+        PixelUI.hop(this, this.printButton, this.printButton.baseY, S(3), { duration: 80 });
+        window.print();
+    }
+
+    // --- Tools --------------------------------------------------------------------------
+
+    // A big square button showing the tool in the chosen paint; the tool in use is lit up
+    // and framed in white.
+    createToolButton(tool, x, y, size, drawIcon) {
+        const g = this.add.graphics();
+        const button = this.add.container(x, y, [g]);
+        button.baseY = y;
+        button.tool = tool;
+        button.draw = (selected) => {
+            g.clear();
+            if (selected) {
+                g.fillStyle(PALETTE.buttonBorder, 1);
+                g.fillRect(-size / 2 - 4, -size / 2 - 4, size + 8, size + 8);
+                g.fillStyle(0xffffff, 1);
+                g.fillRect(-size / 2 - 3, -size / 2 - 3, size + 6, size + 6);
+            }
+            PixelUI.drawBox(g, -size / 2, -size / 2, size, size, selected ? PALETTE.buttonHover : PALETTE.button,
+                PALETTE.buttonBorder, PALETTE.buttonLight);
+            drawIcon(g, 0, 0, Math.round(size * 0.7), paintColor(this.paint, 0, 0));
+        };
+        button.setSize(size, size);
+        button.setInteractive({ useHandCursor: true });
+        button.on('pointerup', () => this.chooseTool(tool));
+        return button;
+    }
+
+    chooseTool(tool) {
+        this.tool = tool;
+        playPat(this);
+        this.refreshTools();
+        const button = this.toolButtons.find((b) => b.tool === tool);
+        PixelUI.hop(this, button, button.baseY, S(3), { duration: 80 });
+    }
+
+    refreshTools() {
+        this.toolButtons.forEach((b) => b.draw(b.tool === this.tool));
     }
 
     // --- Paint panel --------------------------------------------------------------------
@@ -311,6 +435,7 @@ export class ColoringScene extends BaseScene {
         this.paint = paint;
         playPat(this);
         this.refreshSwatches();
+        this.refreshTools();
         PixelUI.hop(this, this.selectedSwatch, this.selectedSwatch.baseY, S(3), { duration: 80 });
     }
 

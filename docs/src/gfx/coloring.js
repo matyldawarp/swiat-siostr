@@ -39,6 +39,10 @@ export function paintColor(paint, x, y) {
 
 export const paintById = (id) => PAINTS.find((p) => p.id === id) || null;
 
+// The brush paints a line this many page pixels wide, about the width of a small child's
+// fingertip on the iPad (a page pixel is 2 CSS px; see tools/make-coloring.mjs).
+export const BRUSH_WIDTH = 18;
+
 const css = (color) => `#${color.toString(16).padStart(6, '0')}`;
 
 // --- Areas ----------------------------------------------------------------------------
@@ -116,13 +120,20 @@ export class PaintLayer {
         return this.patterns.get(paint.id);
     }
 
-    // Everything again: white paper, then every area in its paint (`fills`: area -> paint id).
-    render(fills) {
+    // Everything again: white paper, then every step in order. A step is a fill
+    // ({ area, paint }) or a brush stroke ({ area, paint, points }), paint given by id.
+    render(steps) {
         const ctx = this.ctx;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, this.texture.width, this.texture.height);
-        Object.entries(fills).forEach(([area, paintId]) => this.fill(Number(area), paintById(paintId)));
+        steps.forEach((step) => {
+            if (step.points) {
+                this.stroke(step.area, paintById(step.paint), step.points);
+            } else {
+                this.fill(step.area, paintById(step.paint));
+            }
+        });
         this.texture.refresh();
     }
 
@@ -143,6 +154,37 @@ export class PaintLayer {
             ctx.fill();
         } else {
             ctx.fill(this.info.areas[area].path, 'evenodd');
+        }
+        ctx.restore();
+    }
+
+    // A round brush line through `points` ([x, y, x, y, ...] in page pixels), kept inside
+    // the area so it never goes over into the next one. `from` (a point index) draws only
+    // the part added since then, while the finger is still moving.
+    stroke(area, paint, points, from = 0) {
+        if (!paint || points.length < 2) {
+            return;
+        }
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+        ctx.clip(this.info.areas[area].path, 'evenodd');
+        ctx.fillStyle = this.style(paint);
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = BRUSH_WIDTH;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        const start = Math.max(0, from - 1) * 2;
+        ctx.beginPath();
+        if (points.length - start === 2) {
+            ctx.arc(points[start], points[start + 1], BRUSH_WIDTH / 2, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.moveTo(points[start], points[start + 1]);
+            for (let i = start + 2; i < points.length; i += 2) {
+                ctx.lineTo(points[i], points[i + 1]);
+            }
+            ctx.stroke();
         }
         ctx.restore();
     }
@@ -186,6 +228,45 @@ export function makeLineArt(scene, page, originalKey, blank = []) {
     texture.refresh();
     texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     return key;
+}
+
+// --- Printing -------------------------------------------------------------------------
+
+// Gets the blank page ready to print on paper: the original picture as drawn (with the
+// `make.blank` boxes whited out), as large as the sheet allows. The game hides itself for
+// printing (print stylesheet below), so only the picture is on the sheet. Done when the
+// page opens, so the print button can call window.print() straight from the tap: iPad
+// Safari ignores it later on.
+export function preparePrint(scene, originalKey, blank = []) {
+    const img = scene.textures.get(originalKey).getSourceImage();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, img.width, img.height);
+    ctx.drawImage(img, 0, 0);
+    blank.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+
+    let sheet = document.getElementById('print-sheet');
+    if (!sheet) {
+        sheet = document.createElement('div');
+        sheet.id = 'print-sheet';
+        sheet.appendChild(document.createElement('img'));
+        document.body.appendChild(sheet);
+        document.head.appendChild(document.createElement('style')).id = 'print-style';
+    }
+    const landscape = img.width > img.height;
+    document.getElementById('print-style').textContent = `
+        #print-sheet { display: none; }
+        @media print {
+            @page { size: ${landscape ? 'landscape' : 'portrait'}; margin: 8mm; }
+            html, body { width: 100%; height: 100%; margin: 0; overflow: visible; background: #ffffff; }
+            body > *:not(#print-sheet) { display: none !important; }
+            #print-sheet { display: block; width: 100%; height: 100%; }
+            #print-sheet img { display: block; width: 100%; height: 100%; object-fit: contain; }
+        }`;
+    sheet.querySelector('img').src = canvas.toDataURL('image/png');
 }
 
 // Colors are not kept between visits: every page starts blank when it is opened.
