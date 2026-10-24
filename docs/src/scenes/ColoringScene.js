@@ -1,6 +1,6 @@
 import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
-import { COLORING_PAGES, getColoringPage } from '../data/coloring.js';
+import { COLORING_PAGES, coloringImage, getColoringPage } from '../data/coloring.js';
 import { PAINTS, analysePage, flowOrder, loadFills, paintArea, paintColor, renderPage, saveFills } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
@@ -33,7 +33,7 @@ export class ColoringScene extends BaseScene {
     preload() {
         COLORING_PAGES.forEach((page) => {
             if (!this.textures.exists(pageTexture(page))) {
-                this.load.image(pageTexture(page), page.image);
+                this.load.image(pageTexture(page), coloringImage(page));
             }
         });
     }

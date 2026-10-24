@@ -1,53 +1,63 @@
-// Turns a black-and-white coloring page into the small grayscale PNG the game colors in.
+// Makes the pictures the game colors in from the original coloring pages.
 //
-//   node tools/make-coloring.mjs <source image> <name> [--height 380] [--thicken 3] [--blank x,y,w,h ...]
+//   node tools/make-coloring.mjs            remake every page
+//   node tools/make-coloring.mjs <id>       remake one page
 //
-// The source (keep it in assets/coloring-src/, outside docs/) is shrunk to `--height` game
-// pixels (the page area of the coloring screen), so its lines become pixel-art lines.
-// Before that the lines are made `--thicken` pixels fatter on each side, so after
-// shrinking they stay unbroken and paint can't leak through them from one area into the
-// next (check the number of areas in the game if a page fills strangely).
-// `--blank` paints a white box over parts that must go first, such as a printed title or
-// a website address, in source pixels; it may repeat.
-// The result is docs/assets/coloring/<name>.png; then add the page to
-// docs/src/data/coloring.js. Needs ffmpeg on the PATH.
+// For each page in docs/src/data/coloring.js, the original docs/assets/coloring/<id>.png
+// (the picture exactly as given) becomes docs/assets/coloring/<id>.coloring.png beside it:
+//  - `make.blank` boxes (x, y, w, h in the original's pixels) are painted white first, to
+//    hide things like a printed title or a website address;
+//  - lines get `make.thicken` pixels fatter on each side (default 3; use less for busy
+//    pictures with small details), so after shrinking they stay unbroken;
+//  - the picture shrinks to HEIGHT game pixels, the page area of the coloring screen, so
+//    its lines become pixel-art lines.
+// To add a page: save the original as docs/assets/coloring/<id>.png, add it to
+// COLORING_PAGES, run this, and look at the result in the game. Needs ffmpeg on the PATH.
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const OUT_DIR = join(ROOT, 'docs', 'assets', 'coloring');
+const DOCS = join(ROOT, 'docs');
+const HEIGHT = 380;
 
-const argv = process.argv.slice(2);
-const [source, name] = argv.filter((a, i) => !a.startsWith('--') && !argv[i - 1]?.startsWith('--'));
-if (!source || !name || !/^[a-z0-9-]+$/.test(name)) {
-    console.error('Usage: node tools/make-coloring.mjs <source image> <name: lowercase-with-dashes> [--height 380] [--blank x,y,w,h ...]');
+const { COLORING_PAGES, coloringImage, coloringOriginal } = await import(pathToFileURL(join(DOCS, 'src', 'data', 'coloring.js')).href);
+
+const only = process.argv[2];
+const pages = COLORING_PAGES.filter((p) => !only || p.id === only);
+if (pages.length === 0) {
+    console.error(`No page "${only}" in docs/src/data/coloring.js.`);
     process.exit(1);
 }
-const option = (flag) => argv.flatMap((a, i) => (a === flag ? [argv[i + 1]] : []));
-const height = Number(option('--height')[0] || 380);
 
-const filters = option('--blank').map((box) => {
-    const [x, y, w, h] = box.split(',').map(Number);
-    return `drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=white:t=fill`;
-});
-// Erosion spreads the dark lines by a pixel each time.
-filters.push('format=gray');
-const thicken = Number(option('--thicken')[0] ?? 3);
-for (let i = 0; i < thicken; i++) {
-    filters.push('erosion');
-}
-// Area averaging keeps thin lines as gray pixels instead of dropping them; the game then
-// counts anything darker than its threshold as line.
-filters.push(`scale=-2:${height}:flags=area`);
+let failed = false;
+for (const page of pages) {
+    const source = join(DOCS, coloringOriginal(page));
+    if (!existsSync(source)) {
+        console.error(`${page.id}: missing original ${coloringOriginal(page)}`);
+        failed = true;
+        continue;
+    }
+    const { thicken = 3, blank = [] } = page.make || {};
+    const filters = blank.map(([x, y, w, h]) => `drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=white:t=fill`);
+    filters.push('format=gray');
+    // Erosion spreads the dark lines by a pixel each time.
+    for (let i = 0; i < thicken; i++) {
+        filters.push('erosion');
+    }
+    // Area averaging keeps thin lines as gray pixels instead of dropping them; the game
+    // counts anything darker than its threshold as line.
+    filters.push(`scale=-2:${HEIGHT}:flags=area`);
 
-mkdirSync(OUT_DIR, { recursive: true });
-const out = join(OUT_DIR, `${name}.png`);
-const result = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', source, '-vf', filters.join(','), '-frames:v', '1', out], { encoding: 'utf8' });
-if (result.error || result.status !== 0) {
-    console.error(result.error ? `ffmpeg could not start: ${result.error.message}` : result.stderr);
-    process.exit(1);
+    const out = join(DOCS, coloringImage(page));
+    const result = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', source, '-vf', filters.join(','), '-frames:v', '1', out], { encoding: 'utf8' });
+    if (result.error || result.status !== 0) {
+        console.error(`${page.id}: ${result.error ? `ffmpeg could not start: ${result.error.message}` : result.stderr}`);
+        failed = true;
+        continue;
+    }
+    console.log(`wrote docs/${coloringImage(page)}`);
 }
-console.log(`wrote docs/assets/coloring/${name}.png`);
+process.exit(failed ? 1 : 0);
