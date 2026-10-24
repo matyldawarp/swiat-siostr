@@ -1,7 +1,7 @@
 import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
-import { COLORING_PAGES, coloringImage, coloringOriginal, getColoringPage } from '../data/coloring.js';
-import { PAINTS, PaintLayer, areaAt, makeLineArt, pageAreas, paintColor, preparePrint, printBlankPage } from '../gfx/coloring.js';
+import { COLORING_PAGES, coloringOriginal, getColoringPage } from '../data/coloring.js';
+import { PAINTS, PaintLayer, areaAt, areaBox, coloringInfo, makeLineArt, paintColor, preparePrint, printBlankPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
@@ -22,11 +22,10 @@ const STEPS_KEY = 'coloringSteps';
 // A brush stroke gets a heart at the end once it is this long (page pixels).
 const LONG_STROKE = 80;
 
-// The areas (SVG text) and the original picture whose lines are shown.
-const areasKey = (page) => `coloring-areas-${page.id}`;
+// The original picture: its lines are shown, and its areas are found when tapped.
 const originalTexture = (page) => `coloring-original-${page.id}`;
-const lineArt = (scene, page) => makeLineArt(scene, page, originalTexture(page), page.make?.blank);
-const areasOf = (scene, page) => pageAreas(page.id, scene.cache.text.get(areasKey(page)));
+const lineArt = (scene, page) => makeLineArt(scene, page, originalTexture(page), page.blank);
+const areasOf = (scene, page) => coloringInfo(scene, page, originalTexture(page));
 
 // The art studio. First a shelf with a card per coloring page; tapping one opens it.
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
@@ -42,9 +41,6 @@ export class ColoringScene extends BaseScene {
 
     preload() {
         COLORING_PAGES.forEach((page) => {
-            if (!this.cache.text.exists(areasKey(page))) {
-                this.load.text(areasKey(page), coloringImage(page));
-            }
             if (!this.textures.exists(originalTexture(page))) {
                 this.load.image(originalTexture(page), coloringOriginal(page));
             }
@@ -214,7 +210,7 @@ export class ColoringScene extends BaseScene {
             this.createToolButton('brush', toolsX, toolY + button + S(8), button, Icons.brush)
         ];
         this.refreshTools();
-        preparePrint(this, originalTexture(this.page), this.page.make?.blank, this.page.id);
+        preparePrint(this, originalTexture(this.page), this.page.blank, this.page.id);
         this.printButton = PixelUI.createIconButton(this, toolsX, height - S(6) - button / 2, button,
             (gfx, size) => Icons.printer(gfx, 0, 0, size), () => this.print());
         this.printButton.baseY = this.printButton.y;
@@ -248,7 +244,7 @@ export class ColoringScene extends BaseScene {
         playPlop(this);
 
         // A growing circle of paint from the finger, clipped to the area, over a few frames.
-        const { box } = info.areas[area];
+        const box = areaBox(info, area);
         const reach = Math.max(...[[box.x1, box.y1], [box.x2, box.y1], [box.x1, box.y2], [box.x2, box.y2]]
             .map(([cx, cy]) => Math.hypot(cx - x, cy - y)));
         const big = (box.x2 - box.x1) * (box.y2 - box.y1) > 600;

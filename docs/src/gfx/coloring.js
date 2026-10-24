@@ -1,11 +1,12 @@
-// Coloring pages: paints, the areas of a page (from its <id>.coloring.svg), the paint layer
-// they are filled on, and the original drawing's lines shown over it.
+// Coloring pages: paints, the areas of a page, the paint layer they are filled on, and the
+// original drawing's lines shown over it.
 //
-// What you see is the original picture's lines (makeLineArt) over a layer of paint. The
-// areas come from the SVG made by tools/make-coloring.mjs: one path per area, meeting
-// along the middle of each drawn stroke, so paint always reaches under the lines.
+// What you see is the original picture's lines (makeLineArt) over a layer of paint. An
+// area is found in the blank original when a finger taps it (gfx/coloringAreas.js), and
+// its paint reaches a little under the lines around it.
 
 import { PALETTE } from '../ui/pixel.js';
+import { PageAreas } from './coloringAreas.js';
 
 const STORAGE_KEY = 'swiat-siostr-coloring';
 
@@ -40,50 +41,87 @@ export function paintColor(paint, x, y) {
 export const paintById = (id) => PAINTS.find((p) => p.id === id) || null;
 
 // The brush paints a line this many page pixels wide, about the width of a small child's
-// fingertip on the iPad (a page pixel is 2 CSS px; see tools/make-coloring.mjs).
+// fingertip on the iPad (a page pixel is 2 CSS px there, see STAGE in ui/pixel.js).
 export const BRUSH_WIDTH = 18;
 
 const css = (color) => `#${color.toString(16).padStart(6, '0')}`;
 
 // --- Areas ----------------------------------------------------------------------------
 
-const parsed = new Map();
+// Height of the page on the coloring screen, in page (game) pixels.
+const PAGE_HEIGHT = 380;
 
-// The areas of a page from its SVG text: { width, height, areas: [{ path, box }] } with a
-// Path2D per area (fill-rule evenodd, in page pixels) and its bounding box. Kept per page.
-export function pageAreas(pageId, svgText) {
-    if (parsed.has(pageId)) {
-        return parsed.get(pageId);
+const pages = new Map();
+
+// A page ready to color, kept per page while the game runs (so areas found once stay):
+// { width, height } on screen in page pixels, the areas finder over the blank original
+// (gfx/coloringAreas.js; its pixels are `sx` per page pixel) and masks of found areas.
+export function coloringInfo(scene, page, originalKey) {
+    if (pages.has(page.id)) {
+        return pages.get(page.id);
     }
-    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
-    const svg = doc.documentElement;
-    const [, , width, height] = svg.getAttribute('viewBox').split(/\s+/).map(Number);
-    const areas = [...doc.querySelectorAll('path')].map((el) => {
-        const d = el.getAttribute('d');
-        const numbers = d.match(/-?\d+(\.\d+)?/g).map(Number);
-        const xs = numbers.filter((_, i) => i % 2 === 0);
-        const ys = numbers.filter((_, i) => i % 2 === 1);
-        const box = { x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
-        return { path: new Path2D(d), box };
-    });
-    const result = { width, height, areas };
-    parsed.set(pageId, result);
-    return result;
+    const img = scene.textures.get(originalKey).getSourceImage();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, img.width, img.height);
+    ctx.drawImage(img, 0, 0);
+    (page.blank || []).forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+    const rgba = ctx.getImageData(0, 0, img.width, img.height).data;
+    const gray = new Uint8Array(img.width * img.height);
+    for (let i = 0; i < gray.length; i++) {
+        gray[i] = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3;
+    }
+    const info = {
+        width: Math.round((PAGE_HEIGHT * img.width) / img.height),
+        height: PAGE_HEIGHT,
+        sx: img.height / PAGE_HEIGHT,
+        finder: new PageAreas(gray, img.width, img.height),
+        masks: new Map()
+    };
+    pages.set(page.id, info);
+    return info;
 }
 
-let hitCtx = null;
-
-// The area at (x, y) in page pixels, or -1.
+// The area at (x, y) in page pixels (found now if it's the first tap there), or -1.
 export function areaAt(info, x, y) {
-    hitCtx = hitCtx || document.createElement('canvas').getContext('2d');
-    return info.areas.findIndex(({ path, box }) => x >= box.x1 && x <= box.x2 && y >= box.y1 && y <= box.y2
-        && hitCtx.isPointInPath(path, x, y, 'evenodd'));
+    return info.finder.areaAt(x * info.sx, y * info.sx);
+}
+
+// An area's bounding box in page pixels.
+export function areaBox(info, area) {
+    const { box } = info.finder.areas[area];
+    const s = info.sx;
+    return { x1: box.x1 / s, y1: box.y1 / s, x2: (box.x2 + 1) / s, y2: (box.y2 + 1) / s };
+}
+
+// The area as an image of its bounding box: opaque where it is, clear elsewhere.
+function areaMask(info, area) {
+    if (!info.masks.has(area)) {
+        const { box, mask } = info.finder.areas[area];
+        const canvas = document.createElement('canvas');
+        canvas.width = box.x2 - box.x1 + 1;
+        canvas.height = box.y2 - box.y1 + 1;
+        const ctx = canvas.getContext('2d');
+        const image = ctx.createImageData(canvas.width, canvas.height);
+        for (let i = 0; i < mask.length; i++) {
+            if (mask[i]) {
+                image.data.fill(255, i * 4, i * 4 + 4);
+            }
+        }
+        ctx.putImageData(image, 0, 0);
+        info.masks.set(area, canvas);
+    }
+    return info.masks.get(area);
 }
 
 // --- Paint layer ----------------------------------------------------------------------
 
 // A canvas texture the page's paint is drawn on, `scale` device pixels per page pixel so
-// area edges stay smooth. Untouched paper is white; the lines go on top of it.
+// area edges stay smooth. Untouched paper is white; the lines go on top of it. Paint is
+// first drawn on a scratch canvas, cut to the area's shape there, and then laid on.
 export class PaintLayer {
     constructor(scene, key, info, scale) {
         if (scene.textures.exists(key)) {
@@ -94,9 +132,62 @@ export class PaintLayer {
         this.texture = scene.textures.createCanvas(key, Math.ceil(info.width * scale), Math.ceil(info.height * scale));
         this.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
         this.ctx = this.texture.getContext();
-        // Patterns keep their pixel look.
-        this.ctx.imageSmoothingEnabled = false;
+        this.scratch = document.createElement('canvas');
+        this.sctx = this.scratch.getContext('2d');
+        // What the scratch canvas holds now ("area:paint" of a whole fill), to reuse it
+        // while a fill spreads.
+        this.scratchFill = null;
         this.patterns = new Map();
+    }
+
+    // The area's box on the layer, in whole layer pixels.
+    areaRect(area) {
+        const box = areaBox(this.info, area);
+        const x = Math.floor(box.x1 * this.scale);
+        const y = Math.floor(box.y1 * this.scale);
+        return { x, y, w: Math.ceil(box.x2 * this.scale) - x, h: Math.ceil(box.y2 * this.scale) - y };
+    }
+
+    // Draws `shape(ctx)` (page coordinates) in `paint` on the scratch canvas over `rect` of
+    // the layer, cut to the area. Returns false when there is nothing to draw.
+    prepare(area, paint, rect, shape) {
+        if (rect.w <= 0 || rect.h <= 0) {
+            return false;
+        }
+        const ctx = this.sctx;
+        this.scratch.width = rect.w;
+        this.scratch.height = rect.h;
+        // Patterns keep their pixel look.
+        ctx.imageSmoothingEnabled = false;
+        ctx.setTransform(this.scale, 0, 0, this.scale, -rect.x, -rect.y);
+        ctx.fillStyle = this.style(paint);
+        ctx.strokeStyle = ctx.fillStyle;
+        shape(ctx);
+        // Keep only the area, its edges smoothed.
+        const { box } = this.info.finder.areas[area];
+        const f = this.scale / this.info.sx;
+        const mask = areaMask(this.info, area);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(mask, box.x1 * f - rect.x, box.y1 * f - rect.y, mask.width * f, mask.height * f);
+        ctx.globalCompositeOperation = 'source-over';
+        return true;
+    }
+
+    // Lays the scratch canvas on the layer at `rect`; with `circle` (page pixels) only
+    // the part inside it.
+    layOn(rect, circle = null) {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        if (circle) {
+            ctx.beginPath();
+            ctx.arc(circle.x * this.scale, circle.y * this.scale, circle.r * this.scale, 0, Math.PI * 2);
+            ctx.clip();
+        }
+        ctx.drawImage(this.scratch, rect.x, rect.y);
+        ctx.restore();
     }
 
     // How a paint fills: a CSS color, or a repeating pattern drawn from its pixels.
@@ -115,7 +206,7 @@ export class PaintLayer {
                     tctx.fillRect(x, y, 1, 1);
                 }
             }
-            this.patterns.set(paint.id, this.ctx.createPattern(tile, 'repeat'));
+            this.patterns.set(paint.id, this.sctx.createPattern(tile, 'repeat'));
         }
         return this.patterns.get(paint.id);
     }
@@ -143,19 +234,15 @@ export class PaintLayer {
         if (!paint) {
             return;
         }
-        const ctx = this.ctx;
-        ctx.save();
-        ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
-        ctx.fillStyle = this.style(paint);
-        if (circle) {
-            ctx.clip(this.info.areas[area].path, 'evenodd');
-            ctx.beginPath();
-            ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            ctx.fill(this.info.areas[area].path, 'evenodd');
+        const rect = this.areaRect(area);
+        const key = `${area}:${paint.id}`;
+        if (this.scratchFill !== key) {
+            if (!this.prepare(area, paint, rect, (ctx) => ctx.fillRect(0, 0, this.info.width, this.info.height))) {
+                return;
+            }
+            this.scratchFill = key;
         }
-        ctx.restore();
+        this.layOn(rect, circle);
     }
 
     // A round brush line through `points` ([x, y, x, y, ...] in page pixels), kept inside
@@ -165,28 +252,41 @@ export class PaintLayer {
         if (!paint || points.length < 2) {
             return;
         }
-        const ctx = this.ctx;
-        ctx.save();
-        ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
-        ctx.clip(this.info.areas[area].path, 'evenodd');
-        ctx.fillStyle = this.style(paint);
-        ctx.strokeStyle = ctx.fillStyle;
-        ctx.lineWidth = BRUSH_WIDTH;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
         const start = Math.max(0, from - 1) * 2;
-        ctx.beginPath();
-        if (points.length - start === 2) {
-            ctx.arc(points[start], points[start + 1], BRUSH_WIDTH / 2, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            ctx.moveTo(points[start], points[start + 1]);
-            for (let i = start + 2; i < points.length; i += 2) {
-                ctx.lineTo(points[i], points[i + 1]);
-            }
-            ctx.stroke();
+        // Only the box around the new part, inside the area's box.
+        const xs = [];
+        const ys = [];
+        for (let i = start; i < points.length; i += 2) {
+            xs.push(points[i]);
+            ys.push(points[i + 1]);
         }
-        ctx.restore();
+        const pad = BRUSH_WIDTH / 2 + 1;
+        const areaRect = this.areaRect(area);
+        const x1 = Math.max(areaRect.x, Math.floor((Math.min(...xs) - pad) * this.scale));
+        const y1 = Math.max(areaRect.y, Math.floor((Math.min(...ys) - pad) * this.scale));
+        const x2 = Math.min(areaRect.x + areaRect.w, Math.ceil((Math.max(...xs) + pad) * this.scale));
+        const y2 = Math.min(areaRect.y + areaRect.h, Math.ceil((Math.max(...ys) + pad) * this.scale));
+        const rect = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+        this.scratchFill = null;
+        const drawn = this.prepare(area, paint, rect, (ctx) => {
+            ctx.lineWidth = BRUSH_WIDTH;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            if (points.length - start === 2) {
+                ctx.arc(points[start], points[start + 1], BRUSH_WIDTH / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.moveTo(points[start], points[start + 1]);
+                for (let i = start + 2; i < points.length; i += 2) {
+                    ctx.lineTo(points[i], points[i + 1]);
+                }
+                ctx.stroke();
+            }
+        });
+        if (drawn) {
+            this.layOn(rect);
+        }
     }
 
     refresh() {
