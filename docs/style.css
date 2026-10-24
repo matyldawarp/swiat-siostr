@@ -12,6 +12,22 @@ html, body {
     height: 100%;
 }
 
+/* The home-screen app draws under the status bar (black-translucent, viewport-fit=cover).
+   Since iPadOS 26 the system covers that band with a "glass" blur unless it finds a solid
+   colour at the top of the page: a fixed, opaque, full-width element at least 6px tall at
+   the very top. iPadOS 27 made the blur clearly visible. This strip is that element, so
+   the band is plain pastel instead. Its height is 0 in a browser tab (no inset there). */
+#status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: env(safe-area-inset-top, 0px);
+    background: #fff4f8;
+    z-index: 5;
+    pointer-events: none;
+}
+
 /* Never shown: main.js reads its padding to learn the screen's safe-area insets. */
 #safe-area {
     position: fixed;

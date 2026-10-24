@@ -10,7 +10,7 @@
 
 - Gra ma zawsze poziomy kształt ekranu iPada dziewczynek: 1080×810 px CSS (4:3), zmierzone w trybie debug. Każda scena jest układana na stałej scenie 540×405 pikseli gry (`STAGE` w `docs/src/ui/pixel.js`).
 - Na tym iPadzie trzymanym poziomo, uruchomionym z ekranu początkowego, scena wypełnia ekran przy 2 px CSS na piksel gry. W Safari z paskami narzędzi jest trochę mniejsza.
-- W trybie aplikacji gra rysuje się pod paskiem stanu (`black-translucent`, `viewport-fit=cover`), ale iOS zgłasza wysokość okna bez paska, więc `fitToWindow` dolicza ją z powrotem. Przyciski overlaya omijają pasek dzięki `SAFE_AREA`.
+- W trybie aplikacji gra rysuje się pod paskiem stanu (`black-translucent`, `viewport-fit=cover`), ale iOS zgłasza wysokość okna bez paska, więc `fitToWindow` dolicza ją z powrotem. Przyciski overlaya omijają pasek dzięki `SAFE_AREA`. Pod samym paskiem leży jednolity `#status-bar` (`style.css`), bo bez niego iPadOS 27 rozmywa tam górę gry.
 - Na innych ekranach, także w pionie, cała scena jest zmniejszana albo powiększana, żeby się zmieściła, i wyśrodkowana.
 - Tła scen (niebo, ściany, podłoga, trawa) rysujemy na `view.bleed`, czyli na całym oknie, a nie tylko na scenie. Dzięki temu wokół sceny widać dalszy ciąg tła zamiast pustych pasów, także w nowych scenach.
 - Tylko przyciski z `OverlayScene` (ustawienia, muzyka, przeładowanie) trzymają się rogów okna i mogą wystawać poza scenę.
