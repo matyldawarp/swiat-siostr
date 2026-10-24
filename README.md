@@ -22,6 +22,25 @@ GitHub Pages publikuje grę prosto z folderu `docs/` na gałęzi `main`, przy ka
 
 Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, gałąź **main**, folder **/docs**.
 
+## Ekrany
+
+Strzałki pokazują, dokąd można przejść z danego ekranu. Z każdego ekranu niżej przycisk powrotu prowadzi o poziom wyżej. W nawiasach jest adres ekranu po `#`.
+
+```mermaid
+flowchart TD
+    start["Start (#start)"] --> postacie["Wybór postaci (#postacie)"]
+    postacie --> terrarium["Terrarium (#terrarium)"]
+    terrarium --> kuchnia["Kuchnia (#kuchnia)"]
+    terrarium --> mapa["Mapa (#mapa)"]
+    mapa --> szpital["Szpital (#szpital)"]
+    mapa --> cukiernia["Cukiernia (#cukiernia)"]
+    mapa --> dentysta["Dentysta (#dentysta)"]
+    mapa --> kolorowanki["Kolorowanki: półka (#kolorowanki)"]
+    kolorowanki --> strona["Kolorowanka (#kolorowanki/nazwa-strony)"]
+```
+
+Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Ustawień jest tylko na ekranach Start i Wybór postaci. Przycisk przeładowania w prawym górnym rogu zawsze wraca na Start.
+
 ## Struktura
 
 - `docs/` – cała gra, publikowana na GitHub Pages
