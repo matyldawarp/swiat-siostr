@@ -125,6 +125,12 @@ export class CharacterScene extends BaseScene {
         const character = CHARACTERS[index];
         this.selectedIndex = index;
         this.registry.set('selectedCharacter', character.id);
+        // Remembered on this device, so reloading a screen keeps the same character (main.js).
+        try {
+            localStorage.setItem('swiat-siostr-character', character.id);
+        } catch {
+            // Storage blocked: the choice lasts until the page is closed.
+        }
 
         this.slots.forEach((s, i) => s.draw(i === index));
 

@@ -46,6 +46,11 @@ export class ColoringScene extends BaseScene {
         this.busy = false;
     }
 
+    // #kolorowanki for the shelf, #kolorowanki/<page id> while coloring a page.
+    route() {
+        return this.page ? `${super.route()}/${this.page.id}` : super.route();
+    }
+
     build({ width, height }) {
         this.drawWall();
         if (this.page) {

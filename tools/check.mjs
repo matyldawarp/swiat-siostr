@@ -342,6 +342,14 @@ if (!sceneList || sceneList[1].split(',').map((s) => s.trim()).filter(Boolean).p
     fail(MAIN, 'OverlayScene must be last in the scene list');
 }
 
+// Every scene in the list except OverlayScene needs an address (scenes/routes.js).
+const routesModule = loaded['docs/src/scenes/routes.js'];
+if (sceneList && routesModule) {
+    sceneList[1].split(',').map((s) => s.trim()).filter((s) => s && s !== 'OverlayScene')
+        .filter((key) => !routesModule.SCENE_ROUTES[key])
+        .forEach((key) => fail(join(SRC, 'scenes', 'routes.js'), `${key} has no address in SCENE_ROUTES`));
+}
+
 const html = readFileSync(join(DOCS, 'index.html'), 'utf8');
 for (const m of html.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)) {
     if (!/^https:\/\//.test(m[1]) && m[1] !== 'src/main.js') {

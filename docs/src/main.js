@@ -10,6 +10,7 @@ import { BakeryScene } from './scenes/BakeryScene.js';
 import { DentistScene } from './scenes/DentistScene.js';
 import { ColoringScene } from './scenes/ColoringScene.js';
 import { OverlayScene } from './scenes/OverlayScene.js';
+import { routeFromAddress } from './scenes/routes.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -25,7 +26,8 @@ const config = {
         width: STAGE.width,
         height: STAGE.height
     },
-    // OverlayScene must stay last so it draws on top of every other scene.
+    // OverlayScene must stay last so it draws on top of every other scene. The first one
+    // starts the game (StartScene, or the screen named after # in the address).
     scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, OverlayScene]
 };
 
@@ -98,7 +100,29 @@ function startGame() {
     keepScreenAwake();
     Music.init();
 
+    // Reloading on, say, #kuchnia or #kolorowanki/looney-tunes opens that screen again:
+    // Phaser starts the first scene in the list, so that one goes first.
+    const route = routeFromAddress();
+    if (route) {
+        const first = config.scene.find((scene) => scene.name === route.scene);
+        config.scene = [first, ...config.scene.filter((scene) => scene !== first)];
+    }
     const game = new Phaser.Game(config);
+
+    // Set at once, before the first scene starts and reads them.
+    // The character chosen last time on this device (CharacterScene remembers it).
+    try {
+        const saved = localStorage.getItem('swiat-siostr-character');
+        if (saved) {
+            game.registry.set('selectedCharacter', saved);
+        }
+    } catch {
+        // Storage blocked: the first character, as on a first visit.
+    }
+    // The page in #kolorowanki/<page>.
+    if (route && route.scene === 'ColoringScene') {
+        game.registry.set('coloringPage', route.detail);
+    }
 
     game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));
 
