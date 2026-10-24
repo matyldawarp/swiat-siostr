@@ -1,5 +1,9 @@
-// Coloring pages: paints, splitting a page's line art into fillable areas and drawing the
-// colored page.
+// Coloring pages: paints, splitting a page into fillable areas, the paint layer, and the
+// original drawing's lines shown over it.
+//
+// What you see is the original picture's lines (makeLineArt) over a layer of paint. The
+// areas the paint fills come from the small grayscale <id>.coloring.png: they meet along
+// the middle of each drawn stroke, so paint always reaches under the lines.
 
 import { PALETTE } from '../ui/pixel.js';
 
@@ -8,10 +12,6 @@ const LINE_THRESHOLD = 200;
 // Gaps in the drawing up to about twice this many pixels wide count as closed, so paint
 // doesn't leak out of a shape whose outline doesn't quite meet.
 const GAP_CLOSE = 3;
-// Every page's lines are thinned to their 1-pixel middle and then drawn this many pixels
-// further out on each side, so all pages have lines of the same width, whatever the
-// original drawing had: 0 gives 1-pixel lines, 1 gives 3-pixel lines.
-const LINE_RADIUS = 0;
 const STORAGE_KEY = 'swiat-siostr-coloring';
 
 // Little repeatable hash of a pixel position, for sparkles that stay put.
@@ -121,16 +121,15 @@ function widen(mask, width, height, r) {
     return out;
 }
 
-// Splits a page's line art (a loaded texture) into areas of paper between lines.
-// Returns { width, height, line, labels, areas } where labels[i] is the area of pixel i
-// (-1 on a line) and areas[n] lists the pixel indexes of area n. Kept per page, so this
-// runs once.
+// Splits a page (its loaded <id>.coloring.png) into areas. Returns { width, height,
+// labels, areas } where labels[i] is the area of pixel i and areas[n] lists the pixel
+// indexes of area n; every pixel belongs to an area. Kept per page, so this runs once.
 //
 // Drawings often have small gaps where two strokes almost meet, which would let paint
-// leak out. So areas are found with the strokes as drawn fattened by GAP_CLOSE pixels
-// (gaps closed). Then the strokes are thinned and redrawn LINE_RADIUS wide, so every page
-// has the same lines, and the paper left over (next to and under the old strokes) joins
-// the nearest area.
+// leak out. So areas are found with the strokes fattened by GAP_CLOSE pixels (gaps
+// closed). Then each stroke is thinned to its 1-pixel middle, which becomes the border
+// between areas, and everything else (next to and under the strokes) joins the nearest
+// area.
 export function analysePage(scene, page, textureKey) {
     if (analysed.has(page.id)) {
         return analysed.get(page.id);
@@ -161,10 +160,9 @@ export function analysePage(scene, page, textureKey) {
         }
     }
 
-    // What is drawn (and what stops paint) is the same width on every page: the middle of
-    // each stroke, LINE_RADIUS wide. The rest of the stroke becomes paper of its areas.
+    // The middle of each stroke: the border areas grow up to.
     thin(ink, width, height);
-    const line = widen(ink, width, height, LINE_RADIUS);
+    const line = ink;
 
     const neighboursOf = (i) => {
         const x = i % width;
@@ -235,6 +233,28 @@ export function analysePage(scene, page, textureKey) {
         }
     }
 
+    // The thin middle lines are only borders between areas: the original drawing's lines
+    // are shown on top (makeLineArt). Each of their pixels joins a neighbouring area, so
+    // paint reaches right under the drawn lines, and a tap on a line fills an area too.
+    ring = [];
+    for (let i = 0; i < count; i++) {
+        if (labels[i] !== -1) {
+            ring.push(i);
+        }
+    }
+    while (ring.length > 0) {
+        const next = [];
+        for (const i of ring) {
+            for (const n of neighboursOf(i)) {
+                if (n >= 0 && labels[n] === -1) {
+                    labels[n] = labels[i];
+                    next.push(n);
+                }
+            }
+        }
+        ring = next;
+    }
+
     const members = Array.from({ length: areaCount }, () => []);
     for (let i = 0; i < count; i++) {
         if (labels[i] !== -1) {
@@ -243,22 +263,52 @@ export function analysePage(scene, page, textureKey) {
     }
     const areas = members.map((m) => Int32Array.from(m));
 
-    const result = { width, height, line, labels, areas };
+    const result = { width, height, labels, areas };
     analysed.set(page.id, result);
     return result;
 }
 
-// The page's pixels with the current colors: lines in the outline color, untouched paper
-// white. `fills` maps area number -> paint id. Writes into a Uint32Array view of ImageData.
+// The paint layer: untouched paper white, areas in their paints. `fills` maps area number
+// -> paint id. Writes into a Uint32Array view of ImageData. The lines go on top of it.
 export function renderPage(info, fills, out) {
-    const outline = toPixel(PALETTE.outline);
-    const white = toPixel(0xffffff);
-    for (let i = 0; i < out.length; i++) {
-        out[i] = info.line[i] ? outline : white;
-    }
+    out.fill(toPixel(0xffffff));
     Object.entries(fills).forEach(([area, paintId]) => {
         paintArea(info, Number(area), paintById(paintId), out);
     });
+}
+
+// The original drawing's lines as a texture to lay over the paint: full resolution, the
+// page's `make.blank` boxes (printed title, website address) whited out, lines in the
+// outline color with soft edges and the paper transparent. Smooth scaling keeps them as
+// drawn when shown at the page's size. Returns the texture key.
+export function makeLineArt(scene, page, originalKey, blank = []) {
+    const key = `coloring-lines-${page.id}`;
+    if (scene.textures.exists(key)) {
+        return key;
+    }
+    const img = scene.textures.get(originalKey).getSourceImage();
+    const texture = scene.textures.createCanvas(key, img.width, img.height);
+    const ctx = texture.getContext();
+    ctx.drawImage(img, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    blank.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+
+    const data = ctx.getImageData(0, 0, img.width, img.height);
+    const px = data.data;
+    const r = (PALETTE.outline >> 16) & 0xff;
+    const g = (PALETTE.outline >> 8) & 0xff;
+    const b = PALETTE.outline & 0xff;
+    for (let i = 0; i < px.length; i += 4) {
+        const light = (px[i] + px[i + 1] + px[i + 2]) / 3;
+        px[i] = r;
+        px[i + 1] = g;
+        px[i + 2] = b;
+        px[i + 3] = Math.round(255 - light);
+    }
+    ctx.putImageData(data, 0, 0);
+    texture.refresh();
+    texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    return key;
 }
 
 // Colors the pixels `indexes` (all of an area by default) with a paint.

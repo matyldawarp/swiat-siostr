@@ -1,7 +1,7 @@
 import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
-import { COLORING_PAGES, coloringImage, getColoringPage } from '../data/coloring.js';
-import { PAINTS, analysePage, flowOrder, paintArea, paintColor, renderPage } from '../gfx/coloring.js';
+import { COLORING_PAGES, coloringImage, coloringOriginal, getColoringPage } from '../data/coloring.js';
+import { PAINTS, analysePage, flowOrder, makeLineArt, paintArea, paintColor, renderPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
@@ -21,7 +21,10 @@ const FILLS_KEY = 'coloringFills';
 // Undo steps kept per visit.
 const UNDO_LIMIT = 30;
 
+// The small picture that sets the areas, and the original whose lines are shown.
 const pageTexture = (page) => `coloring-page-${page.id}`;
+const originalTexture = (page) => `coloring-original-${page.id}`;
+const lineArt = (scene, page) => makeLineArt(scene, page, originalTexture(page), page.make?.blank);
 
 // The art studio. First a shelf with a card per coloring page; tapping one opens it.
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
@@ -37,6 +40,9 @@ export class ColoringScene extends BaseScene {
         COLORING_PAGES.forEach((page) => {
             if (!this.textures.exists(pageTexture(page))) {
                 this.load.image(pageTexture(page), coloringImage(page));
+            }
+            if (!this.textures.exists(originalTexture(page))) {
+                this.load.image(originalTexture(page), coloringOriginal(page));
             }
         });
     }
@@ -101,13 +107,7 @@ export class ColoringScene extends BaseScene {
         PixelUI.drawBox(g, x, y, w, h, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
 
         const info = analysePage(this, page, pageTexture(page));
-        const full = document.createElement('canvas');
-        full.width = info.width;
-        full.height = info.height;
-        const fullCtx = full.getContext('2d');
-        const data = fullCtx.createImageData(info.width, info.height);
-        renderPage(info, {}, new Uint32Array(data.data.buffer));
-        fullCtx.putImageData(data, 0, 0);
+        const lines = this.textures.get(lineArt(this, page)).getSourceImage();
 
         const titleH = S(22);
         const scale = Math.min((w - S(12)) / info.width, (h - titleH - S(10)) / info.height);
@@ -119,8 +119,11 @@ export class ColoringScene extends BaseScene {
         }
         const thumb = this.textures.createCanvas(key, tw, th);
         const ctx = thumb.getContext();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, tw, th);
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(full, 0, 0, tw, th);
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(lines, 0, 0, tw, th);
         thumb.refresh();
         this.add.image(x + w / 2, y + S(6) + th / 2, key);
 
@@ -179,6 +182,8 @@ export class ColoringScene extends BaseScene {
         const picture = this.add.image(px, py, key).setOrigin(0);
         picture.setInteractive({ useHandCursor: true });
         picture.on('pointerdown', (pointer) => this.fillAt(pointer.worldX - px, pointer.worldY - py));
+        // The original drawing's lines over the paint, smoothly scaled to the page.
+        this.add.image(px, py, lineArt(this, this.page)).setOrigin(0).setDisplaySize(info.width, info.height);
 
         // Below the music and reload buttons in the top-right corner (OverlayScene).
         const panelTop = S(34);

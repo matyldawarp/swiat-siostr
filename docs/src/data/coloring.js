@@ -5,8 +5,8 @@
 // saved colors, so don't rename it later.
 //
 // make: { blank } – see tools/make-coloring.mjs; `blank` boxes (x, y, w, h in the
-// original's pixels) hide things like a printed title or a website address. Lines get the
-// same width on every page (LINE_RADIUS in gfx/coloring.js).
+// original's pixels) hide things like a printed title or a website address, both in the
+// lines shown in the game (from the original) and in the .coloring.png that sets the areas.
 export const COLORING_PAGES = [
     {
         id: 'strus-pedziwiatr',
