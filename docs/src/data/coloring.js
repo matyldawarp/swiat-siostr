@@ -15,6 +15,10 @@ export const COLORING_PAGES = [
     {
         id: 'baby-kojot',
         title: 'Looney Tunes'
+    },
+    {
+        id: 'domek-strusia',
+        title: 'Looney Tunes'
     }
 ];
 
