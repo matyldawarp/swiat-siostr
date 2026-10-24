@@ -6,6 +6,11 @@ export const COLORING_PAGES = [
         id: 'strus-pedziwiatr',
         title: 'Struś pędziwiatr',
         image: 'assets/coloring/strus-pedziwiatr.png'
+    },
+    {
+        id: 'looney-tunes',
+        title: 'Looney Tunes',
+        image: 'assets/coloring/looney-tunes.png'
     }
 ];
 
