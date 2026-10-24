@@ -23,6 +23,35 @@
     <div id="game"></div>
     <!-- Measures the safe area (status bar, rounded corners) for the overlay buttons. -->
     <div id="safe-area"></div>
+    <!-- In debug mode (Settings) the game's errors show in the bottom-right corner, so they
+         can be read off a device. Plain script first, so it catches errors even when the
+         game's own code fails to load. -->
+    <div id="errors" style="display:none;position:fixed;right:8px;bottom:8px;max-width:60%;max-height:40%;overflow:auto;padding:6px 8px;background:#ffffff;color:#7a3f63;font:14px Arial,Helvetica,sans-serif;white-space:pre-wrap;z-index:10;"></div>
+    <script>
+        (function () {
+            var debug = false;
+            try {
+                debug = Boolean((JSON.parse(localStorage.getItem('swiat-siostr-settings')) || {}).debug);
+            } catch (e) {
+                debug = false;
+            }
+            function show(text) {
+                if (!debug) {
+                    return;
+                }
+                var box = document.getElementById('errors');
+                box.style.display = 'block';
+                box.textContent += (box.textContent ? '\n' : '') + text;
+            }
+            window.addEventListener('error', function (event) {
+                var where = event.filename ? ' (' + event.filename.split('/').slice(-2).join('/') + ':' + event.lineno + ')' : '';
+                show('Błąd: ' + (event.message || (event.target && event.target.src) || event) + where);
+            }, true);
+            window.addEventListener('unhandledrejection', function (event) {
+                show('Błąd: ' + (event.reason && (event.reason.stack || event.reason.message) || event.reason));
+            });
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/phaser@4.2.1/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nosleep.js@0.12.0/dist/NoSleep.min.js"></script>
     <!-- Game code is ES modules: main.js imports everything else. -->
