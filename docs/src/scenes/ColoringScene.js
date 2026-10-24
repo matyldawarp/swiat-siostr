@@ -1,7 +1,7 @@
 import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { COLORING_PAGES, coloringImage, getColoringPage } from '../data/coloring.js';
-import { PAINTS, analysePage, flowOrder, loadFills, paintArea, paintColor, renderPage, saveFills } from '../gfx/coloring.js';
+import { PAINTS, analysePage, flowOrder, paintArea, paintColor, renderPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
@@ -15,16 +15,19 @@ const STUDIO_COLORS = {
 
 // The page being colored, kept in the registry so a rebuild (resize) stays on it.
 const PAGE_KEY = 'coloringPage';
+// Its colors so far, in the registry only: they survive a rebuild (e.g. turning the iPad)
+// but not leaving the page or closing the game. Every page starts blank when opened.
+const FILLS_KEY = 'coloringFills';
 // Undo steps kept per visit.
 const UNDO_LIMIT = 30;
 
 const pageTexture = (page) => `coloring-page-${page.id}`;
 
-// The art studio. First a shelf with a card per coloring page (its picture as colored so
-// far); tapping one opens it. Coloring works like a paint book: pick a paint on the right
-// (solid colors, then rainbow, dots and glitter), tap an area of the picture and the paint
-// flows into it up to the lines. The curved arrow undoes, the house goes back to the shelf.
-// Colors are remembered per page.
+// The art studio. First a shelf with a card per coloring page; tapping one opens it.
+// Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
+// dots and glitter), tap an area of the picture and the paint flows into it up to the
+// lines. The curved arrow undoes, the house goes back to the shelf. Colors aren't kept:
+// a page opens blank every time.
 export class ColoringScene extends BaseScene {
     constructor() {
         super('ColoringScene');
@@ -92,7 +95,7 @@ export class ColoringScene extends BaseScene {
             (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
     }
 
-    // A card with the page as colored so far (shrunk smoothly) and its title.
+    // A card with the blank page (shrunk smoothly) and its title.
     createCard(page, x, y, w, h) {
         const g = this.add.graphics();
         PixelUI.drawBox(g, x, y, w, h, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
@@ -103,7 +106,7 @@ export class ColoringScene extends BaseScene {
         full.height = info.height;
         const fullCtx = full.getContext('2d');
         const data = fullCtx.createImageData(info.width, info.height);
-        renderPage(info, loadFills(page.id), new Uint32Array(data.data.buffer));
+        renderPage(info, {}, new Uint32Array(data.data.buffer));
         fullCtx.putImageData(data, 0, 0);
 
         const titleH = S(22);
@@ -131,12 +134,14 @@ export class ColoringScene extends BaseScene {
     openPage(page) {
         playPat(this);
         this.registry.set(PAGE_KEY, page.id);
+        this.registry.set(FILLS_KEY, {});
         this.scene.restart({ resized: true });
     }
 
     backToShelf() {
         playStep(this);
         this.registry.set(PAGE_KEY, null);
+        this.registry.set(FILLS_KEY, {});
         this.scene.restart({ resized: true });
     }
 
@@ -146,7 +151,11 @@ export class ColoringScene extends BaseScene {
         const panelW = S(84);
         const info = analysePage(this, this.page, pageTexture(this.page));
         this.info = info;
-        this.fills = loadFills(this.page.id);
+        // The same object stays in the registry, so colors added below survive a rebuild.
+        if (!this.registry.get(FILLS_KEY)) {
+            this.registry.set(FILLS_KEY, {});
+        }
+        this.fills = this.registry.get(FILLS_KEY);
 
         // The page on a colored mat, in the space left of the paint panel.
         const areaW = width - panelW - S(8);
@@ -201,7 +210,6 @@ export class ColoringScene extends BaseScene {
             this.undoStack.shift();
         }
         this.fills[area] = this.paint.id;
-        saveFills(this.page.id, this.fills);
         playPlop(this);
 
         // Paint the area nearest-first over a few frames, like paint spreading.
@@ -240,7 +248,6 @@ export class ColoringScene extends BaseScene {
         } else {
             delete this.fills[step.area];
         }
-        saveFills(this.page.id, this.fills);
         // Back to white first, then the earlier paint if there was one.
         const white = PAINTS.find((p) => p.id === 'white');
         paintArea(this.info, step.area, white, this.pixels);

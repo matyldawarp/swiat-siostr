@@ -1,5 +1,5 @@
-// Coloring pages: paints, splitting a page's line art into fillable areas, drawing the
-// colored page, and remembering the colors per page on this device.
+// Coloring pages: paints, splitting a page's line art into fillable areas and drawing the
+// colored page.
 
 import { PALETTE } from '../ui/pixel.js';
 
@@ -8,6 +8,10 @@ const LINE_THRESHOLD = 200;
 // Gaps in the drawing up to about twice this many pixels wide count as closed, so paint
 // doesn't leak out of a shape whose outline doesn't quite meet.
 const GAP_CLOSE = 3;
+// Every page's lines are thinned to their 1-pixel middle and then drawn this many pixels
+// further out on each side, so all pages have lines of the same width, whatever the
+// original drawing had: 0 gives 1-pixel lines, 1 gives 3-pixel lines.
+const LINE_RADIUS = 0;
 const STORAGE_KEY = 'swiat-siostr-coloring';
 
 // Little repeatable hash of a pixel position, for sparkles that stay put.
@@ -45,15 +49,88 @@ const toPixel = (color) => (0xff000000 | ((color & 0xff) << 16) | (color & 0xff0
 
 const analysed = new Map();
 
+// Thins a mask of strokes (1 = ink) in place to their 1-pixel-wide middle, keeping every
+// stroke connected (Zhang–Suen thinning). The result still stops 4-connected paint.
+function thin(mask, width, height) {
+    const at = (x, y) => (x < 0 || y < 0 || x >= width || y >= height ? 0 : mask[y * width + x]);
+    const remove = [];
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const pass of [0, 1]) {
+            remove.length = 0;
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (!mask[y * width + x]) {
+                        continue;
+                    }
+                    // Neighbours clockwise from the top.
+                    const n = [at(x, y - 1), at(x + 1, y - 1), at(x + 1, y), at(x + 1, y + 1),
+                        at(x, y + 1), at(x - 1, y + 1), at(x - 1, y), at(x - 1, y - 1)];
+                    const filled = n.reduce((a, b) => a + b, 0);
+                    if (filled < 2 || filled > 6) {
+                        continue;
+                    }
+                    let edges = 0;
+                    for (let k = 0; k < 8; k++) {
+                        if (!n[k] && n[(k + 1) % 8]) {
+                            edges++;
+                        }
+                    }
+                    if (edges !== 1) {
+                        continue;
+                    }
+                    const [p2, , p4, , p6, , p8] = n;
+                    const ok = pass === 0
+                        ? !(p2 && p4 && p6) && !(p4 && p6 && p8)
+                        : !(p2 && p4 && p8) && !(p2 && p6 && p8);
+                    if (ok) {
+                        remove.push(y * width + x);
+                    }
+                }
+            }
+            if (remove.length > 0) {
+                changed = true;
+                remove.forEach((i) => {
+                    mask[i] = 0;
+                });
+            }
+        }
+    }
+}
+
+// A copy of a mask grown by `r` pixels in every direction (a round brush); r = 0 copies.
+function widen(mask, width, height, r) {
+    const out = new Uint8Array(mask.length);
+    for (let i = 0; i < mask.length; i++) {
+        if (!mask[i]) {
+            continue;
+        }
+        const x = i % width;
+        const y = Math.floor(i / width);
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (dx * dx + dy * dy <= r * r && nx >= 0 && ny >= 0 && nx < width && ny < height) {
+                    out[ny * width + nx] = 1;
+                }
+            }
+        }
+    }
+    return out;
+}
+
 // Splits a page's line art (a loaded texture) into areas of paper between lines.
 // Returns { width, height, line, labels, areas } where labels[i] is the area of pixel i
 // (-1 on a line) and areas[n] lists the pixel indexes of area n. Kept per page, so this
 // runs once.
 //
 // Drawings often have small gaps where two strokes almost meet, which would let paint
-// leak out. So areas are first found with the lines fattened by GAP_CLOSE pixels (gaps
-// closed), and then the paper next to the lines, left out by the fattening, joins the
-// nearest area; on screen the lines keep their own thickness.
+// leak out. So areas are found with the strokes as drawn fattened by GAP_CLOSE pixels
+// (gaps closed). Then the strokes are thinned and redrawn LINE_RADIUS wide, so every page
+// has the same lines, and the paper left over (next to and under the old strokes) joins
+// the nearest area.
 export function analysePage(scene, page, textureKey) {
     if (analysed.has(page.id)) {
         return analysed.get(page.id);
@@ -69,30 +146,25 @@ export function analysePage(scene, page, textureKey) {
     const pixels = ctx.getImageData(0, 0, width, height).data;
 
     const count = width * height;
-    const line = new Uint8Array(count);
+    const ink = new Uint8Array(count);
     for (let i = 0; i < count; i++) {
-        line[i] = pixels[i * 4] < LINE_THRESHOLD && pixels[i * 4 + 3] > 0 ? 1 : 0;
+        ink[i] = pixels[i * 4] < LINE_THRESHOLD && pixels[i * 4 + 3] > 0 ? 1 : 0;
     }
-
-    // Lines fattened by GAP_CLOSE pixels in every direction (a round brush).
-    const fat = new Uint8Array(count);
-    const r = GAP_CLOSE;
+    // Areas come from the strokes as drawn, fattened by GAP_CLOSE pixels in every direction
+    // (a round brush) to close gaps. The page's edge counts as a line too.
+    const fat = widen(ink, width, height, GAP_CLOSE);
     for (let i = 0; i < count; i++) {
-        if (!line[i]) {
-            continue;
-        }
         const x = i % width;
         const y = Math.floor(i / width);
-        for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (dx * dx + dy * dy <= r * r && nx >= 0 && ny >= 0 && nx < width && ny < height) {
-                    fat[ny * width + nx] = 1;
-                }
-            }
+        if (x < GAP_CLOSE || y < GAP_CLOSE || x >= width - GAP_CLOSE || y >= height - GAP_CLOSE) {
+            fat[i] = 1;
         }
     }
+
+    // What is drawn (and what stops paint) is the same width on every page: the middle of
+    // each stroke, LINE_RADIUS wide. The rest of the stroke becomes paper of its areas.
+    thin(ink, width, height);
+    const line = widen(ink, width, height, LINE_RADIUS);
 
     const neighboursOf = (i) => {
         const x = i % width;
@@ -140,6 +212,27 @@ export function analysePage(scene, page, textureKey) {
             }
         }
         ring = next;
+    }
+
+    // Paper no area reached (a narrow space fully under the fattened strokes, closed in by
+    // the thin lines) becomes areas of its own, so every bit of paper can be painted.
+    for (let start = 0; start < count; start++) {
+        if (line[start] || labels[start] !== -1) {
+            continue;
+        }
+        const id = areaCount++;
+        let top = 0;
+        stack[top++] = start;
+        labels[start] = id;
+        while (top > 0) {
+            const i = stack[--top];
+            for (const n of neighboursOf(i)) {
+                if (n >= 0 && !line[n] && labels[n] === -1) {
+                    labels[n] = id;
+                    stack[top++] = n;
+                }
+            }
+        }
     }
 
     const members = Array.from({ length: areaCount }, () => []);
@@ -208,22 +301,10 @@ export function flowOrder(info, area, x, y) {
     return order;
 }
 
-// Saved colors of every page: { pageId: { area: paintId } }.
-export function loadFills(pageId) {
-    try {
-        const all = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-        return all[pageId] || {};
-    } catch {
-        return {};
-    }
-}
-
-export function saveFills(pageId, fills) {
-    try {
-        const all = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-        all[pageId] = fills;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-    } catch {
-        // Storage blocked: the colors last until the page is closed.
-    }
+// Colors are not kept between visits: every page starts blank when it is opened.
+// Earlier versions of the game saved them on the device; that leftover is cleared.
+try {
+    localStorage.removeItem(STORAGE_KEY);
+} catch {
+    // Storage blocked: nothing was saved there either.
 }

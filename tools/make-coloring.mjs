@@ -7,8 +7,8 @@
 // (the picture exactly as given) becomes docs/assets/coloring/<id>.coloring.png beside it:
 //  - `make.blank` boxes (x, y, w, h in the original's pixels) are painted white first, to
 //    hide things like a printed title or a website address;
-//  - lines get `make.thicken` pixels fatter on each side (default 3; use less for busy
-//    pictures with small details), so after shrinking they stay unbroken;
+//  - lines get THICKEN pixels fatter on each side, the same for every page, so after
+//    shrinking they stay unbroken (the game then thins them all to the same width);
 //  - the picture shrinks to HEIGHT game pixels, the page area of the coloring screen, so
 //    its lines become pixel-art lines.
 // To add a page: save the original as docs/assets/coloring/<id>.png, add it to
@@ -22,6 +22,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DOCS = join(ROOT, 'docs');
 const HEIGHT = 380;
+const THICKEN = 1;
 
 const { COLORING_PAGES, coloringImage, coloringOriginal } = await import(pathToFileURL(join(DOCS, 'src', 'data', 'coloring.js')).href);
 
@@ -40,11 +41,11 @@ for (const page of pages) {
         failed = true;
         continue;
     }
-    const { thicken = 3, blank = [] } = page.make || {};
+    const { blank = [] } = page.make || {};
     const filters = blank.map(([x, y, w, h]) => `drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=white:t=fill`);
     filters.push('format=gray');
     // Erosion spreads the dark lines by a pixel each time.
-    for (let i = 0; i < thicken; i++) {
+    for (let i = 0; i < THICKEN; i++) {
         filters.push('erosion');
     }
     // Area averaging keeps thin lines as gray pixels instead of dropping them; the game
