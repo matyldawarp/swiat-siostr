@@ -410,11 +410,16 @@ export class OverlayScene extends BaseScene {
         });
     }
 
+    // Reloads the newest files and always starts again on the start screen: the address
+    // after # (scenes/routes.js) is dropped first. Reloading in the browser keeps it.
     createReloadButton(x, y, size) {
         PixelUI.createIconButton(this, x, y, size, (g) => {
             g.fillStyle(PALETTE.buttonBorder, 1);
             this.drawReloadIcon(g, 0, 1, S(6));
-        }, () => window.location.reload());
+        }, () => {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            window.location.reload();
+        });
     }
 
     // Clockwise circular arrow on the pixel grid: a ring with a gap at the top right
