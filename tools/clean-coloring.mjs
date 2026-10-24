@@ -22,7 +22,8 @@ const STRIP = {
     'strus-pedziwiatr': [[220, 20, 500, 90], [550, 910, 170, 20]],
     'looney-tunes': [[555, 910, 165, 20]],
     'baby-kojot': [[0, 0, 200, 50]],
-    'domek-strusia': [[0, 900, 160, 30]]
+    'domek-strusia': [[0, 900, 160, 30]],
+    wednesday: [[270, 880, 130, 40]]
 };
 
 // A pixel darker than this belongs to a line (soft edges included, so they go too).

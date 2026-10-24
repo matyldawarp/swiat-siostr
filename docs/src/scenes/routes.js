@@ -1,4 +1,4 @@
-// Every screen has its own address after # (e.g. #kuchnia, #kolorowanki/looney-tunes), so
+// Every screen has its own address after # (e.g. #kuchnia, #kolorowanki/wednesday), so
 // reloading the page comes back to the same screen. BaseScene writes it when a scene opens
 // (scene.route()), and main.js starts the game on the screen the address names.
 
@@ -17,7 +17,8 @@ export const SCENE_ROUTES = {
 
 // Scene key -> the screen one level up (the screen tree in README.md), where the back
 // button in the top-left corner leads. The start screen has none. A coloring page's
-// parent is the shelf, in the same scene (ColoringScene.goBack).
+// parent is its group's shelf, and that one's the shelf of groups, in the same scene
+// (ColoringScene.goBack).
 export const SCENE_PARENTS = {
     CharacterScene: 'StartScene',
     TerrariumScene: 'CharacterScene',
@@ -29,7 +30,7 @@ export const SCENE_PARENTS = {
     ColoringScene: 'MapScene'
 };
 
-// Shows a route ('kuchnia', 'kolorowanki/looney-tunes') in the address bar, without adding
+// Shows a route ('kuchnia', 'kolorowanki/wednesday') in the address bar, without adding
 // a step to the browser's history.
 export function setRoute(route) {
     const hash = `#${route}`;
@@ -38,9 +39,10 @@ export function setRoute(route) {
     }
 }
 
-// The scene key and the extra part (e.g. a coloring page id) the address names, or null.
+// The scene key and the extra parts (e.g. a coloring group and page id) the address names,
+// or null.
 export function routeFromAddress() {
-    const [name, detail] = decodeURIComponent(window.location.hash.slice(1)).split('/');
+    const [name, ...details] = decodeURIComponent(window.location.hash.slice(1)).split('/');
     const scene = Object.keys(SCENE_ROUTES).find((key) => SCENE_ROUTES[key] === name);
-    return scene ? { scene, detail: detail || null } : null;
+    return scene ? { scene, details } : null;
 }

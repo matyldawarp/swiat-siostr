@@ -35,8 +35,9 @@ flowchart TD
     mapa --> szpital["Szpital (#szpital)"]
     mapa --> cukiernia["Cukiernia (#cukiernia)"]
     mapa --> dentysta["Dentysta (#dentysta)"]
-    mapa --> kolorowanki["Kolorowanki: półka (#kolorowanki)"]
-    kolorowanki --> strona["Kolorowanka (#kolorowanki/nazwa-strony)"]
+    mapa --> kolorowanki["Kolorowanki: grupy (#kolorowanki)"]
+    kolorowanki --> grupa["Grupa kolorowanek (#kolorowanki/grupa)"]
+    grupa --> strona["Kolorowanka (#kolorowanki/grupa/nazwa-strony)"]
 ```
 
 Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Ustawień jest tylko na ekranach Start i Wybór postaci. Przycisk przeładowania w prawym górnym rogu zawsze wraca na Start.

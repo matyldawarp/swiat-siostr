@@ -1,6 +1,6 @@
 import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
-import { COLORING_PAGES, coloringImage, getColoringPage } from '../data/coloring.js';
+import { COLORING_GROUPS, COLORING_PAGES, coloringImage, getColoringGroup, getColoringPage, groupPages } from '../data/coloring.js';
 import { PAINTS, PaintLayer, areaAt, areaBox, coloringInfo, makeLineArt, paintColor, preparePrint, printBlankPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
@@ -13,7 +13,9 @@ const STUDIO_COLORS = {
     panel: 0xfff7fb
 };
 
-// The page being colored, kept in the registry so a rebuild (resize) stays on it.
+// The open group and the page being colored, kept in the registry so a rebuild (resize)
+// stays on them.
+const GROUP_KEY = 'coloringGroup';
 const PAGE_KEY = 'coloringPage';
 // Its painting so far, as a list of steps (fills and brush strokes, see PaintLayer.render),
 // in the registry only: it survives a rebuild (e.g. turning the iPad) but not leaving the
@@ -27,7 +29,8 @@ const pictureTexture = (page) => `coloring-picture-${page.id}`;
 const lineArt = (scene, page) => makeLineArt(scene, page, pictureTexture(page));
 const areasOf = (scene, page) => coloringInfo(scene, page, pictureTexture(page));
 
-// The art studio. First a shelf with a card per coloring page; tapping one opens it.
+// The art studio. First a shelf with a card per group of coloring pages, then a shelf with
+// the group's pages; tapping a page opens it.
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
 // dots and glitter) and a tool on the left. With the bucket, tapping an area of the
 // picture makes the paint flow into it up to the lines; with the brush, a finger paints a
@@ -51,6 +54,7 @@ export class ColoringScene extends BaseScene {
     init(data) {
         super.init(data);
         this.page = getColoringPage(this.registry.get(PAGE_KEY));
+        this.group = getColoringGroup(this.page ? this.page.group : this.registry.get(GROUP_KEY));
         this.paint = this.paint || PAINTS[0];
         // 'fill' (bucket) or 'brush'; like the paint, kept while the game runs.
         this.tool = this.tool || 'fill';
@@ -58,17 +62,22 @@ export class ColoringScene extends BaseScene {
         this.stroke = null;
     }
 
-    // #kolorowanki for the shelf, #kolorowanki/<page id> while coloring a page.
+    // #kolorowanki for the groups, #kolorowanki/<group id> for a group's pages and
+    // #kolorowanki/<group id>/<page id> while coloring a page.
     route() {
-        return this.page ? `${super.route()}/${this.page.id}` : super.route();
+        return [super.route(), this.group && this.group.id, this.page && this.page.id].filter(Boolean).join('/');
     }
 
     build({ width, height }) {
         this.drawWall();
         if (this.page) {
             this.buildPage(width, height);
+        } else if (this.group) {
+            this.buildShelf(width, height, this.group.title, groupPages(this.group).map((page) =>
+                ({ page, title: null, open: () => this.openPage(page) })));
         } else {
-            this.buildShelf(width, height);
+            this.buildShelf(width, height, 'Kolorowanki', COLORING_GROUPS.map((group) =>
+                ({ page: groupPages(group)[0], title: group.title, open: () => this.openGroup(group) })));
         }
     }
 
@@ -84,10 +93,11 @@ export class ColoringScene extends BaseScene {
         }
     }
 
-    // --- Shelf of pages -----------------------------------------------------------------
+    // --- Shelves of groups and pages ---------------------------------------------------
 
-    buildShelf(width, height) {
-        PixelUI.addTitle(this, Math.round(width / 2), S(24), 'Kolorowanki');
+    // cards: { page (its picture is shown), title (or null), open }.
+    buildShelf(width, height, title, cards) {
+        PixelUI.addTitle(this, Math.round(width / 2), S(24), title);
 
         // Cards in as many rows as makes them largest (never above full size), all on the
         // stage between the title and the bottom edge.
@@ -96,7 +106,7 @@ export class ColoringScene extends BaseScene {
         const gap = S(12);
         const top = S(42);
         const bottom = height - S(8);
-        const count = COLORING_PAGES.length;
+        const count = cards.length;
         let best = null;
         for (let rows = 1; rows <= count; rows++) {
             const cols = Math.ceil(count / rows);
@@ -110,24 +120,24 @@ export class ColoringScene extends BaseScene {
         const cardW = Math.floor(fullW * best.k);
         const cardH = Math.floor(fullH * best.k);
         const y0 = top + Math.round((bottom - top - best.rows * cardH - (best.rows - 1) * gap) / 2);
-        COLORING_PAGES.forEach((page, i) => {
+        cards.forEach((card, i) => {
             const row = Math.floor(i / best.cols);
             const inRow = Math.min(best.cols, count - row * best.cols);
             const x0 = Math.round((width - inRow * cardW - (inRow - 1) * gap) / 2);
-            this.createCard(page, x0 + (i % best.cols) * (cardW + gap), y0 + row * (cardH + gap), cardW, cardH);
+            this.createCard(card, x0 + (i % best.cols) * (cardW + gap), y0 + row * (cardH + gap), cardW, cardH);
         });
     }
 
-    // A card with the blank page (shrunk smoothly, at the screen's own resolution) and its
-    // title.
-    createCard(page, x, y, w, h) {
+    // A card with a blank page (shrunk smoothly, at the screen's own resolution) and, for a
+    // group, its title.
+    createCard({ page, title, open }, x, y, w, h) {
         const g = this.add.graphics();
         PixelUI.drawBox(g, x, y, w, h, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
 
         const info = areasOf(this, page);
         const lines = this.textures.get(lineArt(this, page)).getSourceImage();
 
-        const titleH = S(22);
+        const titleH = title ? S(22) : 0;
         const scale = Math.min((w - S(12)) / info.width, (h - titleH - S(10)) / info.height);
         const tw = Math.round(info.width * scale);
         const th = Math.round(info.height * scale);
@@ -145,13 +155,27 @@ export class ColoringScene extends BaseScene {
         ctx.drawImage(lines, 0, 0, tw * res, th * res);
         thumb.refresh();
         thumb.setFilter(Phaser.Textures.FilterMode.LINEAR);
-        this.add.image(x + w / 2, y + S(6) + th / 2, key).setDisplaySize(tw, th);
+        this.add.image(x + w / 2, y + S(6) + Math.floor((h - titleH - S(10) - th) / 2) + th / 2, key).setDisplaySize(tw, th);
 
-        PixelUI.addText(this, x + w / 2, y + h - titleH / 2 - S(2), page.title,
-            textStyle(S(10), { bold: true, color: TEXT_COLORS.button })).setOrigin(0.5);
+        if (title) {
+            PixelUI.addText(this, x + w / 2, y + h - titleH / 2 - S(2), title,
+                textStyle(S(10), { bold: true, color: TEXT_COLORS.button })).setOrigin(0.5);
+        }
 
         const zone = this.add.zone(x + w / 2, y + h / 2, w, h).setInteractive({ useHandCursor: true });
-        zone.on('pointerup', () => this.openPage(page));
+        zone.on('pointerup', open);
+    }
+
+    openGroup(group) {
+        playPat(this);
+        this.registry.set(GROUP_KEY, group.id);
+        this.scene.restart({ resized: true });
+    }
+
+    backToGroups() {
+        playStep(this);
+        this.registry.set(GROUP_KEY, null);
+        this.scene.restart({ resized: true });
     }
 
     openPage(page) {
@@ -461,10 +485,15 @@ export class ColoringScene extends BaseScene {
         });
     }
 
-    // From a page back to the shelf; from the shelf to the map, in front of the studio.
+    // From a page back to its group's shelf, from there to the groups, and from the groups
+    // to the map, in front of the studio.
     goBack() {
         if (this.page) {
             this.backToShelf();
+            return;
+        }
+        if (this.group) {
+            this.backToGroups();
             return;
         }
         this.registry.set('mapLocation', 'studio');

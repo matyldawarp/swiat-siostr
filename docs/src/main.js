@@ -147,9 +147,10 @@ function startGame() {
     } catch {
         // Storage blocked: the first character, as on a first visit.
     }
-    // The page in #kolorowanki/<page>.
+    // The group and page in #kolorowanki/<group>/<page>.
     if (route && route.scene === 'ColoringScene') {
-        game.registry.set('coloringPage', route.detail);
+        game.registry.set('coloringGroup', route.details[0] || null);
+        game.registry.set('coloringPage', route.details[1] || null);
     }
 
     game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));
