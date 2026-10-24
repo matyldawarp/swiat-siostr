@@ -5,7 +5,8 @@
 // STRIP lists boxes (x, y, w, h in the original's pixels) around what to take out. Only
 // lines lying wholly inside the boxes go: a line that also runs outside them (a tail
 // reaching under the title) stays whole, so a box can be drawn with room to spare.
-// Pages without boxes are copied as they are.
+// A frame around the picture goes too (unframe), and paper is added around the drawing
+// (pad).
 // No dependencies: PNG files are read and written by hand with node:zlib.
 //
 // Usage: node tools/clean-coloring.mjs
@@ -219,8 +220,132 @@ function strip({ width, height, rgb }, boxes) {
     return removed;
 }
 
-// Adds paper where the drawing comes closer than MARGIN to an edge; the drawing itself
-// keeps its size. Returns the padded image.
+// Takes out a frame around the picture: a line along an edge (within FRAME_ZONE of it)
+// running over most of the page. Where the frame closes off a part of the drawing (a dress
+// standing on the bottom line) that part of it stays, or the paint would flow out of the
+// dress; it goes only where the background lies against it, that is paper touching the
+// frame on two sides or more. Returns whether there was a frame.
+const FRAME_ZONE = 0.15;
+
+function unframe({ width, height, rgb }) {
+    const dark = (x, y) => {
+        const k = (y * width + x) * 3;
+        return rgb[k] + rgb[k + 1] + rgb[k + 2] < LINE * 3;
+    };
+    const darkInRow = (y) => {
+        let n = 0;
+        for (let x = 0; x < width; x++) n += dark(x, y);
+        return n;
+    };
+    const darkInColumn = (x) => {
+        let n = 0;
+        for (let y = 0; y < height; y++) n += dark(x, y);
+        return n;
+    };
+    // The rows (or columns) of the frame line nearest the edge, as [first, last], or null.
+    const band = (count, size, length, fromEnd) => {
+        const at = (i) => (fromEnd ? size - 1 - i : i);
+        const zone = Math.floor(size * FRAME_ZONE);
+        let i = 0;
+        while (i < zone && count(at(i)) < 0.5 * length) i++;
+        if (i === zone) return null;
+        let a = i;
+        while (a > 0 && count(at(a - 1)) >= 0.3 * length) a--;
+        let b = i;
+        while (b < zone && count(at(b + 1)) >= 0.3 * length) b++;
+        // With the pale soft edge on both sides of the line.
+        return [Math.max(0, Math.min(at(a), at(b)) - 2), Math.min(size - 1, Math.max(at(a), at(b)) + 2)];
+    };
+    const sides = {
+        top: band(darkInRow, height, width, false),
+        bottom: band(darkInRow, height, width, true),
+        left: band(darkInColumn, width, height, false),
+        right: band(darkInColumn, width, height, true)
+    };
+    // A frame has all four sides; a single long line (the wall of a house) is not one.
+    if (!Object.values(sides).every(Boolean)) {
+        return false;
+    }
+
+    // Paper in pieces (4-connected), with the frame still there.
+    const piece = new Int32Array(width * height).fill(-1);
+    let pieces = 0;
+    for (let start = 0; start < width * height; start++) {
+        if (piece[start] >= 0 || dark(start % width, Math.floor(start / width))) continue;
+        const stack = [start];
+        piece[start] = pieces;
+        while (stack.length) {
+            const k = stack.pop();
+            const x = k % width;
+            const y = (k - x) / width;
+            for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+                const n = ny * width + nx;
+                if (nx >= 0 && ny >= 0 && nx < width && ny < height && piece[n] < 0 && !dark(nx, ny)) {
+                    piece[n] = pieces;
+                    stack.push(n);
+                }
+            }
+        }
+        pieces++;
+    }
+
+    // Each frame pixel and the paper piece just inside it (-1 where a line meets it).
+    const inBand = (side, i) => sides[side] && i >= sides[side][0] && i <= sides[side][1];
+    const frame = [];
+    const inside = (x, y, dx, dy) => {
+        for (let step = 0; step < 6; step++) {
+            x += dx;
+            y += dy;
+            if (x < 0 || y < 0 || x >= width || y >= height) return -1;
+            if (!dark(x, y)) return piece[y * width + x];
+        }
+        return -1;
+    };
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (!dark(x, y)) continue;
+            const across = ['top', 'bottom'].filter((s) => inBand(s, y));
+            const along = ['left', 'right'].filter((s) => inBand(s, x));
+            if (!across.length && !along.length) continue;
+            if (across.length && along.length) {
+                frame.push({ x, y, corner: true });
+                continue;
+            }
+            const side = across[0] || along[0];
+            const [a, b] = sides[side];
+            const from = { top: [x, b], bottom: [x, a], left: [b, y], right: [a, y] }[side];
+            const dir = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[side];
+            frame.push({ x, y, side, paper: inside(from[0], from[1], dir[0], dir[1]) });
+        }
+    }
+    const sidesOf = new Map();
+    for (const f of frame) {
+        if (f.paper >= 0) {
+            if (!sidesOf.has(f.paper)) sidesOf.set(f.paper, new Set());
+            sidesOf.get(f.paper).add(f.side);
+        }
+    }
+    const background = (p) => p >= 0 && sidesOf.get(p).size >= 2;
+    for (const f of frame) {
+        if (f.corner || background(f.paper)) {
+            rgb.fill(255, (f.y * width + f.x) * 3, (f.y * width + f.x) * 3 + 3);
+        }
+    }
+    // Specks of frame left where a line met it, now apart from the drawing.
+    const { top, bottom, left, right } = sides;
+    strip({ width, height, rgb }, [
+        [0, top[0], width, top[1] - top[0] + 1],
+        [0, bottom[0], width, bottom[1] - bottom[0] + 1],
+        [left[0], 0, left[1] - left[0] + 1, height],
+        [right[0], 0, right[1] - right[0] + 1, height]
+    ]);
+    return true;
+}
+
+// Leaves MARGIN of paper on every side of the drawing: adds paper where there is less and
+// trims it where there is more (a page that had a frame), so the drawing is as large as it
+// can be on screen. The drawing itself keeps its size. Returns the new image, with `add`
+// telling how much paper each side got (below zero where it was trimmed).
 function pad({ width, height, rgb }) {
     let x1 = width;
     let y1 = height;
@@ -236,27 +361,21 @@ function pad({ width, height, rgb }) {
             y2 = Math.max(y2, y);
         }
     }
-    // The margin grows with the page, so add paper until it no longer needs more.
-    let add = { left: 0, top: 0, right: 0, bottom: 0 };
-    for (;;) {
-        const m = Math.ceil(MARGIN * (height + add.top + add.bottom));
-        const next = {
-            left: Math.max(0, m - x1),
-            top: Math.max(0, m - y1),
-            right: Math.max(0, m - (width - 1 - x2)),
-            bottom: Math.max(0, m - (height - 1 - y2))
-        };
-        if (next.top + next.bottom === add.top + add.bottom) {
-            add = next;
-            break;
-        }
-        add = next;
-    }
+    // The margin is a share of the new page's height: m = MARGIN * (drawing height + 2m).
+    const m = Math.ceil(MARGIN * (y2 - y1 + 1) / (1 - 2 * MARGIN));
+    const add = {
+        left: m - x1,
+        top: m - y1,
+        right: m - (width - 1 - x2),
+        bottom: m - (height - 1 - y2)
+    };
     const w = width + add.left + add.right;
     const h = height + add.top + add.bottom;
     const out = Buffer.alloc(w * h * 3, 255);
-    for (let y = 0; y < height; y++) {
-        rgb.copy(out, ((y + add.top) * w + add.left) * 3, y * width * 3, (y + 1) * width * 3);
+    for (let y = Math.max(0, -add.top); y < Math.min(height, h - add.top); y++) {
+        const from = Math.max(0, -add.left);
+        const to = Math.min(width, w - add.left);
+        rgb.copy(out, ((y + add.top) * w + from + add.left) * 3, (y * width + from) * 3, (y * width + to) * 3);
     }
     return { width: w, height: h, rgb: out, add };
 }
@@ -265,8 +384,9 @@ for (const name of readdirSync(IN_DIR).filter((f) => f.endsWith('.png'))) {
     const id = name.slice(0, -4);
     const image = decodePng(join(IN_DIR, name));
     const removed = strip(image, STRIP[id] || []);
+    const framed = unframe(image);
     const padded = pad(image);
     writeFileSync(join(OUT_DIR, name), encodePng(padded));
     const { left, top, right, bottom } = padded.add;
-    console.log(`wrote docs/assets/coloring/${name} (${removed} lines taken out, paper added: left ${left}, top ${top}, right ${right}, bottom ${bottom})`);
+    console.log(`wrote docs/assets/coloring/${name} (${removed} lines taken out, ${framed ? 'frame taken out, ' : ''}paper added: left ${left}, top ${top}, right ${right}, bottom ${bottom})`);
 }
