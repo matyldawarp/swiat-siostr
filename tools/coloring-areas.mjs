@@ -160,6 +160,81 @@ export function findAreas(gray, width, height) {
     return { labels, count };
 }
 
+// Joins every area smaller than `minPixels` to a neighbour, so no area is too small for a
+// child's finger, and numbers the areas 0.. again. A small area joins its smallest
+// neighbour (longest shared border on a tie): small pieces of one thing, like the parts
+// of a head, come together first, instead of a head piece vanishing into the background.
+// Changes `labels` in place; returns the new count.
+export function mergeSmallAreas(labels, width, height, count, minPixels) {
+    const parent = Array.from({ length: count }, (_, i) => i);
+    const root = (a) => {
+        while (parent[a] !== a) {
+            parent[a] = parent[parent[a]];
+            a = parent[a];
+        }
+        return a;
+    };
+    for (;;) {
+        // Sizes and shared border lengths of the areas as merged so far.
+        const size = new Map();
+        const borders = new Map();
+        const addBorder = (a, b) => {
+            if (!borders.has(a)) {
+                borders.set(a, new Map());
+            }
+            const m = borders.get(a);
+            m.set(b, (m.get(b) || 0) + 1);
+        };
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const a = root(labels[y * width + x]);
+                size.set(a, (size.get(a) || 0) + 1);
+                if (x + 1 < width) {
+                    const b = root(labels[y * width + x + 1]);
+                    if (a !== b) {
+                        addBorder(a, b);
+                        addBorder(b, a);
+                    }
+                }
+                if (y + 1 < height) {
+                    const b = root(labels[(y + 1) * width + x]);
+                    if (a !== b) {
+                        addBorder(a, b);
+                        addBorder(b, a);
+                    }
+                }
+            }
+        }
+        // Only the smallest area joins a neighbour per round, so sizes stay current.
+        const small = [...size.entries()].filter(([a, s]) => s < minPixels && borders.has(a))
+            .sort((p, q) => p[1] - q[1]);
+        if (small.length === 0) {
+            break;
+        }
+        const [a] = small[0];
+        let best = -1;
+        for (const [b, length] of borders.get(a)) {
+            const better = best === -1 || size.get(b) < size.get(best)
+                || (size.get(b) === size.get(best) && length > borders.get(a).get(best));
+            if (better) {
+                best = b;
+            }
+        }
+        parent[a] = best;
+    }
+
+    // Number the remaining areas 0.. in order of first appearance.
+    const renumber = new Map();
+    for (let i = 0; i < labels.length; i++) {
+        const r = root(labels[i]);
+        if (!renumber.has(r)) {
+            renumber.set(r, renumber.size);
+        }
+        labels[i] = renumber.get(r);
+    }
+    return renumber.size;
+}
+
 // The outline of area `id` as an SVG path along pixel edges: one closed loop per border
 // (outer edge and holes), meant for fill-rule="evenodd". Neighbouring areas share edges
 // exactly, so no paper shows between them.

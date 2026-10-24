@@ -12,7 +12,8 @@
 //    hide things like a printed title or a website address;
 //  - lines get THICKEN pixels fatter so they stay unbroken when the picture shrinks to
 //    HEIGHT pixels, the size of the page on the coloring screen and of the SVG's units;
-//  - tools/coloring-areas.mjs splits it into areas (closing small gaps in the lines).
+//  - tools/coloring-areas.mjs splits it into areas (closing small gaps in the lines), and
+//    areas under MIN_AREA_CM2 join their neighbour.
 // To add a page: save the original as docs/assets/coloring/<id>.png, add it to
 // COLORING_PAGES, run this, and look at the result in the game. Needs ffmpeg on the PATH.
 
@@ -20,12 +21,18 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { areaPath, findAreas } from './coloring-areas.mjs';
+import { areaPath, findAreas, mergeSmallAreas } from './coloring-areas.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DOCS = join(ROOT, 'docs');
 const HEIGHT = 380;
 const THICKEN = 1;
+// No area smaller than this on the girls' iPad, so a small finger can hit it; smaller ones
+// join a neighbour. The iPad shows 132 CSS px per inch and the page at 2 CSS px per page
+// pixel (STAGE in docs/src/ui/pixel.js), so a centimetre is 132 / 2 / 2.54 page pixels.
+const MIN_AREA_CM2 = 1;
+const PAGE_PX_PER_CM = 132 / 2 / 2.54;
+const MIN_AREA_PX = Math.round(MIN_AREA_CM2 * PAGE_PX_PER_CM * PAGE_PX_PER_CM);
 const PREVIEW_COLORS = ['#f7b2cc', '#d9ccf5', '#bfe8d6', '#fff1c9', '#cfe8ff', '#ffe1c4', '#c3b3ea', '#a6dcc4'];
 
 const { COLORING_PAGES, coloringImage, coloringOriginal } = await import(pathToFileURL(join(DOCS, 'src', 'data', 'coloring.js')).href);
@@ -67,7 +74,9 @@ for (const page of pages) {
     const height = HEIGHT;
     const width = gray.length / height;
 
-    const { labels, count } = findAreas(gray, width, height);
+    const found = findAreas(gray, width, height);
+    const { labels } = found;
+    const count = mergeSmallAreas(labels, width, height, found.count, MIN_AREA_PX);
     const paths = [];
     for (let id = 0; id < count; id++) {
         paths.push(`<path id="a${id}" fill="${PREVIEW_COLORS[id % PREVIEW_COLORS.length]}" d="${areaPath(labels, width, height, id)}"/>`);
