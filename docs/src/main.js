@@ -88,6 +88,33 @@ function keepScreenAwake() {
     document.addEventListener('click', enable);
 }
 
+// As a home-screen app the iPad still shows its status bar (clock, battery) over the top
+// of the game, and iPadOS 27 blurs it. The Fullscreen API (iPad only, iPadOS 16.4+) hides
+// it, but only from a tap, so the first tap goes full screen. Leaving full screen (the
+// system's close button, or the share sheet when printing) comes back on the next tap.
+function playFullscreen() {
+    const root = document.documentElement;
+    const request = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (!isHomeScreenApp() || !request) {
+        return;
+    }
+    const enter = () => {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            return;
+        }
+        try {
+            const result = request.call(root);
+            if (result && result.catch) {
+                result.catch(() => {});
+            }
+        } catch {
+            // Not allowed here: the game stays as it is, under the status bar.
+        }
+    };
+    document.addEventListener('touchend', enter, { passive: true });
+    document.addEventListener('click', enter);
+}
+
 // Lets Chrome offer "Install app". Service workers only run on HTTPS or localhost.
 function registerServiceWorker() {
     if ('serviceWorker' in navigator && window.isSecureContext) {
@@ -98,6 +125,7 @@ function registerServiceWorker() {
 function startGame() {
     registerServiceWorker();
     keepScreenAwake();
+    playFullscreen();
     Music.init();
 
     // Reloading on, say, #kuchnia or #kolorowanki/looney-tunes opens that screen again:
