@@ -20,7 +20,8 @@ const OUT_DIR = fileURLToPath(new URL('../docs/assets/coloring/', import.meta.ur
 
 const STRIP = {
     'strus-pedziwiatr': [[220, 20, 500, 90], [550, 910, 170, 20]],
-    'looney-tunes': [[555, 910, 165, 20]]
+    'looney-tunes': [[555, 910, 165, 20]],
+    'baby-kojot': [[0, 0, 200, 50]]
 };
 
 // A pixel darker than this belongs to a line (soft edges included, so they go too).
@@ -122,9 +123,16 @@ function chunk(type, data) {
     return Buffer.concat([len, body, crc]);
 }
 
-// RGB; each row gets the filter that leaves the smallest numbers, to keep the file small.
+// Gray (the game uses only how dark a pixel is); paper lighter than a line becomes pure
+// white, which drops the specks a JPG leaves. Each row gets the filter that leaves the
+// smallest numbers, to keep the file small.
 function encodePng({ width, height, rgb }) {
-    const stride = width * 3;
+    const gray = Buffer.alloc(width * height);
+    for (let k = 0; k < gray.length; k++) {
+        const light = Math.round((rgb[k * 3] + rgb[k * 3 + 1] + rgb[k * 3 + 2]) / 3);
+        gray[k] = light < LINE ? light : 255;
+    }
+    const stride = width;
     const raw = Buffer.alloc(height * (stride + 1));
     const row = Buffer.alloc(stride);
     for (let y = 0; y < height; y++) {
@@ -132,11 +140,11 @@ function encodePng({ width, height, rgb }) {
         for (let filter = 0; filter < 5; filter++) {
             let sum = 0;
             for (let i = 0; i < stride; i++) {
-                const a = i >= 3 ? rgb[y * stride + i - 3] : 0;
-                const b = y > 0 ? rgb[(y - 1) * stride + i] : 0;
-                const c = i >= 3 && y > 0 ? rgb[(y - 1) * stride + i - 3] : 0;
+                const a = i >= 1 ? gray[y * stride + i - 1] : 0;
+                const b = y > 0 ? gray[(y - 1) * stride + i] : 0;
+                const c = i >= 1 && y > 0 ? gray[(y - 1) * stride + i - 1] : 0;
                 const pred = [0, a, b, (a + b) >> 1, paeth(a, b, c)][filter];
-                row[i] = (rgb[y * stride + i] - pred) & 0xff;
+                row[i] = (gray[y * stride + i] - pred) & 0xff;
                 sum += row[i] < 128 ? row[i] : 256 - row[i];
             }
             if (sum < best) {
@@ -150,7 +158,7 @@ function encodePng({ width, height, rgb }) {
     header.writeUInt32BE(width, 0);
     header.writeUInt32BE(height, 4);
     header[8] = 8; // bit depth
-    header[9] = 2; // RGB
+    header[9] = 0; // gray
     return Buffer.concat([
         Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
         chunk('IHDR', header),
