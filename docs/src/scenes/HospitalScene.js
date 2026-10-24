@@ -52,9 +52,6 @@ export class HospitalScene extends BaseScene {
         this.createBed(Math.round(width * 0.46), floorY);
         this.createTools(width, height);
 
-        this.mapButton = PixelUI.createIconButton(this, S(24), height - S(24), S(32),
-            (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
-
         // Bottom-right: rest in bed, and invite the other hamster.
         PixelUI.createIconButton(this, width - S(26), height - S(26), S(36),
             (g, size) => Icons.moon(g, 0, 0, size), () => this.toggleRest());
@@ -390,7 +387,7 @@ export class HospitalScene extends BaseScene {
         }
     }
 
-    // "Brave patient" sticker, then the map button invites the trip home.
+    // "Brave patient" sticker, then the back button invites the trip home.
     celebrate() {
         const cx = Math.round(this.view.width / 2);
         const cy = S(44);
@@ -420,7 +417,7 @@ export class HospitalScene extends BaseScene {
         PixelUI.hop(this, this.hamster, this.hamsterGroundY, S(8), { duration: 160, repeat: 2 });
 
         this.registry.set('stickers', (this.registry.get('stickers') || 0) + 1);
-        PixelUI.pulse(this, this.mapButton);
+        PixelUI.pulse(this, this.backButton);
     }
 
     // --- Resting in bed --------------------------------------------------------
@@ -549,8 +546,9 @@ export class HospitalScene extends BaseScene {
         floatHeart(this, x, y);
     }
 
-    goToMap() {
+    // Back on the map in front of the hospital.
+    goBack() {
         this.registry.set('mapLocation', 'hospital');
-        PixelUI.fadeTo(this, 'MapScene');
+        super.goBack();
     }
 }

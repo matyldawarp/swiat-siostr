@@ -17,8 +17,8 @@ const MAP_COLORS = {
 // Places on the map. `at` is where the building stands, as fractions of the map; every
 // road starts at home and passes through `bends` on its way to the place. Going between
 // two places other than home walks past home. `trees` are offsets of trees around it.
-// To add a place: an entry here, its scene in main.js, and the scene's map button setting
-// registry 'mapLocation' to the key.
+// To add a place: an entry here, its scene in main.js and in SCENE_PARENTS (routes.js),
+// and the scene's goBack setting registry 'mapLocation' to the key.
 const MAP_PLACES = {
     home: {
         scene: 'TerrariumScene',
@@ -312,6 +312,11 @@ export class MapScene extends BaseScene {
             });
         };
         walk(0);
+    }
+
+    // Back home: the hamster walks there first, then the terrarium opens.
+    goBack() {
+        this.goTo('home');
     }
 
     enter(place) {

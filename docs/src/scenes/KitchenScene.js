@@ -77,9 +77,6 @@ export class KitchenScene extends BaseScene {
         this.drawBowl();
         this.cake = this.add.graphics();
 
-        PixelUI.createIconButton(this, S(24), height - S(24), S(32),
-            (g, size) => Icons.house(g, 0, 0, size), () => this.goHome());
-
         this.showIngredientButtons();
     }
 
@@ -581,7 +578,7 @@ export class KitchenScene extends BaseScene {
         }
         PixelUI.hop(this, this.char, this.charGroundY, S(8), { duration: 160, repeat: 2 });
 
-        // Bake again, or go home.
+        // Bake again, or go back home (the back button).
         this.setRow([{
             key: 'again',
             draw: (g, s) => Icons.characterCake(g, this.character, 0, Math.round(s * 0.3), Math.round(s * 0.8)),
@@ -593,9 +590,5 @@ export class KitchenScene extends BaseScene {
 
     heartAt(x, y) {
         floatHeart(this, x, y, { depth: 30 });
-    }
-
-    goHome() {
-        PixelUI.fadeTo(this, 'TerrariumScene');
     }
 }

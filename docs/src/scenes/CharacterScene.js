@@ -52,15 +52,12 @@ export class CharacterScene extends BaseScene {
 
         this.createPreview(panelX, panelY);
 
-        PixelUI.createButton(this, S(36), height - S(14), 'Wróć', () => this.back(), { width: S(56), height: S(18), fontSize: S(10) });
-
         const selectedId = this.registry.get('selectedCharacter') || CHARACTERS[0].id;
         this.select(CHARACTERS.indexOf(getCharacter(selectedId)));
 
         this.input.keyboard.on('keydown-LEFT', () => this.cycle(-1));
         this.input.keyboard.on('keydown-RIGHT', () => this.cycle(1));
         this.input.keyboard.on('keydown-ENTER', () => this.confirm());
-        this.input.keyboard.on('keydown-ESC', () => this.back());
     }
 
     createSlot(x, y, size, character) {
@@ -165,9 +162,5 @@ export class CharacterScene extends BaseScene {
 
     confirm() {
         PixelUI.fadeTo(this, 'TerrariumScene');
-    }
-
-    back() {
-        PixelUI.fadeTo(this, 'StartScene');
     }
 }

@@ -77,9 +77,6 @@ export class BakeryScene extends BaseScene {
         this.cupcake = this.add.graphics();
         this.drawCupcake();
 
-        this.mapButton = PixelUI.createIconButton(this, S(24), height - S(24), S(32),
-            (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
-
         this.createButtons(width, height);
         this.updateHint();
     }
@@ -393,8 +390,9 @@ export class BakeryScene extends BaseScene {
         });
     }
 
-    goToMap() {
+    // Back on the map in front of the bakery.
+    goBack() {
         this.registry.set('mapLocation', 'bakery');
-        PixelUI.fadeTo(this, 'MapScene');
+        super.goBack();
     }
 }

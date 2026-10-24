@@ -58,9 +58,6 @@ export class DentistScene extends BaseScene {
         this.createMouthPanel(Math.round(width * 0.62), Math.round(height * 0.38));
         this.createTools(width, height);
 
-        this.mapButton = PixelUI.createIconButton(this, S(24), height - S(24), S(32),
-            (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
-
         this.updateHint();
     }
 
@@ -435,7 +432,7 @@ export class DentistScene extends BaseScene {
         floatAway(this, g, { dy: this.panelRect.h - S(20), duration: 500, steps: 6 });
     }
 
-    // "Beautiful smile" sticker; the map button then invites the way home.
+    // "Beautiful smile" sticker; the back button then invites the way home.
     celebrate() {
         const cx = Math.round(this.view.width / 2);
         const cy = S(40);
@@ -516,15 +513,16 @@ export class DentistScene extends BaseScene {
             open: this.tools.toothbrush,
             brushing: null,
             clean: this.tools.cup,
-            rinsed: this.mapButton
+            rinsed: this.backButton
         }[this.step];
         if (next) {
             this.hintTween = PixelUI.pulse(this, next);
         }
     }
 
-    goToMap() {
+    // Back on the map in front of the dentist.
+    goBack() {
         this.registry.set('mapLocation', 'dentist');
-        PixelUI.fadeTo(this, 'MapScene');
+        super.goBack();
     }
 }

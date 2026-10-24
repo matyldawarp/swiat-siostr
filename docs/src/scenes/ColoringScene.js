@@ -31,8 +31,9 @@ const areasOf = (scene, page) => coloringInfo(scene, page, pictureTexture(page))
 // Coloring works like a paint book: pick a paint on the right (solid colors, then rainbow,
 // dots and glitter) and a tool on the left. With the bucket, tapping an area of the
 // picture makes the paint flow into it up to the lines; with the brush, a finger paints a
-// thick line that stays inside the area it started in. The curved arrow undoes, the house
-// goes back to the shelf, and the printer (bottom left) prints the blank page on paper.
+// thick line that stays inside the area it started in. The curved arrow undoes, the back
+// button (top left) goes back to the shelf, and the printer (bottom left) prints the blank
+// page on paper.
 // Colors aren't kept: a page opens blank every time.
 export class ColoringScene extends BaseScene {
     constructor() {
@@ -88,19 +89,33 @@ export class ColoringScene extends BaseScene {
     buildShelf(width, height) {
         PixelUI.addTitle(this, Math.round(width / 2), S(24), 'Kolorowanki');
 
-        const cardW = S(112);
-        const cardH = S(150);
-        const gap = S(16);
-        const total = COLORING_PAGES.length * cardW + (COLORING_PAGES.length - 1) * gap;
-        let x = Math.round((width - total) / 2);
-        const y = Math.round((height - cardH) / 2) + S(4);
-        COLORING_PAGES.forEach((page) => {
-            this.createCard(page, x, y, cardW, cardH);
-            x += cardW + gap;
+        // Cards in as many rows as makes them largest (never above full size), all on the
+        // stage between the title and the bottom edge.
+        const fullW = S(112);
+        const fullH = S(150);
+        const gap = S(12);
+        const top = S(42);
+        const bottom = height - S(8);
+        const count = COLORING_PAGES.length;
+        let best = null;
+        for (let rows = 1; rows <= count; rows++) {
+            const cols = Math.ceil(count / rows);
+            const k = Math.min(1,
+                (width - S(16) - (cols - 1) * gap) / (cols * fullW),
+                (bottom - top - (rows - 1) * gap) / (rows * fullH));
+            if (!best || k > best.k) {
+                best = { rows, cols, k };
+            }
+        }
+        const cardW = Math.floor(fullW * best.k);
+        const cardH = Math.floor(fullH * best.k);
+        const y0 = top + Math.round((bottom - top - best.rows * cardH - (best.rows - 1) * gap) / 2);
+        COLORING_PAGES.forEach((page, i) => {
+            const row = Math.floor(i / best.cols);
+            const inRow = Math.min(best.cols, count - row * best.cols);
+            const x0 = Math.round((width - inRow * cardW - (inRow - 1) * gap) / 2);
+            this.createCard(page, x0 + (i % best.cols) * (cardW + gap), y0 + row * (cardH + gap), cardW, cardH);
         });
-
-        PixelUI.createIconButton(this, S(24), height - S(24), S(32),
-            (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
     }
 
     // A card with the blank page (shrunk smoothly, at the screen's own resolution) and its
@@ -374,18 +389,16 @@ export class ColoringScene extends BaseScene {
 
     // --- Paint panel --------------------------------------------------------------------
 
-    // Undo and home on top, then the paints in two columns.
+    // Undo on top, then the paints in two columns.
     createPanel(x, y, w, h) {
         const g = this.add.graphics();
         PixelUI.drawBox(g, x, y, w, h, STUDIO_COLORS.panel, PALETTE.buttonBorder, 0xffffff);
 
         const button = S(30);
         const topY = y + S(6) + button / 2;
-        this.undoButton = PixelUI.createIconButton(this, x + w / 4 + S(1), topY, button,
+        this.undoButton = PixelUI.createIconButton(this, x + w / 2, topY, button,
             (gfx, size) => Icons.undo(gfx, 0, 0, size), () => this.undo());
         this.undoButton.baseY = topY;
-        PixelUI.createIconButton(this, x + (w * 3) / 4 - S(1), topY, button,
-            (gfx, size) => Icons.house(gfx, 0, 0, size), () => this.backToShelf());
 
         const rows = Math.ceil(PAINTS.length / 2);
         const listTop = topY + button / 2 + S(8);
@@ -448,8 +461,13 @@ export class ColoringScene extends BaseScene {
         });
     }
 
-    goToMap() {
+    // From a page back to the shelf; from the shelf to the map, in front of the studio.
+    goBack() {
+        if (this.page) {
+            this.backToShelf();
+            return;
+        }
         this.registry.set('mapLocation', 'studio');
-        PixelUI.fadeTo(this, 'MapScene');
+        super.goBack();
     }
 }

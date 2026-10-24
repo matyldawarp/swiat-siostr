@@ -63,6 +63,27 @@ export const Icons = {
         Icons.heart(g, left + Math.round(w * 2.5), top + Math.round(h * 0.28), Math.max(5, Math.round(size / 6)));
     },
 
+    // Fat arrow pointing left: "go back".
+    back(g, cx, cy, size) {
+        const left = Math.round(cx - size / 2);
+        const right = Math.round(cx + size / 2);
+        const tip = left + Math.round(size * 0.45);
+        const half = Math.round(size * 0.42);
+        const shaft = Math.max(2, Math.round(size * 0.16));
+        const y = Math.round(cy);
+        const arrow = [
+            { x: left, y }, { x: tip, y: y - half }, { x: tip, y: y - shaft }, { x: right, y: y - shaft },
+            { x: right, y: y + shaft }, { x: tip, y: y + shaft }, { x: tip, y: y + half }
+        ];
+        // Outline: the arrow shifted a pixel every way, then the arrow itself on top.
+        g.fillStyle(PALETTE.outline, 1);
+        [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => {
+            Icons.fillPolygon(g, arrow.map((p) => ({ x: p.x + dx, y: p.y + dy })));
+        });
+        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        Icons.fillPolygon(g, arrow);
+    },
+
     // Small pixel heart, roughly `size` pixels wide.
     heart(g, cx, cy, size) {
         const s = Math.max(1, Math.round(size / 7));

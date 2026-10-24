@@ -82,18 +82,15 @@ export class TerrariumScene extends BaseScene {
         PixelUI.addText(this, cx, height - S(14), 'Dotknij postaci albo szyby',
             textStyle(S(8), { color: TEXT_COLORS.hint })).setOrigin(0.5);
 
-        PixelUI.createButton(this, S(36), height - S(14), 'Wróć', () => this.back(), { width: S(56), height: S(18), fontSize: S(10) });
-
-        // Map to travel to other places, e.g. the hospital.
-        this.mapButton = PixelUI.createIconButton(this, S(20), S(20), S(28), (g, size) => Icons.map(g, 0, 0, size), () => {
+        // Map to travel to other places, e.g. the hospital; right of the back button.
+        this.mapButton = PixelUI.createIconButton(this, S(52), S(20), S(28), (g, size) => Icons.map(g, 0, 0, size), () => {
             this.registry.set('mapLocation', 'home');
             PixelUI.fadeTo(this, 'MapScene');
         });
         // Kitchen: bake this character's own cake, which the button shows.
-        PixelUI.createIconButton(this, S(54), S(20), S(28),
+        PixelUI.createIconButton(this, S(86), S(20), S(28),
             (g, size) => Icons.characterCake(g, this.character, 0, Math.round(size * 0.3), Math.round(size * 0.8)),
             () => PixelUI.fadeTo(this, 'KitchenScene'));
-        this.input.keyboard.on('keydown-ESC', () => this.back());
 
         if (Illness.isSick(this)) {
             this.showSickness();
@@ -460,9 +457,5 @@ export class TerrariumScene extends BaseScene {
             rise: S(20),
             duration: 700
         });
-    }
-
-    back() {
-        PixelUI.fadeTo(this, 'CharacterScene');
     }
 }

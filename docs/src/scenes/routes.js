@@ -15,6 +15,20 @@ export const SCENE_ROUTES = {
     ColoringScene: 'kolorowanki'
 };
 
+// Scene key -> the screen one level up (the screen tree in README.md), where the back
+// button in the top-left corner leads. The start screen has none. A coloring page's
+// parent is the shelf, in the same scene (ColoringScene.goBack).
+export const SCENE_PARENTS = {
+    CharacterScene: 'StartScene',
+    TerrariumScene: 'CharacterScene',
+    KitchenScene: 'TerrariumScene',
+    MapScene: 'TerrariumScene',
+    HospitalScene: 'MapScene',
+    BakeryScene: 'MapScene',
+    DentistScene: 'MapScene',
+    ColoringScene: 'MapScene'
+};
+
 // Shows a route ('kuchnia', 'kolorowanki/looney-tunes') in the address bar, without adding
 // a step to the browser's history.
 export function setRoute(route) {
