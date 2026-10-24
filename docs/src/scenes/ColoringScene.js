@@ -107,7 +107,8 @@ export class ColoringScene extends BaseScene {
             (g, size) => Icons.map(g, 0, 0, size), () => this.goToMap());
     }
 
-    // A card with the blank page (shrunk smoothly) and its title.
+    // A card with the blank page (shrunk smoothly, at the screen's own resolution) and its
+    // title.
     createCard(page, x, y, w, h) {
         const g = this.add.graphics();
         PixelUI.drawBox(g, x, y, w, h, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
@@ -123,15 +124,17 @@ export class ColoringScene extends BaseScene {
         if (this.textures.exists(key)) {
             this.textures.remove(key);
         }
-        const thumb = this.textures.createCanvas(key, tw, th);
+        const res = Math.max(1, Math.ceil(RENDER_SCALE));
+        const thumb = this.textures.createCanvas(key, tw * res, th * res);
         const ctx = thumb.getContext();
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, tw, th);
+        ctx.fillRect(0, 0, tw * res, th * res);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(lines, 0, 0, tw, th);
+        ctx.drawImage(lines, 0, 0, tw * res, th * res);
         thumb.refresh();
-        this.add.image(x + w / 2, y + S(6) + th / 2, key);
+        thumb.setFilter(Phaser.Textures.FilterMode.LINEAR);
+        this.add.image(x + w / 2, y + S(6) + th / 2, key).setDisplaySize(tw, th);
 
         PixelUI.addText(this, x + w / 2, y + h - titleH / 2 - S(2), page.title,
             textStyle(S(10), { bold: true, color: TEXT_COLORS.button })).setOrigin(0.5);
