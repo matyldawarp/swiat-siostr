@@ -1,5 +1,6 @@
 import { SAFE_AREA, STAGE, fitScale, setRenderScale } from './ui/pixel.js';
 import { Music } from './audio/music.js';
+import { setGameAudio } from './audio/speech.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
 import { TerrariumScene } from './scenes/TerrariumScene.js';
@@ -158,7 +159,10 @@ function startGame() {
         game.registry.set('schoolLesson', route.details[0] || null);
     }
 
-    game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));
+    game.events.once(Phaser.Core.Events.READY, () => {
+        fitToWindow(game);
+        setGameAudio(game.sound.context);
+    });
 
     let resizeTimer;
     window.addEventListener('resize', () => {

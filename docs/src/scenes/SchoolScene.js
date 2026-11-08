@@ -679,7 +679,8 @@ export class SchoolScene extends BaseScene {
     // The whole round is done: a big star, and the desk keeps one.
     finishRound() {
         playFanfare(this);
-        say('Brawo!');
+        // After the fanfare: speaking pauses the game's sounds.
+        this.time.delayedCall(500, () => say('Brawo!'));
         const stars = loadStars();
         stars[this.lesson.id] = (stars[this.lesson.id] || 0) + 1;
         saveStars(stars);

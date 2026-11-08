@@ -1,6 +1,10 @@
+import { isSpeaking } from './speech.js';
+
+// The game's Web Audio output, or null when there is none or while the school reads aloud
+// (speech.js pauses the sounds then).
 function getAudio(scene) {
     const ctx = scene.sound.context;
-    if (!ctx) {
+    if (!ctx || isSpeaking()) {
         return null;
     }
     if (ctx.state === 'suspended') {
