@@ -38,6 +38,8 @@ flowchart TD
     mapa --> kolorowanki["Kolorowanki: grupy (#kolorowanki)"]
     kolorowanki --> grupa["Grupa kolorowanek (#kolorowanki/grupa)"]
     grupa --> strona["Kolorowanka (#kolorowanki/grupa/nazwa-strony)"]
+    mapa --> szkola["Szkoła: klasa (#szkola)"]
+    szkola --> lekcja["Lekcja ortografii (#szkola/lekcja)"]
 ```
 
 Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Ustawień jest tylko na ekranach Start i Wybór postaci. Przycisk przeładowania w prawym górnym rogu zawsze wraca na Start.

@@ -53,6 +53,12 @@ const MAP_PLACES = {
         bends: [[0.3, 0.6], [0.45, 0.45]],
         draw: (g, x, y) => Icons.studio(g, x, y, S(60), S(50)),
         trees: [[46, 0]]
+    },
+    school: {
+        scene: 'SchoolScene',
+        at: [0.1, 0.41],
+        bends: [[0.06, 0.58]],
+        draw: (g, x, y) => Icons.school(g, x, y, S(52), S(48))
     }
 };
 

@@ -1083,6 +1083,75 @@ export const Icons = {
         Icons.palette(g, cx, top - Math.round(h * 0.08), Math.round(w * 0.42));
     },
 
+    // School for the map: yellow walls under a lavender gable with a clock, windows on
+    // both sides of the door; (cx, bottom) is the middle of its base.
+    school(g, cx, bottom, w, h) {
+        const left = Math.round(cx - w / 2);
+        const roofH = Math.round(h * 0.36);
+        const wallTop = bottom - h + roofH;
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(left - 1, wallTop, w + 2, bottom - wallTop + 1);
+        g.fillStyle(ICON_COLORS.gold, 1);
+        g.fillRect(left, wallTop, w, bottom - wallTop);
+        g.fillStyle(ICON_COLORS.goldDark, 1);
+        g.fillRect(left, bottom - 3, w, 3);
+
+        // Gable roof with the outline drawn one pixel larger behind it.
+        const roof = [{ x: left - 4, y: wallTop }, { x: cx, y: bottom - h }, { x: left + w + 4, y: wallTop }];
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, [{ x: roof[0].x - 1, y: roof[0].y + 1 }, { x: cx, y: roof[1].y - 1 }, { x: roof[2].x + 1, y: roof[2].y + 1 }]);
+        g.fillStyle(ICON_COLORS.lavender, 1);
+        Icons.fillPolygon(g, roof);
+        const clockR = Math.max(3, Math.round(roofH * 0.28));
+        const clockY = wallTop - Math.round(roofH * 0.38);
+        g.fillStyle(PALETTE.outline, 1);
+        PixelUI.fillCircle(g, cx, clockY, clockR + 1);
+        g.fillStyle(ICON_COLORS.white, 1);
+        PixelUI.fillCircle(g, cx, clockY, clockR);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(cx, clockY - clockR + 1, 1, clockR);
+        g.fillRect(cx, clockY, Math.max(2, clockR - 1), 1);
+
+        // Door with steps, and two windows on each side.
+        const doorW = Math.round(w * 0.2);
+        const doorH = Math.round((bottom - wallTop) * 0.55);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(Math.round(cx - doorW / 2) - 1, bottom - doorH - 1, doorW + 2, doorH + 1);
+        g.fillStyle(ICON_COLORS.pinkDark, 1);
+        g.fillRect(Math.round(cx - doorW / 2), bottom - doorH, doorW, doorH);
+        const win = Math.round(w * 0.14);
+        const winY = wallTop + Math.round((bottom - wallTop - win) / 2) - 2;
+        [0.16, 0.34, 0.66, 0.84].forEach((f) => {
+            const x = Math.round(left + w * f - win / 2);
+            PixelUI.drawBox(g, x, winY, win, win, ICON_COLORS.sky, PALETTE.outline);
+            g.fillStyle(PALETTE.outline, 1);
+            g.fillRect(x + Math.floor(win / 2), winY + 1, 1, win - 2);
+        });
+    },
+
+    // Loudspeaker with two sound waves: "listen again".
+    speaker(g, cx, cy, size) {
+        const s = size / 16;
+        const px = (x, y, w, h) => g.fillRect(Math.round(cx + x * s), Math.round(cy + y * s), Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
+        g.fillStyle(PALETTE.outline, 1);
+        Icons.fillPolygon(g, [
+            { x: cx - 7 * s, y: cy - 3 * s }, { x: cx - 3 * s, y: cy - 3 * s }, { x: cx + 2 * s, y: cy - 7 * s },
+            { x: cx + 2 * s, y: cy + 7 * s }, { x: cx - 3 * s, y: cy + 3 * s }, { x: cx - 7 * s, y: cy + 3 * s }
+        ]);
+        g.fillStyle(ICON_COLORS.white, 1);
+        Icons.fillPolygon(g, [
+            { x: cx - 6 * s, y: cy - 2 * s }, { x: cx - 3 * s, y: cy - 2 * s }, { x: cx + 1 * s, y: cy - 5 * s },
+            { x: cx + 1 * s, y: cy + 5 * s }, { x: cx - 3 * s, y: cy + 2 * s }, { x: cx - 6 * s, y: cy + 2 * s }
+        ]);
+        g.fillStyle(PALETTE.outline, 1);
+        px(4, -2, 1, 4);
+        px(5, -3, 1, 1);
+        px(5, 2, 1, 1);
+        px(6, -5, 1, 1);
+        px(7, -4, 1, 8);
+        px(6, 4, 1, 1);
+    },
+
     // Tiny tree for map decoration.
     tree(g, cx, bottom, size) {
         const trunkH = Math.round(size * 0.3);

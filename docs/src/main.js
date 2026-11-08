@@ -9,6 +9,7 @@ import { KitchenScene } from './scenes/KitchenScene.js';
 import { BakeryScene } from './scenes/BakeryScene.js';
 import { DentistScene } from './scenes/DentistScene.js';
 import { ColoringScene } from './scenes/ColoringScene.js';
+import { SchoolScene } from './scenes/SchoolScene.js';
 import { OverlayScene } from './scenes/OverlayScene.js';
 import { routeFromAddress } from './scenes/routes.js';
 
@@ -28,7 +29,7 @@ const config = {
     },
     // OverlayScene must stay last so it draws on top of every other scene. The first one
     // starts the game (StartScene, or the screen named after # in the address).
-    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, OverlayScene]
+    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, SchoolScene, OverlayScene]
 };
 
 // Started from the iPad's home screen (not in a Safari tab).
@@ -151,6 +152,10 @@ function startGame() {
     if (route && route.scene === 'ColoringScene') {
         game.registry.set('coloringGroup', route.details[0] || null);
         game.registry.set('coloringPage', route.details[1] || null);
+    }
+    // The lesson in #szkola/<lesson>.
+    if (route && route.scene === 'SchoolScene') {
+        game.registry.set('schoolLesson', route.details[0] || null);
     }
 
     game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));

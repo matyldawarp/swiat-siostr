@@ -245,6 +245,73 @@ if (coloringModule) {
     });
 }
 
+const picturesModule = loaded['docs/src/gfx/pictures.js'];
+const picturesFile = join(SRC, 'gfx', 'pictures.js');
+if (picturesModule) {
+    Object.entries(picturesModule.PICTURES).forEach(([id, p]) => {
+        const where = `PICTURES.${id}`;
+        if (!p.word) {
+            fail(picturesFile, `${where}: missing word`);
+        }
+        if (!p.rows.length || p.rows.length > 16 || p.rows.some((row) => row.length !== 16)) {
+            fail(picturesFile, `${where}: rows must be at most 16 rows of 16 characters`);
+        }
+        const allowed = new Set(['.', 'O', 'E', 'W', ...Object.keys(p.colors || {})]);
+        const unknown = new Set([...p.rows.join('')].filter((ch) => !allowed.has(ch)));
+        if (unknown.size > 0) {
+            fail(picturesFile, `${where}: rows use letters without a colour: ${[...unknown].join(' ')}`);
+        }
+    });
+}
+
+const schoolModule = loaded['docs/src/data/school.js'];
+if (schoolModule && picturesModule) {
+    const schoolFile = join(SRC, 'data', 'school.js');
+    const { PICTURES } = picturesModule;
+    const { RIDDLES, REBUSES, SEARCH_WORDS, SEARCH_SIZE, SENTENCES, LESSONS, rebusPart } = schoolModule;
+    const knownPic = (pic, where) => {
+        if (!PICTURES[pic]) {
+            fail(schoolFile, `${where}: unknown picture "${pic}" (see PICTURES in gfx/pictures.js)`);
+            return false;
+        }
+        return true;
+    };
+    RIDDLES.forEach((r, i) => {
+        knownPic(r.pic, `RIDDLES[${i}]`);
+        if (!r.text) {
+            fail(schoolFile, `RIDDLES[${i}]: missing text`);
+        }
+    });
+    REBUSES.forEach((r, i) => {
+        r.parts.filter((p) => typeof p !== 'string').forEach((p) => {
+            if (!knownPic(p.pic, `REBUSES[${i}]`)) {
+                return;
+            }
+            const word = PICTURES[p.pic].word;
+            const dropped = p.drop ? word.replace(p.drop, '') : word;
+            if ((p.drop && !word.includes(p.drop)) || (p.swap && !dropped.includes(p.swap[0]))) {
+                fail(schoolFile, `REBUSES[${i}]: "${word}" has no "${p.drop && !word.includes(p.drop) ? p.drop : p.swap[0]}" to change`);
+            }
+        });
+        if (r.parts.map(rebusPart).join('').length < 2) {
+            fail(schoolFile, `REBUSES[${i}]: the answer is too short`);
+        }
+    });
+    SEARCH_WORDS.filter((w) => w.length > Math.max(SEARCH_SIZE.cols, SEARCH_SIZE.rows) || w !== w.toLowerCase())
+        .forEach((w) => fail(schoolFile, `SEARCH_WORDS: "${w}" must be lowercase and fit the grid`));
+    if (SEARCH_WORDS.length < SEARCH_SIZE.words) {
+        fail(schoolFile, `SEARCH_WORDS: needs at least ${SEARCH_SIZE.words} words`);
+    }
+    SENTENCES.filter((s) => !/^[A-ZŁŚŻŹĆÓ].* [^ ]+[.!?]$/.test(s)).forEach((s) => {
+        fail(schoolFile, `SENTENCES: "${s}" must start with a capital, have words split by single spaces and end with . ! or ?`);
+    });
+    LESSONS.forEach((l) => {
+        if (!l.id || !l.title || !l.say || !(l.count > 0)) {
+            fail(schoolFile, `LESSONS: ${l.id || '?'} needs id, title, say and count`);
+        }
+    });
+}
+
 const personalitiesModule = loaded['docs/src/data/personalities.js'];
 const personalitiesFile = join(SRC, 'data', 'personalities.js');
 if (personalitiesModule) {

@@ -65,7 +65,9 @@ function toCss(color) {
     return '#' + color.toString(16).padStart(6, '0');
 }
 
-function paintPixels(scene, key, rows, colors) {
+// Canvas texture `key` from rows of letters, each letter a colour in `colors` (others are
+// left transparent). Made once; later calls keep the existing texture.
+export function paintPixels(scene, key, rows, colors) {
     if (scene.textures.exists(key)) {
         return;
     }
