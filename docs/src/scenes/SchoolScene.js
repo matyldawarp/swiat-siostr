@@ -1,9 +1,9 @@
 import { PALETTE, PixelUI, S, STAGE, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { PICTURES, PICTURE_SIZE, pictureTexture } from '../gfx/pictures.js';
-import { LESSONS, SEARCH_SIZE, makeRound, rebusAnswer, trapsIn } from '../data/school.js';
+import { LESSONS, SAY_BRAVO, SAY_FILL, SEARCH_SIZE, makeRound, rebusAnswer, riddleSpeech, spokenTexts, trapsIn } from '../data/school.js';
 import { floatHeart } from '../ui/effects.js';
-import { say } from '../audio/speech.js';
+import { loadSpeech, say } from '../audio/speech.js';
 import { playDing, playFanfare, playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
@@ -80,6 +80,11 @@ function flow(widths, cx, y, maxW, gap, rowH) {
 export class SchoolScene extends BaseScene {
     constructor() {
         super('SchoolScene');
+    }
+
+    // Recordings of everything the school says (audio/speech.js).
+    preload() {
+        loadSpeech(this, spokenTexts());
     }
 
     init(data) {
@@ -202,8 +207,7 @@ export class SchoolScene extends BaseScene {
 
     openLesson(lesson) {
         playPat(this);
-        // Said from the tap itself: the iPad lets a page speak only after that.
-        say(lesson.say);
+        say(this, lesson.say);
         this.registry.set(LESSON_KEY, lesson.id);
         this.registry.set(ROUND_KEY, { lesson: lesson.id, tasks: makeRound(lesson.id), index: 0 });
         this.scene.restart({ resized: true });
@@ -232,7 +236,7 @@ export class SchoolScene extends BaseScene {
         const title = PixelUI.addTitle(this, Math.round(width / 2), S(20), this.lesson.title);
         this.speech = this.lesson.say;
         PixelUI.createIconButton(this, Math.round(width / 2 + title.width / 2 + S(18)), S(20), S(22),
-            (g, size) => Icons.speaker(g, 0, 0, size), () => say(this.speech));
+            (g, size) => Icons.speaker(g, 0, 0, size), () => say(this, this.speech));
 
         this.stars = this.add.graphics();
         this.drawProgress();
@@ -357,7 +361,7 @@ export class SchoolScene extends BaseScene {
         this.orderTiles(sentence.split(' '), [], {
             slotY: S(90), tileY: S(186), fontSize: S(14), gap: S(8), rowH: S(36),
             done: () => {
-                say(sentence);
+                say(this, sentence);
                 this.taskDone(this.width / 2, S(90));
             }
         });
@@ -367,9 +371,9 @@ export class SchoolScene extends BaseScene {
     buildRiddle() {
         const task = this.task;
         const { width } = this;
-        this.speech = task.text.replace(/\n/g, ' ');
+        this.speech = riddleSpeech(task);
         // The first riddle comes after the lesson's instruction.
-        say(this.speech, { after: this.round.index === 0 });
+        say(this, this.speech, { after: this.round.index === 0 });
         this.chosen = false;
 
         const g = this.add.graphics();
@@ -392,7 +396,7 @@ export class SchoolScene extends BaseScene {
                     return;
                 }
                 if (id !== task.pic) {
-                    say(PICTURES[id].word);
+                    say(this, PICTURES[id].word);
                     this.wiggle(c);
                     return;
                 }
@@ -435,15 +439,16 @@ export class SchoolScene extends BaseScene {
         });
 
         const finish = () => {
-            say(word);
+            say(this, word);
             this.taskDone(this.width / 2, y);
         };
         if (!blanks.length) {
             this.time.delayedCall(500, finish);
             return;
         }
-        this.speech = 'Uzupełnij brakujące literki.';
-        say(`${word}. Uzupełnij brakujące literki.`);
+        this.speech = SAY_FILL;
+        say(this, word);
+        say(this, SAY_FILL, { after: true });
 
         let next = 0;
         let choices = [];
@@ -523,7 +528,7 @@ export class SchoolScene extends BaseScene {
             const { pic, drop, swap } = item.part;
             PixelUI.drawBox(g, cx - card / 2, y - card / 2, card, card, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
             const image = this.add.image(cx, y, pictureTexture(this, pic)).setScale(Math.floor((card - S(10)) / PICTURE_SIZE));
-            image.setInteractive({ useHandCursor: true }).on('pointerup', () => say(PICTURES[pic].word));
+            image.setInteractive({ useHandCursor: true }).on('pointerup', () => say(this, PICTURES[pic].word));
             if (drop) {
                 // Crossed out above the picture's left corner.
                 const t = PixelUI.addText(this, cx - card / 2 + S(4), y - card / 2 - S(1), drop,
@@ -546,7 +551,7 @@ export class SchoolScene extends BaseScene {
         this.orderTiles([...answer], extra, {
             slotY: S(170), tileY: S(214), fontSize: S(18), gap: S(6), rowH: S(34),
             done: () => {
-                say(answer);
+                say(this, answer);
                 this.taskDone(width / 2, S(170));
             }
         });
@@ -652,7 +657,7 @@ export class SchoolScene extends BaseScene {
             listG.fillRect(listX + 2, row - S(12) + 2, listW - 4, S(24) - 4);
             PixelUI.addText(this, listX + listW / 2, row, word, textStyle(S(14), { bold: true, color: TEXT_COLORS.button })).setOrigin(0.5);
             playDing(this);
-            say(word);
+            say(this, word);
             floatHeart(this, left + ((a.x + b.x) / 2 + 0.5) * cell, top + ((a.y + b.y) / 2) * cell);
             if (found.size === words.length) {
                 this.time.delayedCall(800, () => this.taskDone(this.width / 2, S(120)));
@@ -679,8 +684,8 @@ export class SchoolScene extends BaseScene {
     // The whole round is done: a big star, and the desk keeps one.
     finishRound() {
         playFanfare(this);
-        // After the fanfare: speaking pauses the game's sounds.
-        this.time.delayedCall(500, () => say('Brawo!'));
+        // Once the fanfare has played.
+        this.time.delayedCall(500, () => say(this, SAY_BRAVO));
         const stars = loadStars();
         stars[this.lesson.id] = (stars[this.lesson.id] || 0) + 1;
         saveStars(stars);

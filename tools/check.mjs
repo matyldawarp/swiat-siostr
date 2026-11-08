@@ -310,6 +310,14 @@ if (schoolModule && picturesModule) {
             fail(schoolFile, `LESSONS: ${l.id || '?'} needs id, title, say and count`);
         }
     });
+    const speechModule = loaded['docs/src/audio/speech.js'];
+    if (speechModule) {
+        const missing = schoolModule.spokenTexts()
+            .filter((text) => !existsSync(join(DOCS, speechModule.SPEECH_DIR, `${speechModule.speechFile(text)}.m4a`)));
+        if (missing.length) {
+            fail(schoolFile, `${missing.length} texts have no recording, e.g. "${missing[0]}" (run node tools/make-speech.mjs)`);
+        }
+    }
 }
 
 const personalitiesModule = loaded['docs/src/data/personalities.js'];

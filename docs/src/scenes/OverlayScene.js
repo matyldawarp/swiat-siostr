@@ -7,7 +7,6 @@ import { floatZ } from '../ui/effects.js';
 import { getCharacter } from '../data/characters.js';
 import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
 import { playLullaby } from '../audio/sfx.js';
-import { voiceName } from '../audio/speech.js';
 import { BaseScene } from './BaseScene.js';
 
 // Scenes that show the gear button; elsewhere the girls can't open Settings by accident.
@@ -82,7 +81,7 @@ export class OverlayScene extends BaseScene {
     }
 
     // In debug mode (Settings): the window and screen size in the bottom-left corner, to
-    // tune STAGE for a device, and the voice that reads aloud in the school.
+    // tune STAGE for a device.
     refreshDebugInfo() {
         if (this.debugInfo) {
             this.debugInfo.destroy();
@@ -96,8 +95,7 @@ export class OverlayScene extends BaseScene {
             `okno ${window.innerWidth}x${window.innerHeight} CSS, dpr ${dpr}`,
             `gra ${Math.round(this.scale.width / dpr)}x${Math.round(this.scale.height / dpr)} CSS`,
             `ekran ${window.screen.width}x${window.screen.height}`,
-            `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`,
-            `głos ${voiceName() || 'domyślny'}`
+            `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`
         ];
         // A plain sans-serif font, large enough to read and copy off a photo.
         this.debugInfo = PixelUI.addText(this, S(6), this.view.height - S(6), lines.join('\n'), {

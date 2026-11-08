@@ -73,6 +73,13 @@ export const REBUSES = [
     { parts: ['s', { pic: 'roza', drop: 'r', swap: ['ża', 'l'] }] }
 ];
 
+// Said while filling in a word's tricky letters, and at the end of a round.
+export const SAY_FILL = 'Uzupełnij brakujące literki.';
+export const SAY_BRAVO = 'Brawo!';
+
+// A riddle as it is read aloud.
+export const riddleSpeech = (riddle) => riddle.text.replace(/\n/g, ' ');
+
 // Words hidden in the word search, all with ó that can't be explained by another form.
 export const SEARCH_WORDS = [
     'krótki', 'żółty', 'róża', 'córka', 'który', 'mózg', 'góra', 'król', 'wróbel', 'mrówka',
@@ -161,6 +168,20 @@ export function makeWordSearch() {
             };
         }
     }
+}
+
+// Everything the school says aloud: each needs a recording (node tools/make-speech.mjs).
+export function spokenTexts() {
+    return [...new Set([
+        ...LESSONS.map((l) => l.say),
+        SAY_FILL,
+        SAY_BRAVO,
+        ...SENTENCES,
+        ...RIDDLES.map(riddleSpeech),
+        ...Object.values(PICTURES).map((p) => p.word),
+        ...REBUSES.map(rebusAnswer),
+        ...SEARCH_WORDS
+    ])];
 }
 
 // The tasks of one round of a lesson, as plain data (kept in the registry).
