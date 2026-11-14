@@ -182,9 +182,12 @@ if (charactersModule) {
             fail(charactersFile, `${where}: species must be a string (may be empty)`);
         }
         // Every character in both sizes, with closed eyes (blink) and eating (chew).
-        ['postacie', 'postacie-male'].forEach((folder) => ['', '-blink', '-chew'].forEach((suffix) => {
-            if (!existsSync(join(DOCS, 'assets', 'gfx', folder, `${c.id}${suffix}.png`))) {
-                fail(charactersFile, `${where}: no picture docs/assets/gfx/${folder}/${c.id}${suffix}.png`);
+        if (!c.picture || !/^[a-z0-9-]+$/.test(c.picture)) {
+            fail(charactersFile, `${where}: picture must be its pictures' name (lowercase letters, digits, dashes)`);
+        }
+        ['postacie', 'postacie-male'].forEach((folder) => ['', '-oczy-zamkniete', '-je'].forEach((suffix) => {
+            if (!existsSync(join(DOCS, 'assets', 'gfx', folder, `${c.picture}${suffix}.png`))) {
+                fail(charactersFile, `${where}: no picture docs/assets/gfx/${folder}/${c.picture}${suffix}.png`);
             }
         }));
         const sound = c.sound;
@@ -199,7 +202,7 @@ if (charactersModule) {
     }
     // Every character bakes its own cake in the kitchen (KitchenScene).
     CHARACTERS.forEach((c) => {
-        [`kuchnia/tort-${c.id}`, `kuchnia/lukier-${c.id}`, `kuchnia/dodatek-${c.id}`, `kuchnia/kawalek-${c.id}`, `ikony64/tort-${c.id}`]
+        [`kuchnia/tort-${c.picture}`, `kuchnia/lukier-${c.picture}`, `kuchnia/dodatek-${c.picture}`, `kuchnia/kawalek-${c.picture}`, `ikony64/tort-${c.picture}`]
             .filter((key) => !existsSync(join(DOCS, 'assets', 'gfx', `${key}.png`)))
             .forEach((key) => fail(charactersFile, `character ${c.id}: no cake picture docs/assets/gfx/${key}.png`));
     });

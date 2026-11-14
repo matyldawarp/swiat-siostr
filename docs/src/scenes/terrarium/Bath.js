@@ -4,6 +4,9 @@ import { playBubble } from '../../audio/sfx.js';
 import { Activity } from './Activity.js';
 import { DEPTH, P } from './config.js';
 
+// Bubbles, smallest first (terrarium/babelek-*).
+const BUBBLE_PICTURES = ['maly', 'sredni', 'duzy', 'najwiekszy'];
+
 // Bubble bath: the hamster hops into the foam, wiggles and sends bubbles up.
 export class Bath extends Activity {
     // The tank from TerrariumScene; the tub stands on its floor right of the middle.
@@ -26,7 +29,7 @@ export class Bath extends Activity {
 
         // Water surface behind the hamster; the tub on its feet in front, with the foam heaped
         // along the rim so the hamster looks covered in bubbles. Both anchored on the rim's middle.
-        addImage(scene, cx, top, P + 'wanna-woda').setDepth(DEPTH.bathBack);
+        addImage(scene, cx, top, P + 'wanna-woda-z-tylu').setDepth(DEPTH.bathBack);
         addImage(scene, cx, top, P + 'wanna').setDepth(DEPTH.bathFront);
 
         const zone = scene.add.zone(cx, top + th / 2 - S(4), tw, th + S(12)).setInteractive({ useHandCursor: true });
@@ -67,10 +70,10 @@ export class Bath extends Activity {
 
     floatBubble() {
         const scene = this.scene;
-        // Radius 3 to 6: pictures babelek-3 to babelek-6.
+        // Radius 3 to 6 game pixels: babelek-maly ... babelek-najwiekszy.
         const r = Phaser.Math.Between(S(2), S(4));
         const bubble = addImage(scene, Math.round(this.x + Phaser.Math.Between(-this.w / 2 + 6, this.w / 2 - 6)),
-            this.rimY - S(4), `${P}babelek-${r}`).setDepth(DEPTH.effects);
+            this.rimY - S(4), `${P}babelek-${BUBBLE_PICTURES[r - 3]}`).setDepth(DEPTH.effects);
 
         if (Math.random() < 0.5) {
             playBubble(scene);

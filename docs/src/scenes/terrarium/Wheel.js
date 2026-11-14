@@ -18,16 +18,16 @@ export class Wheel extends Activity {
     }
 
     create() {
-        this.image = addImage(this.scene, this.x, this.y, P + 'kolo-0');
+        this.image = addImage(this.scene, this.x, this.y, P + 'kolo-obrot-0');
 
         // Tapping the wheel invites the hamster in; sits above the glass zone for input.
         const zone = this.scene.add.zone(this.x, this.y, this.r * 2, this.r * 2).setInteractive({ useHandCursor: true });
         zone.on('pointerdown', () => this.scene.startActivity(this));
     }
 
-    // The four spokes repeat every 90 degrees: pictures kolo-0 to kolo-75 in steps of 15.
+    // The four spokes repeat every 90 degrees: pictures kolo-obrot-0 to kolo-obrot-75 in steps of 15.
     draw() {
-        setImage(this.image, `${P}kolo-${this.angle % 90}`);
+        setImage(this.image, `${P}kolo-obrot-${this.angle % 90}`);
     }
 
     approachX() {

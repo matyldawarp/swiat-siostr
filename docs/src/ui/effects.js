@@ -41,7 +41,7 @@ export function floatHeart(scene, x, y, { depth = 20, delay = 0, rise = S(24), d
 // One sleepy "z" drifting up and to the right; pass a running count, every third is a capital Z.
 export function floatZ(scene, x, y, index, { depth = 16 } = {}) {
     const big = index % 3 === 2;
-    const z = addImage(scene, x, y, big ? 'efekty/z-duze' : 'efekty/z-male').setDepth(depth);
+    const z = addImage(scene, x, y, big ? 'efekty/litera-z-duza' : 'efekty/litera-z-mala').setDepth(depth);
     floatAway(scene, z, { dx: S(14), dy: -S(24), duration: 1800 });
     return z;
 }

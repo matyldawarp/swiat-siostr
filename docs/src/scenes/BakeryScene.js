@@ -182,10 +182,10 @@ export class BakeryScene extends BaseScene {
         // Front panels down to the stage's bottom, plain front below it.
         const frontTop = top + slab + 1;
         this.add.rectangle(b.x, frontTop, b.width, b.y + b.height - frontTop, C.front).setOrigin(0);
-        addPattern(this, b.x, frontTop, b.width, height - frontTop, P + 'lada');
+        addPattern(this, b.x, frontTop, b.width, height - frontTop, P + 'lada-wzor');
 
         // Plate under the cupcake.
-        addImage(this, this.cupcakePos.x, top - 1, P + 'talerz');
+        addImage(this, this.cupcakePos.x, top - 1, P + 'talerz-na-babeczke');
     }
 
     drawCupcake() {
@@ -223,7 +223,7 @@ export class BakeryScene extends BaseScene {
             defs.forEach((def, i) => {
                 const button = PixelUI.createIconButton(this, place(i, defs.length), rowY[row], size, def.icon, def.onTap);
                 // Small heart marks what is on the cupcake now.
-                const mark = addImage(this, S(12), -S(12), 'ikony/serce-15');
+                const mark = addImage(this, S(12), -S(12), 'ikony/serce-dodatek-wybrany');
                 button.add(mark);
                 button.mark = mark;
                 button.isChosen = def.isChosen;
@@ -233,7 +233,7 @@ export class BakeryScene extends BaseScene {
         });
 
         this.doneButton = PixelUI.createIconButton(this, width - S(42), height - S(44), S(44),
-            'ikony64/serce-mniejsze', () => this.finish());
+            'ikony64/serce-babeczka-gotowa', () => this.finish());
         this.refreshButtons();
     }
 

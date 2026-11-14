@@ -87,7 +87,7 @@ export class TerrariumScene extends BaseScene {
             PixelUI.fadeTo(this, 'MapScene');
         });
         // Kitchen: bake this character's own cake, which the button shows (ikony64/tort-<id>).
-        PixelUI.createIconButton(this, S(86), S(20), S(28), `ikony64/tort-${this.character.id}`,
+        PixelUI.createIconButton(this, S(86), S(20), S(28), `ikony64/tort-${this.character.picture}`,
             () => PixelUI.fadeTo(this, 'KitchenScene'));
 
         if (Illness.isSick(this)) {

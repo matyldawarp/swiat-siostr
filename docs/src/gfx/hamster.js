@@ -23,8 +23,9 @@ const CHARACTER_FOLDERS = { 2: 'postacie-male', 4: 'postacie' };
 export function createHamsterTextures(scene, character, scale = CHARACTER_SCALE) {
     const folder = CHARACTER_FOLDERS[scale];
     const key = scale === CHARACTER_SCALE ? character.id : `${character.id}-x${scale}`;
-    ['', '-blink', '-chew'].forEach((suffix) => {
-        imageTexture(scene, `${folder}/${character.id}${suffix}`, key + suffix);
+    // Texture suffix -> picture name suffix.
+    Object.entries({ '': '', '-blink': '-oczy-zamkniete', '-chew': '-je' }).forEach(([suffix, file]) => {
+        imageTexture(scene, `${folder}/${character.picture}${file}`, key + suffix);
     });
     return key;
 }

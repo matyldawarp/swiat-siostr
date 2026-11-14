@@ -501,7 +501,7 @@ export class OverlayScene extends BaseScene {
         } else if (song) {
             parts.push(PixelUI.addText(this, badgeX, 1, String(index + 1), textStyle(S(16), { bold: true })).setOrigin(0.5));
         } else {
-            parts.push(addImage(this, badgeX, 0, 'efekty/piosenki-cisza'));
+            parts.push(addImage(this, badgeX, 0, 'efekty/piosenki-nutka-wylaczona'));
         }
 
         const textX = badgeX + badgeW / 2 + S(8);

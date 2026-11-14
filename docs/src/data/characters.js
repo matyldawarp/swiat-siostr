@@ -4,6 +4,7 @@ export const CHARACTER_SLOTS = 20;
 export const CHARACTERS = [
     {
         id: 'mordka',
+        picture: 'mordka',
         name: 'Mordka',
         species: 'chomik',
         // Two warm, lower squeaks.
@@ -18,6 +19,7 @@ export const CHARACTERS = [
     },
     {
         id: 'mysia',
+        picture: 'mysia',
         name: 'Mysia',
         species: 'chomik',
         // Quick, high trill.
@@ -35,11 +37,13 @@ export const CHARACTERS = [
 
 // Characters designed by the girls on paper (scanned in assets/scans/postacie-1-5.png),
 // redrawn as 16x16 pixel pictures and, from those, with Scale2x in both sizes. Every
-// character's pictures are docs/assets/gfx/postacie/<id>.png, <id>-blink (eyes closed) and
-// <id>-chew (eating), and the same in postacie-male.
+// character's pictures are named after it (`picture`): docs/assets/gfx/postacie/<picture>.png,
+// <picture>-oczy-zamkniete (blinking) and <picture>-je (eating), and the same in
+// postacie-male; its cake pictures too (kuchnia/tort-<picture> and so on).
 CHARACTERS.push(
     {
         id: 'postac1',
+        picture: 'titi',
         name: 'Titi',
         species: '',
         // Low, round "boo-oop".
@@ -54,6 +58,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac2',
+        picture: 'lili',
         name: 'Lili',
         species: '',
         // Cheerful rising giggle.
@@ -69,6 +74,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac3',
+        picture: 'harry',
         name: 'Harry',
         species: '',
         // Deep, wobbly rumble (soft, not scary).
@@ -84,6 +90,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac4',
+        picture: 'harbin',
         name: 'Harbin',
         species: '',
         // Bright little tune.
@@ -98,6 +105,7 @@ CHARACTERS.push(
     },
     {
         id: 'postac5',
+        picture: 'karabilein',
         name: 'Karabilein',
         species: '',
         // Airy, floating "woo".
@@ -116,6 +124,7 @@ CHARACTERS.push(
 // so it is copied cell for cell with its own colours, softened to pastels.
 CHARACTERS.push({
     id: 'postac6',
+    picture: 'leili',
     name: 'Leili',
     species: '',
     // A little "miau".
@@ -133,6 +142,7 @@ CHARACTERS.push({
 // photo assets/scans/gabi-syrena.jpg (32x32 in postacie-male, enlarged with Scale2x).
 CHARACTERS.push({
     id: 'gabi',
+    picture: 'gabi',
     name: 'Gabi',
     species: '',
     // A bubbly, splashy sing-song.

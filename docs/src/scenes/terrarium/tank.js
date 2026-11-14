@@ -24,14 +24,14 @@ export function drawTank(scene, { x, y, w, h, floorY }) {
     const hh = S(28);
     const hx = x + w - hw - S(14);
     const hy = floorY - hh;
-    addImage(scene, hx, hy, P + 'domek');
+    addImage(scene, hx, hy, P + 'domek-chomika');
     const house = { x: hx, y: hy, w: hw, h: hh, doorX: Math.round(hx + hw / 2), doorBottom: hy + hh };
 
     // Water bottle hanging on the right wall.
     addImage(scene, x + w - S(11) - 1, y + S(7), P + 'poidelko');
 
     // Food bowl in the middle.
-    addImage(scene, Math.round(x + w * 0.45), floorY, P + 'miska');
+    addImage(scene, Math.round(x + w * 0.45), floorY, P + 'miska-z-ziarnami');
 
     const margin = spriteHalf(HAMSTER_SCALE) + S(6);
     const minX = wcx + wr + margin;

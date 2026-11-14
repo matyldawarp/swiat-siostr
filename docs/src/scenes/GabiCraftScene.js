@@ -103,7 +103,7 @@ export class GabiCraftScene extends BaseScene {
     // Cork board with a frame of buttons and cat ears, holding a sheet to paint on.
     createCanvas() {
         const frame = { x: S(26), y: S(46), w: S(146), h: S(118) };
-        addImage(this, frame.x, frame.y, P + 'tablica');
+        addImage(this, frame.x, frame.y, P + 'tablica-korkowa');
 
         // The sheet: a canvas texture with one texel per game pixel, so paint stays blocky.
         const sheet = { x: frame.x + S(11), y: frame.y + S(11), w: frame.w - S(22), h: frame.h - S(22) };
@@ -171,7 +171,7 @@ export class GabiCraftScene extends BaseScene {
 
     // A little four-point star that shines and fades.
     twinkle(x, y) {
-        const star = addImage(this, Math.round(x) + Phaser.Math.Between(-S(6), S(6)), Math.round(y) + Phaser.Math.Between(-S(6), S(6)), P + 'iskierka').setDepth(30);
+        const star = addImage(this, Math.round(x) + Phaser.Math.Between(-S(6), S(6)), Math.round(y) + Phaser.Math.Between(-S(6), S(6)), P + 'iskierka-brokatu').setDepth(30);
         floatAway(this, star, { dy: -S(6), duration: 600, steps: 4 });
     }
 
@@ -184,7 +184,7 @@ export class GabiCraftScene extends BaseScene {
         this.bottles = [];
         [0, 1].forEach((row) => {
             const shelfY = S(92) + row * S(46);
-            addImage(this, left - S(6), shelfY, P + 'polka');
+            addImage(this, left - S(6), shelfY, P + 'polka-na-farby');
             for (let i = 0; i < 4; i++) {
                 const { color: paint, bottle: picture } = PAINTS[row * 4 + i];
                 const bottle = this.add.container(left + i * step + S(9), shelfY, [addImage(this, 0, 0, P + picture)]).setDepth(6);
@@ -228,7 +228,7 @@ export class GabiCraftScene extends BaseScene {
         const top = this.floorY - S(26);
         const w = S(112);
         this.table = { cx, top, left: Math.round(cx - w / 2), w };
-        addImage(this, cx, top, P + 'stol');
+        addImage(this, cx, top, P + 'stol-z-pomponami');
 
         // Basket full of pompoms.
         const bx = this.table.left + S(16);
@@ -300,7 +300,7 @@ export class GabiCraftScene extends BaseScene {
     createBox(x) {
         this.boxGroundY = this.floorY + S(26);
         this.box = this.add.container(x, this.boxGroundY).setDepth(20);
-        const image = addImage(this, 0, 0, P + 'tekturzatko').setInteractive({ useHandCursor: true });
+        const image = addImage(this, 0, 0, P + 'tekturzatko-kotek-z-kartonu').setInteractive({ useHandCursor: true });
         this.box.add(image);
         image.on('pointerup', () => this.happy(this.box, this.boxGroundY, () => {
             playNotes(this, [{ freq: 659, duration: 0.1 }, { freq: 880, duration: 0.1 }, { freq: 659, duration: 0.1 }, { freq: 1047, duration: 0.18 }], 'triangle', 0.1);

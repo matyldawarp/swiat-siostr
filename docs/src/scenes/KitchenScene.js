@@ -7,7 +7,7 @@ import { playCharacterSound, playCrunch, playDing, playFanfare, playPlop, playSp
 import { BaseScene } from './BaseScene.js';
 
 // Pictures of this scene: docs/assets/gfx/kuchnia/ (the character's cake in layers:
-// tort-<id>, lukier-<id>, posypka, dodatek-<id>; -kes-1 and -kes-2 after bites).
+// tort-<picture>, lukier-<picture>, posypka-na-torcie, dodatek-<picture>; -kes-1 and -kes-2 after bites).
 const P = 'kuchnia/';
 const KITCHEN_COLORS = {
     wall: 0xfff1e6,
@@ -27,9 +27,9 @@ const INGREDIENTS = [
 // Decorations for a character's own cake: icing in its colour, sprinkles and its topping.
 function cakeDecorations(character) {
     return [
-        { key: 'icing', icon: `ikony64/lukier-${character.id}` },
+        { key: 'icing', icon: `ikony64/lukier-${character.picture}` },
         { key: 'sprinkles', icon: 'ikony64/posypka' },
-        { key: 'topping', icon: `ikony64/dodatek-${character.id}` }
+        { key: 'topping', icon: `ikony64/dodatek-${character.picture}` }
     ];
 }
 
@@ -84,7 +84,7 @@ export class KitchenScene extends BaseScene {
         const winH = S(42);
         const winX = Math.round(width * 0.42 - winW / 2);
         const winY = Math.max(S(10), Math.round(tilesTop * 0.4 - winH / 2));
-        addImage(this, winX, winY, P + 'okno');
+        addImage(this, winX, winY, P + 'okno-z-polka');
     }
 
     // The character stands behind the counter, so the counter is drawn after it.
@@ -123,7 +123,7 @@ export class KitchenScene extends BaseScene {
             const step = doorW + S(6);
             const firstX = S(6) - Math.ceil((S(6) - b.x) / step) * step;
             for (let x = firstX; x < b.x + b.width; x += step) {
-                addImage(this, x, cabTop + S(4), P + 'drzwiczki');
+                addImage(this, x, cabTop + S(4), P + 'drzwiczki-szafki');
             }
         }
         this.add.rectangle(b.x, cabBottom, b.width, b.y + b.height - cabBottom, C.cabinetDark).setOrigin(0);
@@ -144,7 +144,7 @@ export class KitchenScene extends BaseScene {
 
         // Window: shows the tin and glows while baking.
         this.ovenWindow = { x: left + S(8), y: top + S(19), w: w - S(16), h: h - S(25) };
-        this.ovenGlass = addImage(this, this.ovenWindow.x - cx, this.ovenWindow.y - bottom, P + 'szybka');
+        this.ovenGlass = addImage(this, this.ovenWindow.x - cx, this.ovenWindow.y - bottom, P + 'szybka-piekarnika');
         container.add(this.ovenGlass);
         this.oven = container;
 
@@ -155,19 +155,19 @@ export class KitchenScene extends BaseScene {
         const totalW = count * size + (count - 1) * gap;
         const progressLeft = Math.round(cx - totalW / 2);
         this.progress = Array.from({ length: count }, (_, i) =>
-            addImage(this, progressLeft + i * (size + gap), top - S(10), P + 'kratka').setVisible(false));
+            addImage(this, progressLeft + i * (size + gap), top - S(10), P + 'kratka-postepu').setVisible(false));
 
         const zone = this.add.zone(cx, top + h / 2, w, h).setInteractive({ useHandCursor: true });
         zone.on('pointerup', () => this.bake());
     }
 
     drawOvenGlass(glowing, withTin = false) {
-        const key = withTin ? (glowing ? 'szybka-z-forma-goraca' : 'szybka-z-forma') : 'szybka';
+        const key = withTin ? (glowing ? 'szybka-piekarnika-z-forma-goraca' : 'szybka-piekarnika-z-forma') : 'szybka-piekarnika';
         setImage(this.ovenGlass, P + key);
     }
 
     drawProgress(done) {
-        this.progress.forEach((square, i) => setImage(square.setVisible(true), P + (i < done ? 'kratka-pelna' : 'kratka')));
+        this.progress.forEach((square, i) => setImage(square.setVisible(true), P + (i < done ? 'kratka-postepu-pelna' : 'kratka-postepu')));
     }
 
     // --- Bowl --------------------------------------------------------------------
@@ -235,7 +235,7 @@ export class KitchenScene extends BaseScene {
     markDone(button) {
         button.setAlpha(0.45);
         button.done = true;
-        button.add(addImage(this, S(13), -S(13), 'ikony/serce-18'));
+        button.add(addImage(this, S(13), -S(13), 'ikony/serce-narzedzie-uzyte'));
     }
 
     showIngredientButtons() {
@@ -336,7 +336,7 @@ export class KitchenScene extends BaseScene {
         this.hint(null);
 
         // Batter goes into a tin and into the oven.
-        const tin = addImage(this, this.bowlPos.x, this.bowlPos.y - S(30), P + 'forma').setDepth(20);
+        const tin = addImage(this, this.bowlPos.x, this.bowlPos.y - S(30), P + 'forma-do-ciasta').setDepth(20);
         this.added = [];
         this.mixed = false;
         this.bowl.setVisible(false);
@@ -386,7 +386,7 @@ export class KitchenScene extends BaseScene {
         this.busy = false;
 
         const defs = cakeDecorations(this.character).map((t) => ({ key: t.key, icon: t.icon, onTap: (button) => this.addTopping(t, button) }));
-        defs.push({ key: 'serve', icon: 'ikony64/serce', onTap: () => this.serve() });
+        defs.push({ key: 'serve', icon: 'ikony64/serce-podaj-tort', onTap: () => this.serve() });
         this.setRow(defs);
         this.hint(this.rowButtons[0]);
     }
@@ -394,11 +394,11 @@ export class KitchenScene extends BaseScene {
     // The cake on the plate in layers (sponge, icing, sprinkles, topping), shown once baked.
     createCake() {
         const { x, y } = this.bowlPos;
-        const id = this.character.id;
+        const id = this.character.picture;
         this.cakeLayers = {
             base: addImage(this, x, y, `${P}tort-${id}`),
             icing: addImage(this, x, y, `${P}lukier-${id}`),
-            sprinkles: addImage(this, x, y, P + 'posypka'),
+            sprinkles: addImage(this, x, y, P + 'posypka-na-torcie'),
             topping: addImage(this, x, y, `${P}dodatek-${id}`)
         };
         this.cake = this.add.container(0, 0, Object.values(this.cakeLayers)).setVisible(false);
@@ -406,16 +406,16 @@ export class KitchenScene extends BaseScene {
 
     // `bites`: how many of the three bites have been eaten from the right side.
     drawCake(bites = 0) {
-        const id = this.character.id;
+        const id = this.character.picture;
         const layers = this.cakeLayers;
         const suffix = bites ? `-kes-${bites}` : '';
         const eaten = bites >= 3;
-        setImage(layers.base, eaten ? P + 'talerzyk' : `${P}tort-${id}${suffix}`);
+        setImage(layers.base, eaten ? P + 'talerzyk-pusty' : `${P}tort-${id}${suffix}`);
         layers.icing.setVisible(!eaten && Boolean(this.toppings.icing));
         layers.sprinkles.setVisible(!eaten && Boolean(this.toppings.sprinkles));
         if (!eaten) {
             setImage(layers.icing, `${P}lukier-${id}${suffix}`);
-            setImage(layers.sprinkles, `${P}posypka${suffix}`);
+            setImage(layers.sprinkles, `${P}posypka-na-torcie${suffix}`);
         }
         // The topping goes with the second bite.
         layers.topping.setVisible(bites < 2 && Boolean(this.toppings.topping));
@@ -448,7 +448,7 @@ export class KitchenScene extends BaseScene {
     }
 
     biteCake(bite) {
-        const key = `${P}kawalek-${this.character.id}${this.toppings.icing ? '' : '-bez-lukru'}`;
+        const key = `${P}kawalek-${this.character.picture}${this.toppings.icing ? '' : '-bez-lukru'}`;
         const piece = addImage(this, this.bowlPos.x + S(16), this.bowlPos.y - S(14), key).setDepth(20);
 
         this.drawCake(bite);
@@ -501,7 +501,7 @@ export class KitchenScene extends BaseScene {
         // Bake again, or go back home (the back button).
         this.setRow([{
             key: 'again',
-            icon: `ikony64/tort-${this.character.id}`,
+            icon: `ikony64/tort-${this.character.picture}`,
             onTap: () => this.scene.restart({ resized: true })
         }]);
         this.hint(this.rowButtons[0]);

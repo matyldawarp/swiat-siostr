@@ -104,7 +104,7 @@ export class StartScene extends BaseScene {
     // Hills along the bottom of the stage, continued across the whole window (bleed): a
     // repeating strip over the stage's last HILLS_H rows, plain front-hill green below it.
     drawHills(height, bleed) {
-        addPattern(this, bleed.x, height - HILLS_H, bleed.width, HILLS_H, P + 'wzgorza');
+        addPattern(this, bleed.x, height - HILLS_H, bleed.width, HILLS_H, P + 'wzgorza-wzor');
         const bottom = bleed.y + bleed.height;
         if (bottom > height) {
             this.add.rectangle(bleed.x, height, bleed.width, bottom - height, PALETTE.hillFront).setOrigin(0);

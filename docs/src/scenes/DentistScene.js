@@ -15,10 +15,12 @@ const DENTIST_COLORS = {
     water: 0x9fd0f5
 };
 
-// Leftover sweets on the teeth: soft pastel crumbs, nothing scary (dentysta/okruszek-1 ... -5).
-const CRUMB_PICTURES = 5;
-// Sparkles when a crumb comes off: visible on white teeth (dentysta/iskierka-1 ... -4).
-const SPARKLE_PICTURES = 4;
+// Leftover sweets on the teeth: soft pastel crumbs, nothing scary (dentysta/okruszek-*).
+const CRUMB_PICTURES = ['karmelowy', 'rozowy', 'orzechowy', 'liliowy', 'zolty'];
+// Sparkles when a crumb comes off: visible on white teeth (dentysta/iskierka-*).
+const SPARKLE_PICTURES = ['zolta', 'rozowa', 'liliowa', 'mietowa'];
+// Foam blobs, smallest first (dentysta/piana-*).
+const FOAM_PICTURES = ['mala', 'srednia', 'duza', 'najwieksza'];
 // Brush strokes over a crumb before it comes off.
 const STROKES_TO_CLEAN = 4;
 
@@ -109,7 +111,7 @@ export class DentistScene extends BaseScene {
         this.panelRect = { x: cx - w / 2, y: cy - h / 2, w, h };
 
         // The picture has the tail towards the character's face, bottom left.
-        const picture = addImage(this, 0, 0, P + 'buzia');
+        const picture = addImage(this, 0, 0, P + 'buzia-z-zebami');
 
         // Middles of the teeth in the picture, where crumbs land: six on the top gum,
         // six on the bottom one.
@@ -165,7 +167,7 @@ export class DentistScene extends BaseScene {
 
     // A little cluster of sweet crumbs on a tooth.
     addCrumb(tooth) {
-        const key = `${P}okruszek-${Phaser.Math.Between(1, CRUMB_PICTURES)}`;
+        const key = `${P}okruszek-${Phaser.Math.RND.pick(CRUMB_PICTURES)}`;
         const g = addImage(this, tooth.x + Phaser.Math.Between(-S(2), S(2)), tooth.y + Phaser.Math.Between(-S(2), S(2)), key);
         this.panel.add(g);
         this.crumbs.push({ g, strokes: 0, cleaned: false });
@@ -247,8 +249,8 @@ export class DentistScene extends BaseScene {
         if (this.foam.length > 40) {
             return;
         }
-        // Radius 3 to 6: dentysta/piana-3 ... -6.
-        const g = addImage(this, Math.round(x), Math.round(y), `${P}piana-${Phaser.Math.Between(S(2), S(4))}`);
+        // Radius 3 to 6 game pixels, smallest to largest.
+        const g = addImage(this, Math.round(x), Math.round(y), `${P}piana-${FOAM_PICTURES[Phaser.Math.Between(S(2), S(4)) - 3]}`);
         this.panel.add(g);
         this.foam.push(g);
     }
@@ -274,7 +276,7 @@ export class DentistScene extends BaseScene {
     sparkleAt(x, y) {
         for (let i = 0; i < 5; i++) {
             const angle = (i / 5) * Math.PI * 2;
-            const g = addImage(this, x, y, `${P}iskierka-${(i % SPARKLE_PICTURES) + 1}`).setDepth(30);
+            const g = addImage(this, x, y, `${P}iskierka-${SPARKLE_PICTURES[i % SPARKLE_PICTURES.length]}`).setDepth(30);
             floatAway(this, g, { dx: Math.round(Math.cos(angle) * S(14)), dy: Math.round(Math.sin(angle) * S(12)), duration: 500, steps: 4 });
         }
     }
@@ -372,7 +374,7 @@ export class DentistScene extends BaseScene {
         Object.entries(defs).forEach(([key, def], i) => {
             const button = PixelUI.createIconButton(this, Math.round(width / 2 + (i - 1) * gap), y, size, def.icon, def.onTap);
             // Small heart marks a step that is done.
-            const mark = addImage(this, S(14), -S(14), 'ikony/serce-18').setVisible(false);
+            const mark = addImage(this, S(14), -S(14), 'ikony/serce-narzedzie-uzyte').setVisible(false);
             button.add(mark);
             button.mark = mark;
             this.tools[key] = button;

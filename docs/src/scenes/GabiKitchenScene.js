@@ -120,13 +120,13 @@ export class GabiKitchenScene extends BaseScene {
         const top = this.counterTop;
 
         // Steel back panel with three little cat heads, the hob and the mint oven.
-        addImage(this, left, top, P + 'kuchenka');
+        addImage(this, left, top, P + 'kuchenka-z-piekarnikiem');
         // The oven's window; baking makes it glow.
-        this.oven = addImage(this, left + S(8), top + S(23), P + 'piekarnik');
+        this.oven = addImage(this, left + S(8), top + S(23), P + 'szybka-piekarnika');
         this.tapZone(left, top + S(11), w, this.floorY - top - S(11), () => this.bake());
 
         // The tray of cupcakes appears on the hob when they are baked.
-        this.tray = addImage(this, cx, top, P + 'blacha').setDepth(5).setVisible(false);
+        this.tray = addImage(this, cx, top, P + 'blacha-z-babeczkami').setDepth(5).setVisible(false);
         this.trayZone = this.tapZone(left + S(6), top - S(18), w - S(12), S(20), () => this.shareCupcakes());
         this.trayZone.disableInteractive();
     }
@@ -141,11 +141,11 @@ export class GabiKitchenScene extends BaseScene {
         }
         this.baking = true;
         playWhisk(this);
-        setImage(this.oven, P + 'piekarnik-goracy');
+        setImage(this.oven, P + 'szybka-piekarnika-goraca');
         this.time.delayedCall(1300, () => {
             this.baking = false;
             this.trayReady = true;
-            setImage(this.oven, P + 'piekarnik');
+            setImage(this.oven, P + 'szybka-piekarnika');
             playDing(this);
             this.tray.setVisible(true);
             this.trayZone.setInteractive({ useHandCursor: true });
@@ -174,7 +174,7 @@ export class GabiKitchenScene extends BaseScene {
     createShelf() {
         const cx = this.cakeX;
         const y = S(66);
-        addImage(this, cx, y, P + 'polka');
+        addImage(this, cx, y, P + 'polka-z-kwiatkiem-i-kubkiem');
 
         const notes = [1319, 1568, 1760];
         ['patelnia-fioletowa', 'lopatka', 'patelnia-szara'].forEach((name, n) => {
@@ -194,7 +194,7 @@ export class GabiKitchenScene extends BaseScene {
         const cx = this.cakeX;
         const w = S(76);
         const left = Math.round(cx - w / 2);
-        addImage(this, left - S(3), this.counterTop, P + 'blat');
+        addImage(this, left - S(3), this.counterTop, P + 'blat-szafki');
         this.cupboard = { left, top: this.counterTop + S(8), w, h: this.floorY - this.counterTop - S(8) };
         this.cupboardImage = addImage(this, left, this.cupboard.top, P + 'szafka');
         this.tapZone(left, this.cupboard.top, w, this.cupboard.h, () => this.openCupboard());
@@ -218,7 +218,7 @@ export class GabiKitchenScene extends BaseScene {
     // Two-tier party cake on the counter; each tap puts a cherry on top.
     createCake() {
         this.cake = this.add.container(0, 0).setDepth(4);
-        this.cake.add(addImage(this, this.cakeX, this.counterTop, P + 'tort'));
+        this.cake.add(addImage(this, this.cakeX, this.counterTop, P + 'tort-pietrowy'));
         this.cherryImages = [];
         this.tapZone(this.cakeX - S(26), this.counterTop - S(62), S(52), S(62), () => this.addCherry());
     }
@@ -305,7 +305,7 @@ export class GabiKitchenScene extends BaseScene {
     createCakey(x) {
         this.cakeyGroundY = this.floorY + S(26);
         this.cakey = this.add.container(x, this.cakeyGroundY).setDepth(20);
-        const image = addImage(this, 0, 0, P + 'lakotek').setInteractive({ useHandCursor: true });
+        const image = addImage(this, 0, 0, P + 'lakotek-kotek-babeczka').setInteractive({ useHandCursor: true });
         this.cakey.add(image);
         image.on('pointerup', () => {
             playNotes(this, [{ freq: 988, duration: 0.08 }, { freq: 1175, duration: 0.08 }, { freq: 1480, duration: 0.14 }], 'triangle', 0.12);

@@ -142,7 +142,7 @@ export class SchoolScene extends BaseScene {
         PixelUI.addText(this, tx, y + h / 2 - S(10), lesson.title,
             textStyle(S(13), { bold: true, color: TEXT_COLORS.button })).setOrigin(0.5);
         if (stars > 0) {
-            addImage(this, Math.round(tx - S(8)), Math.round(y + h / 2 + S(14)), P + 'gwiazdka');
+            addImage(this, Math.round(tx - S(8)), Math.round(y + h / 2 + S(14)), P + 'gwiazdka-na-lawce');
             PixelUI.addText(this, tx + S(2), y + h / 2 + S(14), `${stars}`,
                 textStyle(S(12), { bold: true, color: TEXT_COLORS.subtitle })).setOrigin(0, 0.5);
         }
@@ -206,7 +206,7 @@ export class SchoolScene extends BaseScene {
             'ikony64/glosnik', () => say(this, this.speech));
 
         this.stars = this.round.tasks.map((_, i) => addImage(this,
-            Math.round(width / 2 + (i - (this.round.tasks.length - 1) / 2) * S(22)), Math.round((FLOOR_Y + height) / 2), P + 'gwiazda-pusta'));
+            Math.round(width / 2 + (i - (this.round.tasks.length - 1) / 2) * S(22)), Math.round((FLOOR_Y + height) / 2), P + 'gwiazda-postepu-pusta'));
         this.drawProgress();
 
         const build = {
@@ -220,7 +220,7 @@ export class SchoolScene extends BaseScene {
 
     // One star per task at the bottom, gold once done.
     drawProgress(done = this.round.index) {
-        this.stars.forEach((star, i) => setImage(star, P + (i < done ? 'gwiazda' : 'gwiazda-pusta')));
+        this.stars.forEach((star, i) => setImage(star, P + (i < done ? 'gwiazda-postepu' : 'gwiazda-postepu-pusta')));
     }
 
     // A word tile at (x, y); `paint(color)` recolours it.
@@ -649,7 +649,7 @@ export class SchoolScene extends BaseScene {
         stars[this.lesson.id] = (stars[this.lesson.id] || 0) + 1;
         saveStars(stars);
 
-        const star = this.add.container(this.width / 2, this.height / 2 - S(10), [addImage(this, 0, 0, P + 'gwiazda-duza')]).setDepth(50);
+        const star = this.add.container(this.width / 2, this.height / 2 - S(10), [addImage(this, 0, 0, P + 'gwiazda-koniec-lekcji')]).setDepth(50);
         PixelUI.popIn(this, star, { duration: 500 });
         for (let i = 0; i < 6; i++) {
             floatHeart(this, this.width / 2 + Phaser.Math.Between(-S(60), S(60)), this.height / 2, { delay: i * 150, depth: 60 });

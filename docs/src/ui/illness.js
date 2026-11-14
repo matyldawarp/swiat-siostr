@@ -6,7 +6,7 @@ import { addImage } from '../gfx/images.js';
 import { playSneeze } from '../audio/sfx.js';
 
 // Pictures: docs/assets/gfx/choroba/. The bubble comes in two sizes.
-const BUBBLES = { [S(26)]: 'choroba/dymek', [S(20)]: 'choroba/dymek-maly' };
+const BUBBLES = { [S(26)]: 'choroba/dymek-duzy', [S(20)]: 'choroba/dymek-maly' };
 
 export const ILLNESS = {
     // A fresh cold can't start this soon after being healed.

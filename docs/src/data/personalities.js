@@ -32,40 +32,40 @@ export const DEFAULTS = {
 export const PERSONALITIES = {
     energetic: {
         name: 'Wiercipięta',
-        icon: 'ikony64/osobowosc-energetic',
+        icon: 'ikony64/osobowosc-wiercipieta',
         wander: { stroll: 0.3, wheel: 0.55, house: 0.05, bath: 0.1 },
         walkSpeed: 0.65,
         stay: { wheel: 1.5, bath: 0.8, house: 0.6 }
     },
     sleepy: {
         name: 'Śpioch',
-        icon: 'ikony64/osobowosc-sleepy',
+        icon: 'ikony64/osobowosc-spioch',
         wander: { stroll: 0.3, wheel: 0.1, house: 0.45, bath: 0.15 },
         walkSpeed: 1.5,
         stay: { wheel: 0.6, bath: 1, house: 1.7 }
     },
     clean: {
         name: 'Czyścioszek',
-        icon: 'ikony64/osobowosc-clean',
+        icon: 'ikony64/osobowosc-czyscioszek',
         wander: { stroll: 0.35, wheel: 0.15, house: 0.1, bath: 0.4 },
         stay: { wheel: 1, bath: 1.6, house: 1 },
         poopChance: 0.25
     },
     foodie: {
         name: 'Łasuch',
-        icon: 'ikony64/osobowosc-foodie',
+        icon: 'ikony64/osobowosc-lasuch',
         seedHurry: 0.55,
         eatHearts: 3,
         poopChance: 0.8
     },
     cuddly: {
         name: 'Przytulas',
-        icon: 'ikony64/osobowosc-cuddly',
+        icon: 'ikony64/osobowosc-przytulas',
         pokeHearts: 3
     },
     playful: {
         name: 'Wesołek',
-        icon: 'ikony64/osobowosc-playful',
+        icon: 'ikony64/osobowosc-wesolek',
         walkSpeed: 0.85,
         pokeHop: 1.6,
         happyHop: 0.4

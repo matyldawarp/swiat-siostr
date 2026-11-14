@@ -48,7 +48,7 @@ export class GabiHouseScene extends BaseScene {
 
         // The house standing on (cx, floorY); its parts sit where WINDOWS, DOOR, EYES and NOSE say.
         this.house = this.add.container(0, 0);
-        this.house.add(addImage(this, Math.round(width * 0.58), this.floorY, P + 'dom'));
+        this.house.add(addImage(this, Math.round(width * 0.58), this.floorY, P + 'domek-bez-okien'));
         this.windowImages = WINDOWS.map((win) => addImage(this, win.x, win.y, `${P}okno-${win.name}`));
         this.eyeImages = EYES.map((eye) => addImage(this, eye.x, eye.y, P + 'oko'));
         this.door = addImage(this, DOOR.x, DOOR.y, P + 'drzwi');
@@ -77,11 +77,11 @@ export class GabiHouseScene extends BaseScene {
             g.fillRect(b.x, b.y + i * bandH, b.width, bandH + 1);
         });
         // Hills: a pattern of one wave, from the hilltops down to the lawn.
-        addPattern(this, b.x, this.floorY - S(50), b.width, S(44), P + 'wzgorza');
+        addPattern(this, b.x, this.floorY - S(50), b.width, S(44), P + 'wzgorza-wzor');
         const lawnTop = this.floorY - S(6);
         this.add.rectangle(b.x, lawnTop, b.width, b.y + b.height - lawnTop, PALETTE.hillFront).setOrigin(0);
         this.add.rectangle(b.x, lawnTop, b.width, S(2), PALETTE.hillFrontLight).setOrigin(0);
-        addPattern(this, b.x, this.floorY - S(4), b.width, b.y + b.height - this.floorY + S(4), P + 'kwiatki');
+        addPattern(this, b.x, this.floorY - S(4), b.width, b.y + b.height - this.floorY + S(4), P + 'kwiatki-wzor');
     }
 
     createTapZones() {

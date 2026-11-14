@@ -13,7 +13,7 @@ const HOSPITAL_COLORS = {
     wall: 0xe4f1ff,
     wainscot: 0xf7d6e4
 };
-// Steps of the thermometer's rising column (szpital/termometr-0 ... -6).
+// Steps of the thermometer's rising column (szpital/termometr-slupek-0 ... -6).
 const THERMOMETER_STEPS = 6;
 
 // Treatment steps, suggested in this order (the next one pulses) but any order works.
@@ -70,7 +70,7 @@ export class HospitalScene extends BaseScene {
         addPattern(this, b.x, floorY + 1, b.width, b.y + b.height - floorY - 1, P + 'podloga');
 
         // Cross sign on the wall.
-        addImage(this, Math.round(width * 0.16), Math.round(floorY * 0.32), P + 'znak');
+        addImage(this, Math.round(width * 0.16), Math.round(floorY * 0.32), P + 'znak-krzyz');
 
         // Window with sky and a cloud, left of the door on the right wall.
         const winW = S(56);
@@ -144,7 +144,7 @@ export class HospitalScene extends BaseScene {
         };
 
         // Blanket over the hamster's lower half.
-        addImage(this, hx - S(26), mattressTop - S(10), P + 'koldra');
+        addImage(this, hx - S(26), mattressTop - S(10), P + 'koldra-na-lozko');
     }
 
     createTools(width, height) {
@@ -209,7 +209,7 @@ export class HospitalScene extends BaseScene {
 
     measureTemperature(button) {
         const to = { x: this.spots.armpit.x, y: this.spots.armpit.y };
-        this.flyTool(button, to, P + 'termometr-0', (tool) => {
+        this.flyTool(button, to, P + 'termometr-slupek-0', (tool) => {
             const reading = { step: 0 };
             this.tweens.add({
                 targets: reading,
@@ -217,7 +217,7 @@ export class HospitalScene extends BaseScene {
                 duration: 1400,
                 ease: 'Stepped',
                 easeParams: [THERMOMETER_STEPS],
-                onUpdate: () => setImage(tool, `${P}termometr-${Math.round(reading.step)}`),
+                onUpdate: () => setImage(tool, `${P}termometr-slupek-${Math.round(reading.step)}`),
                 onComplete: () => {
                     playDing(this);
                     this.time.delayedCall(400, () => {
@@ -283,7 +283,7 @@ export class HospitalScene extends BaseScene {
 
         // Small heart on the used tool marks it as done.
         const button = this.toolButtons[key];
-        button.add(addImage(this, S(14), -S(14), 'ikony/serce-18'));
+        button.add(addImage(this, S(14), -S(14), 'ikony/serce-narzedzie-uzyte'));
 
         this.updateHints();
         if (this.done.size === TREATMENTS.length) {

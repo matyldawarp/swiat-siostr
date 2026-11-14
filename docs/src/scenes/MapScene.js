@@ -18,7 +18,7 @@ const MAP_PLACES = {
     home: {
         scene: 'TerrariumScene',
         at: [0.16, 0.74],
-        image: P + 'dom',
+        image: P + 'dom-postaci',
         trees: [[-40, -6], [38, -14]]
     },
     hospital: {
@@ -103,7 +103,7 @@ export class MapScene extends BaseScene {
         // Grass over the whole window, then every road (one picture over the stage).
         const b = this.view.bleed;
         addPattern(this, b.x, b.y, b.width, b.height, P + 'trawa');
-        addImage(this, 0, 0, P + 'drogi');
+        addImage(this, 0, 0, P + 'drogi-z-domu');
         // Points along the roads, for keeping the clouds off them.
         const roadPoints = Object.values(this.roads).flatMap((road) => road.getSpacedPoints(Math.round(road.getLength() / 2)));
 
@@ -177,7 +177,7 @@ export class MapScene extends BaseScene {
         // Tap area: the cloud picture's size before the outline.
         const w = S(44);
         const h = S(26);
-        const picture = addImage(this, 0, 0, P + 'chmurka');
+        const picture = addImage(this, 0, 0, P + 'chmurka-nieodkryte-miejsce');
         const mark = PixelUI.addText(this, 0, S(1), '?', textStyle(S(14), { bold: true, color: '#b9a6dc' })).setOrigin(0.5);
 
         const cloud = this.add.container(x, y, [picture, mark]);
