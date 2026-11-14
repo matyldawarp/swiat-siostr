@@ -41,6 +41,7 @@ flowchart TD
     mapa --> szkola["Szkoła: klasa (#szkola)"]
     szkola --> lekcja["Lekcja ortografii (#szkola/lekcja)"]
     mapa --> gabi["Domek Gabi (#domek-gabi)"]
+    gabi --> lakotek["Kuchnia Łakotka (#kuchnia-lakotka)"]
 ```
 
 Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Ustawień jest tylko na ekranach Start i Wybór postaci. Przycisk przeładowania w prawym górnym rogu zawsze wraca na Start.

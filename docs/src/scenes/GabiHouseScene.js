@@ -11,7 +11,8 @@ const KITTEN_COLORS = { head: 0xfff0f6, ear: 0xf7b2cc };
 
 // Gabi's dollhouse, a big toy to tap: windows light up with a kitten peeking out (each
 // with its own note), the round eyes in the roof blink, the heart nose purrs and the door
-// opens with a doorbell. Lighting every window makes the whole house cheer.
+// opens with a doorbell and leads into Łakotek's kitchen (GabiKitchenScene). Lighting
+// every window makes the whole house cheer.
 export class GabiHouseScene extends BaseScene {
     constructor() {
         super('GabiHouseScene');
@@ -188,9 +189,10 @@ export class GabiHouseScene extends BaseScene {
         [0, 1, 2].forEach((i) => floatHeart(this, x + (i - 1) * S(8), y, { depth: 30, delay: i * 120 }));
     }
 
-    // Ding-dong: the door swings open to a warm light and the character hops for joy.
+    // Ding-dong: the door swings open to a warm light, the character hops for joy and
+    // goes in, to Łakotek's kitchen.
     openDoor() {
-        if (this.doorOpen) {
+        if (this.doorOpen || this.leaving) {
             return;
         }
         this.doorOpen = true;
@@ -205,10 +207,7 @@ export class GabiHouseScene extends BaseScene {
             playSparkle(this);
             floatHeart(this, door.x + door.w / 2, door.y, { depth: 30 });
         });
-        this.time.delayedCall(1400, () => {
-            this.overlay.clear();
-            this.doorOpen = false;
-        });
+        this.time.delayedCall(900, () => PixelUI.fadeTo(this, 'GabiKitchenScene'));
     }
 
     goBack() {
