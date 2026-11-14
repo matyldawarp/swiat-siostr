@@ -9,6 +9,25 @@ import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
 import { playLullaby } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
+// Reloads the page with the newest files. GitHub Pages lets browsers keep files for 10
+// minutes, and sw.js (which asks the server every time) doesn't always control the page,
+// e.g. on a first visit or when Edge has put it to sleep. So every file of the game this
+// page has loaded is first fetched again past the browser's cache, which stores the new
+// copies, and only then the page reloads. Gives up waiting after a few seconds.
+function reloadFresh() {
+    const origin = window.location.origin;
+    const urls = new Set([window.location.pathname, ...performance.getEntriesByType('resource').map((e) => e.name)]
+        .map((url) => new URL(url, origin))
+        .filter((url) => url.origin === origin)
+        .map((url) => url.href));
+    const fetches = [...urls].map((url) => fetch(url, { cache: 'reload' }).catch(() => {}));
+    if (navigator.serviceWorker) {
+        fetches.push(navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {}));
+    }
+    const timeout = new Promise((resolve) => setTimeout(resolve, 4000));
+    Promise.race([Promise.all(fetches), timeout]).then(() => window.location.reload());
+}
+
 // Changing the stage scale rebuilds every scene, this one too; Settings open again after
 // every rebuild until they are closed.
 let reopenSettings = false;
@@ -493,12 +512,18 @@ export class OverlayScene extends BaseScene {
     // Reloads the newest files and always starts again on the start screen: the address
     // after # (scenes/routes.js) is dropped first. Reloading in the browser keeps it.
     createReloadButton(x, y, size) {
-        PixelUI.createIconButton(this, x, y, size, (g, iconSize) => {
+        const button = PixelUI.createIconButton(this, x, y, size, (g, iconSize) => {
             g.fillStyle(PALETTE.buttonBorder, 1);
             this.drawReloadIcon(g, 0, 1, Math.round(iconSize * 0.4));
         }, () => {
+            if (this.reloading) {
+                return;
+            }
+            this.reloading = true;
+            // The arrow spins while the files come in.
+            this.tweens.add({ targets: button.list[1], angle: 360, duration: 600, repeat: -1 });
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
-            window.location.reload();
+            reloadFresh();
         });
     }
 

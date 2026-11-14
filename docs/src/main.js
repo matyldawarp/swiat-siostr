@@ -129,6 +129,11 @@ function registerServiceWorker() {
 }
 
 function startGame() {
+    // The reload button fetches again every file this page loaded (OverlayScene), read
+    // from this list; the default keeps only 250, fewer than the game's files.
+    if (performance.setResourceTimingBufferSize) {
+        performance.setResourceTimingBufferSize(2000);
+    }
     registerServiceWorker();
     keepScreenAwake();
     playFullscreen();
