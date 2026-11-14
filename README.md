@@ -18,9 +18,9 @@ Gra ma manifest (`docs/manifest.webmanifest`), service worker (`docs/sw.js`) i i
 
 ## GitHub Pages
 
-GitHub Pages publikuje grę prosto z folderu `docs/` na gałęzi `main`, przy każdym pushu. Na stronę trafia tylko ten folder, w którym są wszystkie pliki gry. Notatki, skany rysunków (`assets/scans/`) i narzędzia (`tools/`) leżą poza nim, więc zostają poza stroną. Muzyka z `docs/assets/music/` jest w repozytorium, więc trafia też na stronę. Jeśli żadnego pliku piosenki nie ma, gra ukrywa przycisk nutki.
+Workflow `.github/workflows/pages.yml` publikuje grę z folderu `docs/` na gałęzi `main` przy każdym pushu. Przy okazji dopisuje plik `version.json` z SHA commita i datą builda, które widać na dole okna Ustawień. Na stronę trafia tylko ten folder, w którym są wszystkie pliki gry. Notatki, skany rysunków (`assets/scans/`) i narzędzia (`tools/`) leżą poza nim, więc zostają poza stroną. Muzyka z `docs/assets/music/` jest w repozytorium, więc trafia też na stronę. Jeśli żadnego pliku piosenki nie ma, gra ukrywa przycisk nutki.
 
-Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, gałąź **main**, folder **/docs**.
+Jednorazowo w ustawieniach repozytorium: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
 ## Ekrany
 
@@ -58,3 +58,8 @@ Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Us
   - `assets/icons/` – ikony aplikacji, `assets/music/` – muzyka (tylko lokalnie)
 - `tools/` – serwer deweloperski, generator ikon, `check.mjs` (`npm run check`: szybka kontrola kodu i danych) i `add-song.mjs` (dodawanie piosenki z YouTube)
 - `assets/scans/` – skany rysunków postaci (nie trafiają na stronę)
+- `assets/fonts/leggie/` – czcionka Leggie w formacie BDF. `node tools/make-pixel-font.mjs` robi z niej obrazki liter dla gry w `docs/assets/fonts/`.
+
+## Czcionka
+
+Tekst w grze jest pisany czcionką bitmapową [Leggie](https://github.com/wikkyk/leggie), Copyright 2012–2018 Wiktor Kerr, na licencji [Creative Commons Uznanie autorstwa 4.0 (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/). Pełny tekst licencji jest w `assets/fonts/leggie/LICENCE`. Gra używa rozmiarów 12, 18 i 24 px, zwykłych i pogrubionych, zamienionych na obrazki PNG. Kształty liter się nie zmieniają: gra tylko je koloruje, dodaje obrys i cień oraz powiększa o pełną liczbę razy.

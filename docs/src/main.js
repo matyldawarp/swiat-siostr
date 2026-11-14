@@ -3,6 +3,7 @@ import { Music } from './audio/music.js';
 import { Settings } from './ui/settings.js';
 import { watchWholePixels } from './ui/wholePixels.js';
 import { loadVersion } from './ui/version.js';
+import { loadPixelFonts } from './ui/pixelFont.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
 import { TerrariumScene } from './scenes/TerrariumScene.js';
@@ -209,8 +210,5 @@ function startGame() {
     window.game = game;
 }
 
-// Text objects use canvas fillText, so web fonts must be ready before the game boots:
-// both weights the game uses (FONT in ui/pixel.js), with Polish letters.
-Promise.all(['400', '700'].map((weight) => document.fonts.load(`${weight} 16px "Handjet"`, 'Świat Sióstr ąęłńóśźż')))
-    .catch(() => {})
-    .finally(startGame);
+// The text font's glyph images (Leggie, ui/pixelFont.js) must be ready before the game boots.
+loadPixelFonts().finally(startGame);

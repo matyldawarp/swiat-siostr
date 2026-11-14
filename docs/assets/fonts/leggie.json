@@ -1,0 +1,54 @@
+{
+  "columns": 32,
+  "chars": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſ–—‘’‚“”„•…",
+  "fonts": {
+    "leggie-12": {
+      "size": 12,
+      "bold": false,
+      "cellW": 6,
+      "cellH": 12,
+      "ascent": 10,
+      "image": "assets/fonts/leggie-12.png"
+    },
+    "leggie-12b": {
+      "size": 12,
+      "bold": true,
+      "cellW": 6,
+      "cellH": 12,
+      "ascent": 10,
+      "image": "assets/fonts/leggie-12b.png"
+    },
+    "leggie-18": {
+      "size": 18,
+      "bold": false,
+      "cellW": 9,
+      "cellH": 18,
+      "ascent": 15,
+      "image": "assets/fonts/leggie-18.png"
+    },
+    "leggie-18b": {
+      "size": 18,
+      "bold": true,
+      "cellW": 9,
+      "cellH": 18,
+      "ascent": 15,
+      "image": "assets/fonts/leggie-18b.png"
+    },
+    "leggie-24": {
+      "size": 24,
+      "bold": false,
+      "cellW": 12,
+      "cellH": 24,
+      "ascent": 20,
+      "image": "assets/fonts/leggie-24.png"
+    },
+    "leggie-24b": {
+      "size": 24,
+      "bold": true,
+      "cellW": 12,
+      "cellH": 24,
+      "ascent": 20,
+      "image": "assets/fonts/leggie-24b.png"
+    }
+  }
+}

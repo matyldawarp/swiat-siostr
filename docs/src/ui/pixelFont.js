@@ -1,120 +1,130 @@
-// Bitmap fonts made from Handjet while the game runs, so text is pixel art like everything
-// else: each glyph is drawn once in game pixels, every pixel either solid or clear (no
-// smoothed, blurry edges), and shown through Phaser's BitmapText at the scene's whole-number
-// zoom. One font per text style (size, weight, colour, outline, shadow), made the first
-// time a style is used and kept for the whole game. PixelUI.addText uses it for FONT text.
+// The game's text font: Leggie, a bitmap font with Polish letters (by Wiktor Kerr, CC BY
+// 4.0; assets/fonts/leggie, made into docs/assets/fonts by tools/make-pixel-font.mjs). It
+// comes in 12, 18 and 24 px, regular and bold, and is only ever enlarged by whole numbers,
+// so its pixels are as even as the rest of the pixel art. For every text style (size,
+// weight, colour, outline, shadow) a Phaser bitmap font is built from the white glyph cells
+// the first time the style is used, drawn pixel for pixel, and kept for the whole game.
+// PixelUI.addText shows text through it as BitmapText.
 
-// Every letter a text may use: ASCII, Polish and a few typographic marks. A missing letter
-// is skipped and reported in the console.
-const CHARS = [
-    ...Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)),
-    ...'ąćęłńóśźżĄĆĘŁŃÓŚŹŻ„”“‘’–—…·•×°«»'
-].join('');
+const SIZES = [24, 18, 12];
 
-// Pixels of a glyph at least this opaque (of 255) become solid, the rest clear.
-const SOLID_ALPHA = 60;
-// Width of the canvas the glyphs are packed into, and the empty space between their cells,
-// in game pixels.
-const ATLAS_WIDTH = 1024;
-const CELL_GAP = 2;
+let fonts = null;
 
-const reportedMissing = new Set();
+// Loads the glyph images and their description; the game starts once this is done (main.js).
+export function loadPixelFonts() {
+    return fetch('assets/fonts/leggie.json')
+        .then((response) => response.json())
+        .then((description) => Promise.all(Object.entries(description.fonts).map(([name, font]) => {
+            const image = new Image();
+            image.src = font.image;
+            return image.decode().then(() => [name, { ...font, image }]);
+        })).then((entries) => {
+            fonts = { columns: description.columns, chars: description.chars, byName: Object.fromEntries(entries) };
+        }));
+}
+
+// The Leggie size and whole-number enlargement closest to `px` game pixels of line height,
+// preferring the larger size (more detail) when two are as close.
+function pickSize(px) {
+    let best = null;
+    SIZES.forEach((size) => {
+        const times = Math.max(1, Math.round(px / size));
+        const off = Math.abs(size * times - px);
+        if (!best || off < best.off) {
+            best = { size, times, off };
+        }
+    });
+    return best;
+}
 
 function styleKey(style) {
     const shadow = style.shadow ? [style.shadow.offsetX, style.shadow.offsetY, style.shadow.color, style.shadow.fill, style.shadow.stroke].join(',') : '';
     return ['pixelfont', style.fontSize, style.fontStyle || '', style.color, style.stroke || '', style.strokeThickness || 0, shadow].join('|');
 }
 
-// The key of the bitmap font for this Text-like style ({ fontFamily, fontStyle, fontSize,
-// color, stroke, strokeThickness, shadow }), making the font if it doesn't exist yet.
+// A canvas the size of `source` with its ink in `color`.
+function tinted(source, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = source.width;
+    canvas.height = source.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(source, 0, 0);
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas;
+}
+
+// The key of the bitmap font for a Text-like style ({ fontSize, fontStyle, color, stroke,
+// strokeThickness, shadow }), building the font if it doesn't exist yet.
 export function pixelFont(scene, style) {
     const key = styleKey(style);
     if (scene.cache.bitmapFont.exists(key)) {
         return key;
     }
-    const size = Math.round(parseFloat(style.fontSize));
-    const font = `${style.fontStyle || ''} ${size}px ${style.fontFamily}`.trim();
-    const strokeW = style.strokeThickness || 0;
+    const { size, times } = pickSize(parseFloat(style.fontSize));
+    const bold = style.fontStyle === '700' || style.fontStyle === 'bold';
+    const font = fonts.byName[`leggie-${size}${bold ? 'b' : ''}`];
+    const cellW = font.cellW * times;
+    const cellH = font.cellH * times;
+    const outline = style.strokeThickness ? Math.max(1, Math.round(style.strokeThickness / 2)) : 0;
     const shadow = style.shadow || null;
-    const shadowX = shadow ? Math.max(0, shadow.offsetX) : 0;
-    const shadowY = shadow ? Math.max(0, shadow.offsetY) : 0;
-    const pad = Math.ceil(strokeW / 2) + 1;
+    const sx = shadow ? Math.max(0, shadow.offsetX) : 0;
+    const sy = shadow ? Math.max(0, shadow.offsetY) : 0;
+    // Room around each glyph for its outline and shadow, and a gap so nothing leaks across.
+    const pad = outline + 1;
+    const boxW = cellW + pad * 2 + sx;
+    const boxH = cellH + pad * 2 + sy;
+    const chars = [...fonts.chars];
+    const perRow = Math.max(1, Math.floor(1024 / boxW));
+    const width = perRow * boxW;
+    const height = Math.ceil(chars.length / perRow) * boxH;
 
-    const measure = document.createElement('canvas').getContext('2d');
-    measure.font = font;
-    const metrics = measure.measureText('ĄŚMgjy|');
-    const ascent = Math.ceil(metrics.fontBoundingBoxAscent ?? size * 0.8);
-    const descent = Math.ceil(metrics.fontBoundingBoxDescent ?? size * 0.25);
-    const lineHeight = ascent + descent;
-
-    // Each glyph's cell holds all of its ink, which in Handjet can reach past its advance
-    // and above the line (accents), with a gap to the next cell so no ink leaks across.
-    const glyphs = [...CHARS].map((ch) => {
-        const m = measure.measureText(ch);
-        return {
-            ch,
-            advance: Math.round(m.width),
-            left: Math.max(0, Math.ceil(m.actualBoundingBoxLeft)),
-            right: Math.max(Math.ceil(m.width), Math.ceil(m.actualBoundingBoxRight)),
-            above: Math.max(0, Math.ceil(m.actualBoundingBoxAscent) - ascent),
-            below: Math.max(0, Math.ceil(m.actualBoundingBoxDescent) - descent)
-        };
+    // The glyphs' ink, enlarged by whole numbers, each in its own box.
+    const mask = document.createElement('canvas');
+    mask.width = width;
+    mask.height = height;
+    const maskCtx = mask.getContext('2d');
+    maskCtx.imageSmoothingEnabled = false;
+    chars.forEach((ch, i) => {
+        const fx = (i % fonts.columns) * font.cellW;
+        const fy = Math.floor(i / fonts.columns) * font.cellH;
+        const bx = (i % perRow) * boxW + pad;
+        const by = Math.floor(i / perRow) * boxH + pad;
+        maskCtx.drawImage(font.image, fx, fy, font.cellW, font.cellH, bx, by, cellW, cellH);
     });
-    const top = Math.max(...glyphs.map((g) => g.above)) + pad;
-    const cellH = top + lineHeight + Math.max(...glyphs.map((g) => g.below)) + pad + shadowY;
 
-    // Lay the cells out in rows.
-    let x = 0;
-    let y = 0;
-    glyphs.forEach((g) => {
-        g.w = g.left + g.right + pad * 2 + shadowX;
-        if (x + g.w > ATLAS_WIDTH) {
-            x = 0;
-            y += cellH + CELL_GAP;
-        }
-        g.x = x;
-        g.y = y;
-        x += g.w + CELL_GAP;
-    });
-    const height = y + cellH;
-
-    const texture = scene.textures.createCanvas(key, ATLAS_WIDTH, height);
-    const ctx = texture.getContext();
-    ctx.font = font;
-    ctx.textBaseline = 'alphabetic';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = strokeW;
-    // Drawn in the same order as Phaser's Text: shadow, outline, fill.
-    glyphs.forEach(({ ch, x: gx, y: gy, left }) => {
-        const bx = gx + pad + left;
-        const by = gy + top + ascent;
-        if (shadow) {
-            ctx.fillStyle = shadow.color;
-            ctx.strokeStyle = shadow.color;
-            if (shadow.stroke && strokeW) {
-                ctx.strokeText(ch, bx + shadow.offsetX, by + shadow.offsetY);
-            }
-            if (shadow.fill) {
-                ctx.fillText(ch, bx + shadow.offsetX, by + shadow.offsetY);
+    // The outline: the ink spread by `outline` pixels in a round brush.
+    let shape = mask;
+    if (outline) {
+        shape = document.createElement('canvas');
+        shape.width = width;
+        shape.height = height;
+        const shapeCtx = shape.getContext('2d');
+        for (let dy = -outline; dy <= outline; dy++) {
+            for (let dx = -outline; dx <= outline; dx++) {
+                if (dx * dx + dy * dy <= outline * outline + outline) {
+                    shapeCtx.drawImage(mask, dx, dy);
+                }
             }
         }
-        if (strokeW) {
-            ctx.strokeStyle = style.stroke;
-            ctx.strokeText(ch, bx, by);
-        }
-        ctx.fillStyle = style.color;
-        ctx.fillText(ch, bx, by);
-    });
-    const image = ctx.getImageData(0, 0, ATLAS_WIDTH, height);
-    for (let i = 3; i < image.data.length; i += 4) {
-        image.data[i] = image.data[i] >= SOLID_ALPHA ? 255 : 0;
     }
-    ctx.putImageData(image, 0, 0);
+
+    // Drawn like Phaser's Text: shadow, outline, fill.
+    const texture = scene.textures.createCanvas(key, width, height);
+    const ctx = texture.getContext();
+    if (shadow && (shadow.fill || shadow.stroke)) {
+        ctx.drawImage(tinted(shadow.stroke && outline ? shape : mask, shadow.color), shadow.offsetX, shadow.offsetY);
+    }
+    if (outline) {
+        ctx.drawImage(tinted(shape, style.stroke), 0, 0);
+    }
+    ctx.drawImage(tinted(mask, style.color), 0, 0);
     texture.refresh();
 
-    // Described as a BMFont file, which Phaser knows how to read.
-    const xml = `<font><info face="${key}" size="${size}"/><common lineHeight="${lineHeight}"/><chars>${glyphs
-        .map((g) => `<char id="${g.ch.charCodeAt(0)}" x="${g.x}" y="${g.y}" width="${g.w}" height="${cellH}" xoffset="${-(pad + g.left)}" yoffset="${-top}" xadvance="${g.advance}"/>`)
+    // Described as a BMFont file, which Phaser knows how to read. Leggie is monospaced.
+    const xml = `<font><info face="${key}" size="${cellH}"/><common lineHeight="${cellH}"/><chars>${chars
+        .map((ch, i) => `<char id="${ch.codePointAt(0)}" x="${(i % perRow) * boxW}" y="${Math.floor(i / perRow) * boxH}" width="${boxW}" height="${boxH}" xoffset="${-pad}" yoffset="${-pad}" xadvance="${cellW}"/>`)
         .join('')}</chars></font>`;
     const doc = new DOMParser().parseFromString(xml, 'text/xml');
     const data = Phaser.GameObjects.BitmapText.ParseXMLBitmapFont(doc, texture.get(), 0, 0);
@@ -122,12 +132,19 @@ export function pixelFont(scene, style) {
     return key;
 }
 
-// Reports letters a text uses that the fonts don't have.
+// The size BitmapText needs to show a font at its own size (no scaling).
+export function pixelFontSize(scene, key) {
+    return scene.cache.bitmapFont.get(key).data.size;
+}
+
+const reportedMissing = new Set();
+
+// Reports letters a text uses that the font doesn't have.
 export function checkChars(text) {
     [...String(text)].forEach((ch) => {
-        if (ch !== '\n' && !CHARS.includes(ch) && !reportedMissing.has(ch)) {
+        if (ch !== '\n' && fonts && !fonts.chars.includes(ch) && !reportedMissing.has(ch)) {
             reportedMissing.add(ch);
-            console.warn(`Czcionka pikselowa nie ma litery „${ch}”`);
+            console.warn(`Czcionka Leggie nie ma litery „${ch}”`);
         }
     });
 }

@@ -1,7 +1,7 @@
 // Shared pastel palette and pixel-art drawing helpers used by every scene.
 
 import { addIcon64 } from './icons64.js';
-import { checkChars, pixelFont } from './pixelFont.js';
+import { checkChars, pixelFont, pixelFontSize } from './pixelFont.js';
 
 export const PALETTE = {
     sky: [0xcfe8ff, 0xd9e6fb, 0xe4e3f7, 0xefe0f2, 0xf8deee, 0xffe1ec],
@@ -32,10 +32,9 @@ export const TEXT_COLORS = {
     hint: '#5f8f7c'
 };
 
-export const FONT = '"Handjet", monospace';
-// Handjet is much narrower than most fonts at the same size, so every FONT text is drawn
-// this much larger than its fontSize asks for (applied in PixelUI.addText).
-export const FONT_SCALE = 1.25;
+// The game's font: the Leggie bitmap font (ui/pixelFont.js), at the 12, 18 or 24 px size
+// enlarged by a whole number that comes closest to a text's fontSize.
+export const FONT = 'Leggie';
 
 // Layout sizes are written in design units and scaled by S(). The game renders with
 // fine pixels (see main.js), so UI_SCALE keeps text and shapes comfortably large while
@@ -144,21 +143,21 @@ export const PixelUI = {
         };
     },
 
-    // Text in the game's FONT is a BitmapText in a pixel font (ui/pixelFont.js): its glyphs
-    // are pixel art in game pixels, never blurry. It gets FONT_SCALE times its fontSize, and
-    // style.align 'center' centres its lines. Other fonts (the debug info) stay Phaser Text,
-    // rasterised at the scene's zoom so one texture pixel is one device pixel.
+    // Text in the game's FONT is a BitmapText in the Leggie pixel font (ui/pixelFont.js):
+    // its glyphs are pixel art in game pixels, never blurry. style.align 'center' centres
+    // its lines. Other fonts (the debug info) stay Phaser Text, rasterised at the scene's
+    // zoom so one texture pixel is one device pixel.
     addText(scene, x, y, text, style) {
         if (style.fontFamily !== FONT) {
             return scene.add.text(x, y, text, { ...style, resolution: scene.cameras.main.zoom });
         }
-        const sized = { ...style, fontSize: `${Math.round(parseFloat(style.fontSize) * FONT_SCALE)}px` };
         checkChars(text);
-        const object = scene.add.bitmapText(x, y, pixelFont(scene, sized), text, parseFloat(sized.fontSize));
+        const key = pixelFont(scene, style);
+        const object = scene.add.bitmapText(x, y, key, text, pixelFontSize(scene, key));
         if (style.align === 'center') {
             object.setCenterAlign();
         }
-        object.pixelStyle = sized;
+        object.pixelStyle = style;
         return object;
     },
 
@@ -167,9 +166,10 @@ export const PixelUI = {
         let size = parseFloat(object.pixelStyle.fontSize);
         while (object.width > maxWidth && size > 6) {
             size--;
-            const sized = { ...object.pixelStyle, fontSize: `${size}px` };
-            object.setFont(pixelFont(object.scene, sized), size);
-            object.pixelStyle = sized;
+            const style = { ...object.pixelStyle, fontSize: `${size}px` };
+            const key = pixelFont(object.scene, style);
+            object.setFont(key, pixelFontSize(object.scene, key));
+            object.pixelStyle = style;
         }
         return object;
     },

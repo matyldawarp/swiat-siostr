@@ -140,8 +140,10 @@ function stub() {
     });
 }
 globalThis.Phaser = stub();
-// main.js starts the game once fonts load; never resolving keeps the game from starting.
-globalThis.document = { fonts: { load: () => new Promise(() => {}) } };
+// main.js starts the game once the font's glyph images load (fetch); never resolving keeps
+// the game from starting.
+globalThis.document = {};
+globalThis.fetch = () => new Promise(() => {});
 globalThis.window = globalThis;
 
 const loaded = {};
