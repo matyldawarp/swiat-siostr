@@ -3,17 +3,16 @@
 import { PALETTE, PixelUI, S, textStyle } from './pixel.js';
 import { createHeartTexture } from '../gfx/hamster.js';
 
-// Round-cornered badge showing a personality's icon (data/personalities.js), centred on
-// (x, y). Returns a container; redraw it for another personality with setPersonality().
+// Round-cornered badge showing a personality's icon (data/personalities.js) on the icon
+// grid (PixelUI.addIcon), centred on (x, y). Returns a container; redraw it for another
+// personality with setPersonality().
 export function addPersonalityBadge(scene, x, y, personality, size = S(22)) {
     const g = scene.add.graphics();
-    const badge = scene.add.container(x, y, [g]);
-    badge.setPersonality = (p) => {
-        g.clear();
-        PixelUI.drawBox(g, -size / 2, -size / 2, size, size, 0xffffff, PALETTE.buttonBorder);
-        p.icon(g, 0, 0, Math.round(size * 0.7));
-    };
-    badge.setPersonality(personality);
+    PixelUI.drawBox(g, -size / 2, -size / 2, size, size, 0xffffff, PALETTE.buttonBorder);
+    const drawIcon = (p) => (ig, iconSize) => p.icon(ig, 0, 0, iconSize);
+    const icon = PixelUI.addIcon(scene, 0, 0, size * 0.7, drawIcon(personality));
+    const badge = scene.add.container(x, y, [g, icon]);
+    badge.setPersonality = (p) => icon.setIcon(drawIcon(p));
     return badge;
 }
 

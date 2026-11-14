@@ -82,8 +82,9 @@ export function fitScale(w, h, dpr) {
     return Math.max(fit, 0.25);
 }
 
-// Button icons are drawn on a fixed ICON_GRID x ICON_GRID pixel canvas (PixelUI.
-// createIconButton), at ICON_DRAW_SIZE so outlines past the nominal size still fit.
+// "Ikony 64": button icons and personality badges are drawn on a fixed ICON_GRID x
+// ICON_GRID pixel canvas (PixelUI.addIcon), at ICON_DRAW_SIZE so outlines past the
+// nominal size still fit.
 export const ICON_GRID = 64;
 const ICON_DRAW_SIZE = 58;
 let iconCount = 0;
@@ -269,19 +270,12 @@ export const PixelUI = {
         return button;
     },
 
-    // Square button showing a drawn icon instead of a word, for players who can't read yet.
-    // drawIcon(g, size) draws centred on (0, 0) with fillStyle and fillRect, like the Icons.
-    // Every icon is painted on the same ICON_GRID canvas and scaled to the button, so all
-    // icons share one pixel size, whatever the button's size. button.setIcon(drawIcon)
-    // repaints it (e.g. the music note crossed out).
-    createIconButton(scene, x, y, size, drawIcon, onClick) {
-        const bg = scene.add.graphics();
-        const draw = (fill) => {
-            bg.clear();
-            PixelUI.drawBox(bg, -size / 2, -size / 2, size, size, fill, PALETTE.buttonBorder, PALETTE.buttonLight);
-        };
-        draw(PALETTE.button);
-
+    // An icon on the fixed ICON_GRID canvas, centred on (x, y), whose drawing is drawnSize
+    // game pixels across. drawIcon(g, size) draws centred on (0, 0) with fillStyle and
+    // fillRect, like the Icons. Every icon is painted on the same grid and scaled, so all
+    // icons share one pixel size, whatever their size. icon.setIcon(drawIcon) repaints it
+    // (e.g. the music note crossed out); the canvas goes with the image.
+    addIcon(scene, x, y, drawnSize, drawIcon) {
         const key = `icon-${iconCount++}`;
         const texture = scene.textures.createCanvas(key, ICON_GRID, ICON_GRID);
         const paint = (drawIconNow) => {
@@ -292,13 +286,30 @@ export const PixelUI = {
             texture.refresh();
         };
         paint(drawIcon);
-        // The icon's drawing fills 70% of the button, as before the grid. Shown with fewer
-        // screen pixels than the grid has, it is smoothed so thin lines don't drop out.
-        const shown = Math.round((size * 0.7 * ICON_GRID) / ICON_DRAW_SIZE);
+        // Shown with fewer screen pixels than the grid has, it is smoothed so thin lines
+        // don't drop out.
+        const shown = Math.round((drawnSize * ICON_GRID) / ICON_DRAW_SIZE);
         if (shown * RENDER_SCALE < ICON_GRID) {
             texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
         }
-        const icon = scene.add.image(0, 0, key).setDisplaySize(shown, shown);
+        const icon = scene.add.image(x, y, key).setDisplaySize(shown, shown);
+        icon.setIcon = paint;
+        icon.once('destroy', () => scene.textures.remove(key));
+        return icon;
+    },
+
+    // Square button showing a drawn icon (PixelUI.addIcon) instead of a word, for players
+    // who can't read yet. button.setIcon(drawIcon) repaints the icon.
+    createIconButton(scene, x, y, size, drawIcon, onClick) {
+        const bg = scene.add.graphics();
+        const draw = (fill) => {
+            bg.clear();
+            PixelUI.drawBox(bg, -size / 2, -size / 2, size, size, fill, PALETTE.buttonBorder, PALETTE.buttonLight);
+        };
+        draw(PALETTE.button);
+
+        // The icon's drawing fills 70% of the button, as before the grid.
+        const icon = PixelUI.addIcon(scene, 0, 0, size * 0.7, drawIcon);
 
         const button = scene.add.container(x, y, [bg, icon]);
         button.setSize(size, size);
@@ -306,8 +317,7 @@ export const PixelUI = {
         button.on('pointerover', () => draw(PALETTE.buttonHover));
         button.on('pointerout', () => draw(PALETTE.button));
         button.on('pointerup', onClick);
-        button.setIcon = paint;
-        button.once('destroy', () => scene.textures.remove(key));
+        button.setIcon = icon.setIcon;
         return button;
     },
 

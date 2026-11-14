@@ -270,8 +270,10 @@ export const Icons = {
             }
             return pts;
         };
+        // Growing the star by e moves its edges out by only 0.42 e, so the outline needs
+        // this much more radius to be a line's width all round.
         g.fillStyle(outline, 1);
-        Icons.fillPolygon(g, points(r + 1.5));
+        Icons.fillPolygon(g, points(r + Math.max(1.5, Icons.line(r * 2) / 0.42)));
         g.fillStyle(color, 1);
         Icons.fillPolygon(g, points(r));
     },
@@ -389,7 +391,7 @@ export const Icons = {
             { x: cx + 0.2 * s, y: cy - 1 * s }
         ];
         g.fillStyle(PALETTE.outline, 1);
-        Icons.fillPolygon(g, pts(1));
+        Icons.fillPolygon(g, pts(Math.max(1, Icons.line(size) * 1.5)));
         g.fillStyle(ICON_COLORS.goldDark, 1);
         Icons.fillPolygon(g, pts(0));
     },
