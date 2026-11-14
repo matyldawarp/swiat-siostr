@@ -18,5 +18,6 @@ Gra w Phaser 4 z CDN, bez budowania. `npm start` uruchamia serwer; gra musi dzia
 
 - `notes/kod.md` – mapa plików i modułów, sceny, stan w `registry`.
 - `notes/wyglad.md` – pixel art, skala, scena, pasek stanu iPada.
+- `notes/obrazki.md` – opis każdego obrazka z `docs/assets/gfx/`, z którego da się go narysować od nowa. Nowy albo zmieniony obrazek = nowy albo poprawiony opis.
 - `notes/uruchamianie.md` – serwer, publikacja, testy w przeglądarce.
 - `notes/muzyka.md` – dodawanie piosenek.
