@@ -296,7 +296,8 @@ export const PixelUI = {
         }
         scene.leaving = true;
 
-        scene.cameras.main.fadeOut(400, ...PALETTE.fade);
+        // Shorter when the back button has sped the scene up (BaseScene.backPressed).
+        scene.cameras.main.fadeOut(Math.round(400 / scene.tweens.timeScale), ...PALETTE.fade);
         scene.cameras.main.once('camerafadeoutcomplete', () => scene.scene.start(key, data));
     },
 

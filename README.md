@@ -45,7 +45,7 @@ flowchart TD
     gabi --> tekturzatko["Pracownia Tekturzątka (#pracownia-tekturzatka)"]
 ```
 
-Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Ustawień jest tylko na ekranach Start i Wybór postaci. Przycisk przeładowania w prawym górnym rogu zawsze wraca na Start.
+Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Ustawień jest na każdym ekranie. Strzałka w lewo przyspiesza animacje, np. powrót postaci do domu na mapie. Przycisk przeładowania w prawym górnym rogu zawsze wraca na Start.
 
 ## Struktura
 

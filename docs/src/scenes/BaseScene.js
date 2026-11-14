@@ -3,6 +3,9 @@ import { Icons } from '../gfx/icons.js';
 import { getCharacter } from '../data/characters.js';
 import { SCENE_PARENTS, SCENE_ROUTES, setRoute } from './routes.js';
 
+// How much faster tweens, timers and the fade run after the back button is pressed.
+const BACK_SPEED = 4;
+
 // Base for every scene. A scene implements build({ width, height }) instead of create():
 // BaseScene first sets up the pixel camera (PixelUI.setupView), then calls build with the
 // stage size in game pixels (always STAGE, also kept as this.view), then fades in and
@@ -12,7 +15,8 @@ import { SCENE_PARENTS, SCENE_ROUTES, setRoute } from './routes.js';
 //
 // Every screen but the start screen gets a back button in the top-left corner (and Esc),
 // leading one level up the screen tree (SCENE_PARENTS in routes.js). It is made before
-// build(), so build can already point at this.backButton (e.g. pulse it as a hint).
+// build(), so build can already point at this.backButton (e.g. pulse it as a hint). It
+// also speeds up whatever is still moving (BACK_SPEED), e.g. the walk home on the map.
 //
 // A scene that needs init(data) must call super.init(data) first.
 export class BaseScene extends Phaser.Scene {
@@ -25,10 +29,13 @@ export class BaseScene extends Phaser.Scene {
 
     create() {
         // The stage is a fixed size (STAGE in ui/pixel.js), centred in the window.
+        // A scene keeps its clocks between visits; start at normal speed again.
+        this.tweens.timeScale = 1;
+        this.time.timeScale = 1;
         this.view = PixelUI.setupView(this, { stage: !this.fillsWindow });
         this.backButton = SCENE_PARENTS[this.scene.key] ? this.createBackButton() : null;
         if (this.backButton) {
-            this.input.keyboard.on('keydown-ESC', () => this.goBack());
+            this.input.keyboard.on('keydown-ESC', () => this.backPressed());
         }
         this.build(this.view);
         const route = this.route();
@@ -54,6 +61,13 @@ export class BaseScene extends Phaser.Scene {
         return SCENE_ROUTES[this.scene.key] || null;
     }
 
+    // Back button or Esc: everything still moving here hurries up, then goBack().
+    backPressed() {
+        this.tweens.timeScale = BACK_SPEED;
+        this.time.timeScale = BACK_SPEED;
+        this.goBack();
+    }
+
     // The back button's way one level up. Override to do more on the way (e.g. remember
     // where the hamster stands on the map).
     goBack() {
@@ -70,7 +84,7 @@ export class BaseScene extends Phaser.Scene {
         const left = this.view.bleed.x + 1 + margin;
         const top = this.view.bleed.y + 1 + margin + toGame(SAFE_AREA.top);
         return PixelUI.createIconButton(this, left + size / 2, top + size / 2, size,
-            (g, iconSize) => Icons.back(g, 0, 0, iconSize), () => this.goBack()).setDepth(1000);
+            (g, iconSize) => Icons.back(g, 0, 0, iconSize), () => this.backPressed()).setDepth(1000);
     }
 
     // The character chosen on the character screen.

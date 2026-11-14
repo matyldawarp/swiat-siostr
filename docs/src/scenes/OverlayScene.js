@@ -9,9 +9,6 @@ import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
 import { playLullaby } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
-// Scenes that show the gear button; elsewhere the girls can't open Settings by accident.
-const SETTINGS_SCENES = ['StartScene', 'CharacterScene'];
-
 // Changing the stage scale rebuilds every scene, this one too; Settings open again after
 // every rebuild until they are closed.
 let reopenSettings = false;
@@ -38,14 +35,12 @@ export class OverlayScene extends BaseScene {
         const top = margin + toGame(SAFE_AREA.top);
         const right = width - margin - toGame(SAFE_AREA.right);
         this.createReloadButton(right - size / 2, top + size / 2, size);
-        // Settings sit left of the music button (which may be missing). They are for the
-        // grown-ups, so the gear shows only on the start and character screens (update()).
+        // Settings sit left of the music button (which may be missing), on every screen.
         this.settingsButton = PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
             (g) => Icons.gear(g, 0, 0, Math.round(size * 0.7)),
             () => (this.menu ? this.closeMenu() : this.openSettings()));
         // Above the game over screen (depth 90), below open panels (100).
         this.settingsButton.setDepth(95);
-        this.settingsButton.setVisible(this.settingsAllowed());
         this.gameOver = false;
 
         // The note button appears only once some song file is known to exist.
@@ -69,11 +64,6 @@ export class OverlayScene extends BaseScene {
         }
     }
 
-    // Scenes where the gear (Settings) button is shown.
-    settingsAllowed() {
-        return SETTINGS_SCENES.some((key) => this.scene.isActive(key));
-    }
-
     update() {
         // Time limit (Settings): the "game over" screen comes and goes with PlayTime.
         const over = PlayTime.isOver();
@@ -81,12 +71,6 @@ export class OverlayScene extends BaseScene {
             this.showGameOver();
         } else if (!over && this.gameOver) {
             this.hideGameOver();
-        }
-
-        // On the game over screen the gear stays, for a grown-up to change the limit.
-        const allowed = this.gameOver || this.settingsAllowed();
-        if (this.settingsButton && this.settingsButton.visible !== allowed) {
-            this.settingsButton.setVisible(allowed);
         }
     }
 
