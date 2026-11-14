@@ -23,8 +23,8 @@ export const ICON_COLORS = {
 };
 
 export const Icons = {
-    // Width of a thin line in an icon of this size: one pixel in small drawings, more on
-    // the 64x64 grid of the button icons (PixelUI.createIconButton).
+    // Width of a thin line in an icon of this size: one pixel in small drawings, more in
+    // the ikony 64 (ui/icons64.js).
     line(size) {
         return Math.max(1, Math.round(size / 20));
     },
