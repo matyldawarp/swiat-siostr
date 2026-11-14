@@ -418,11 +418,7 @@ export class OverlayScene extends BaseScene {
         const title = PixelUI.addTitle(this, cx, cy + S(30), 'KONIEC GRY.', S(22));
         const line = PixelUI.addText(this, cx, cy + S(56), 'Minął czas i musisz już wyłączyć ekran',
             textStyle(S(13), { bold: true, color: TEXT_COLORS.button })).setOrigin(0.5);
-        [title, line].forEach((t) => {
-            if (t.width > width - S(24)) {
-                t.setFontSize(`${Math.floor((parseFloat(t.style.fontSize) * (width - S(24))) / t.width)}px`);
-            }
-        });
+        [title, line].forEach((t) => PixelUI.fitTextWidth(t, width - S(24)));
         screen.add([title, line]);
         this.gameOverScreen = screen;
 

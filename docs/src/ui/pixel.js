@@ -1,6 +1,7 @@
 // Shared pastel palette and pixel-art drawing helpers used by every scene.
 
 import { addIcon64 } from './icons64.js';
+import { checkChars, pixelFont } from './pixelFont.js';
 
 export const PALETTE = {
     sky: [0xcfe8ff, 0xd9e6fb, 0xe4e3f7, 0xefe0f2, 0xf8deee, 0xffe1ec],
@@ -101,31 +102,6 @@ export function uiFitScale(w, h, dpr) {
     return Math.max(fit, 0.25);
 }
 
-// Makes a Text object's glyphs crisp: whenever it is drawn, each pixel of its canvas becomes
-// fully opaque or fully clear. Phaser's Text.updateText draws, ends with context.restore(),
-// then sends the canvas to the GPU, so the pixels are changed right after that restore.
-function hardenTextEdges(text) {
-    const ctx = text.context;
-    const restore = ctx.restore.bind(ctx);
-    ctx.restore = () => {
-        restore();
-        const { width, height } = text.canvas;
-        if (!width || !height) {
-            return;
-        }
-        const image = ctx.getImageData(0, 0, width, height);
-        const data = image.data;
-        for (let i = 3; i < data.length; i += 4) {
-            data[i] = data[i] >= TEXT_EDGE_ALPHA ? 255 : 0;
-        }
-        ctx.putImageData(image, 0, 0);
-    };
-    text.updateText();
-}
-
-// Edge pixels at least this opaque (of 255) become solid; the rest clear.
-const TEXT_EDGE_ALPHA = 60;
-
 // Text styles used across scenes; pass the size through S().
 export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}) {
     return {
@@ -168,19 +144,32 @@ export const PixelUI = {
         };
     },
 
-    // Text rasterised at device resolution so glyph edges stay sharp when zoomed. Text in
-    // FONT gets FONT_SCALE times its fontSize. On a screen of ordinary density (dpr < 2) the
-    // browser's smoothed glyph edges look blurry next to the pixel art, so there every edge
-    // pixel is made either solid or clear (hardenTextEdges).
+    // Text in the game's FONT is a BitmapText in a pixel font (ui/pixelFont.js): its glyphs
+    // are pixel art in game pixels, never blurry. It gets FONT_SCALE times its fontSize, and
+    // style.align 'center' centres its lines. Other fonts (the debug info) stay Phaser Text,
+    // rasterised at the scene's zoom so one texture pixel is one device pixel.
     addText(scene, x, y, text, style) {
-        const sized = { ...style };
-        if (style.fontFamily === FONT && style.fontSize) {
-            sized.fontSize = `${Math.round(parseFloat(style.fontSize) * FONT_SCALE)}px`;
+        if (style.fontFamily !== FONT) {
+            return scene.add.text(x, y, text, { ...style, resolution: scene.cameras.main.zoom });
         }
-        // Rasterised at the scene's own zoom, so one texture pixel is one device pixel.
-        const object = scene.add.text(x, y, text, { ...sized, resolution: scene.cameras.main.zoom });
-        if ((window.devicePixelRatio || 1) < 2) {
-            hardenTextEdges(object);
+        const sized = { ...style, fontSize: `${Math.round(parseFloat(style.fontSize) * FONT_SCALE)}px` };
+        checkChars(text);
+        const object = scene.add.bitmapText(x, y, pixelFont(scene, sized), text, parseFloat(sized.fontSize));
+        if (style.align === 'center') {
+            object.setCenterAlign();
+        }
+        object.pixelStyle = sized;
+        return object;
+    },
+
+    // Shrinks a text from addText to a smaller font until it is at most maxWidth wide.
+    fitTextWidth(object, maxWidth) {
+        let size = parseFloat(object.pixelStyle.fontSize);
+        while (object.width > maxWidth && size > 6) {
+            size--;
+            const sized = { ...object.pixelStyle, fontSize: `${size}px` };
+            object.setFont(pixelFont(object.scene, sized), size);
+            object.pixelStyle = sized;
         }
         return object;
     },
@@ -234,15 +223,16 @@ export const PixelUI = {
         return sky;
     },
 
-    addTitle(scene, x, y, text, fontSize = S(16)) {
+    // Bold title with a white outline and a soft shadow; both widths can be given.
+    addTitle(scene, x, y, text, fontSize = S(16), { strokeThickness = Math.max(2, Math.round(fontSize / 10)), shadowOffset = 2 } = {}) {
         return PixelUI.addText(scene, x, y, text, {
             fontFamily: FONT,
             fontStyle: '700',
             fontSize: `${fontSize}px`,
             color: TEXT_COLORS.title,
             stroke: '#ffffff',
-            strokeThickness: Math.max(2, Math.round(fontSize / 10)),
-            shadow: { offsetX: 2, offsetY: 2, color: TEXT_COLORS.titleShadow, blur: 0, fill: true, stroke: true }
+            strokeThickness,
+            shadow: { offsetX: shadowOffset, offsetY: shadowOffset, color: TEXT_COLORS.titleShadow, blur: 0, fill: true, stroke: true }
         }).setOrigin(0.5);
     },
 

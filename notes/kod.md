@@ -18,6 +18,7 @@ Kod to moduły ES bez kroku budowania: `index.html` ładuje tylko `src/main.js`,
 - `scenes/terrarium/` – części terrarium: `tank.js` rysuje akwarium, `Wheel.js`, `Bath.js` i `House.js` to aktywności chomika, a `Poops.js` to kupki do sprzątania palcem. Cykl aktywności i sposób dodania nowej opisuje `Activity.js`.
 - `ui/pixel.js` – paleta (`PALETTE`, `TEXT_COLORS`), `S()`, `textStyle()`, `STAGE`, `fitScale`, `PixelUI` (tekst, przyciski, ramki, kółka, podskok `hop`, `pulse`, przejścia).
 - `ui/icons64.js` – ikony 64: `addIcon64` rysuje ikonę na stałej siatce 64×64 pikseli i skaluje ją do rozmiaru, a ciemne linie pogrubia. Używają jej przyciski z ikoną (`PixelUI.createIconButton`) i plakietki osobowości.
+- `ui/pixelFont.js` – czcionki bitmapowe z Handjet robione w trakcie gry, jedna na styl tekstu (`pixelFont`). Używa ich `PixelUI.addText`, więc cały tekst gry to pikselowy `BitmapText`.
 - `ui/version.js` – wersja gry (SHA i czas builda z `version.json`), wczytana przy starcie i pokazana na dole okna Ustawień.
 - `ui/wholePixels.js` – sprawdza cały czas, gdy gra działa, że płótno i ikony 64 mają całe piksele (`checkWholePixels`, `watchWholePixels` startuje w `main.js`). `fitToWindow` dobiera rozmiar płótna w całych pikselach CSS i ekranu (`wholePixelSize`).
 - `ui/effects.js` – `floatHeart` (nagroda po stuknięciu), `floatZ` (sen), `floatAway`, `walkBob` (podskakiwanie w marszu), `addPersonalityBadge`.

@@ -16,9 +16,7 @@ export class StartScene extends BaseScene {
         this.drawHills(height, this.view.bleed);
         this.drawSparkles(width, height);
 
-        const title = PixelUI.addTitle(this, cx, cy - S(34), 'Świat Sióstr', S(40));
-        title.setStroke('#ffffff', S(4));
-        title.setShadow(S(2), S(2), TEXT_COLORS.titleShadow, 0, true, true);
+        const title = PixelUI.addTitle(this, cx, cy - S(34), 'Świat Sióstr', S(40), { strokeThickness: S(4), shadowOffset: S(2) });
         title.setAlpha(0);
 
         const subtitle = PixelUI.addText(this, cx, cy - S(6), 'opowieść o dwóch siostrach',
