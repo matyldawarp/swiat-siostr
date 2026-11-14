@@ -34,8 +34,8 @@ export const CHARACTERS = [
 ];
 
 // Characters designed by the girls on paper (scanned in assets/scans/postacie-1-5.png),
-// redrawn as 16x16 pixel pictures and, from those, with Scale2x/3x in every size. Every
-// character's picture is docs/assets/gfx/postacie/<id>.png (and postacie-male, -duze); the
+// redrawn as 16x16 pixel pictures and, from those, with Scale2x in both sizes. Every
+// character's picture is docs/assets/gfx/postacie/<id>.png (and postacie-male); the
 // hamsters also have <id>-blink and <id>-chew.
 CHARACTERS.push(
     {
@@ -130,7 +130,7 @@ CHARACTERS.push({
 });
 
 // Gabi, a mermaid doll with cat ears and curly blue, turquoise and pink hair, drawn after the
-// photo assets/scans/gabi-syrena.jpg (32x32 in postacie-male, enlarged with Scale2x/3x).
+// photo assets/scans/gabi-syrena.jpg (32x32 in postacie-male, enlarged with Scale2x).
 CHARACTERS.push({
     id: 'gabi',
     name: 'Gabi',

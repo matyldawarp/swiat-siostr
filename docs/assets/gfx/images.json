@@ -323,19 +323,17 @@
     "mapa/szkola": {"anchor":[43,73]},
     "mapa/szpital": {"anchor":[49,82]},
     "mapa/trawa": {"anchor":[0,0]},
-    "postacie-duze/gabi": {"anchor":[48,48]},
-    "postacie-duze/mordka": {"anchor":[48,48]},
-    "postacie-duze/mordka-blink": {"anchor":[48,48]},
-    "postacie-duze/mordka-chew": {"anchor":[48,48]},
-    "postacie-duze/mysia": {"anchor":[48,48]},
-    "postacie-duze/mysia-blink": {"anchor":[48,48]},
-    "postacie-duze/mysia-chew": {"anchor":[48,48]},
-    "postacie-duze/postac1": {"anchor":[48,48]},
-    "postacie-duze/postac2": {"anchor":[48,48]},
-    "postacie-duze/postac3": {"anchor":[48,48]},
-    "postacie-duze/postac4": {"anchor":[48,48]},
-    "postacie-duze/postac5": {"anchor":[48,48]},
-    "postacie-duze/postac6": {"anchor":[48,48]},
+
+
+
+
+
+
+
+
+
+
+
     "postacie-ekran/okienko": {"anchor":[0,0]},
     "postacie-ekran/okienko-wybrane": {"anchor":[0,0]},
     "postacie-ekran/okienko-zamkniete": {"anchor":[0,0]},
@@ -352,7 +350,6 @@
     "postacie-male/postac4": {"anchor":[16,16]},
     "postacie-male/postac5": {"anchor":[16,16]},
     "postacie-male/postac6": {"anchor":[16,16]},
-
 
 
 

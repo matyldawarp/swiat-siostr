@@ -21,7 +21,7 @@ export class CharacterScene extends BaseScene {
 
     build({ width, height }) {
         const cx = Math.round(width / 2);
-        CHARACTERS.forEach((c) => [2, 6].forEach((scale) => createHamsterTextures(this, c, scale)));
+        CHARACTERS.forEach((c) => [2, 4].forEach((scale) => createHamsterTextures(this, c, scale)));
 
         PixelUI.drawSky(this, this.view.bleed);
 
@@ -89,10 +89,11 @@ export class CharacterScene extends BaseScene {
     }
 
     createPreview(x, y) {
-        this.preview = this.add.image(x, y - S(16), `${CHARACTERS[0].id}-x6`);
+        // The character at its room size (64x64), like in the terrarium.
+        this.preview = this.add.image(x, y - S(8), CHARACTERS[0].id);
         this.tweens.add({
             targets: this.preview,
-            y: y - S(18),
+            y: y - S(10),
             duration: 600,
             yoyo: true,
             repeat: -1,
@@ -100,8 +101,8 @@ export class CharacterScene extends BaseScene {
             easeParams: [2]
         });
 
-        // Personality icon beside the character's head (preview is 16px x 6, centred).
-        this.previewBadge = addPersonalityBadge(this, x + 8 * 6 + S(16), y - S(16) - S(20), getPersonality(CHARACTERS[0]), S(26));
+        // Personality icon beside the character's head (the preview is 64 px wide, centred).
+        this.previewBadge = addPersonalityBadge(this, x + 32 + S(16), y - S(8) - S(20), getPersonality(CHARACTERS[0]), S(26));
 
         this.previewName = PixelUI.addTitle(this, x, y + S(26), '');
         this.previewSpecies = PixelUI.addText(this, x, y + S(40), '', textStyle(S(8), { color: TEXT_COLORS.subtitle })).setOrigin(0.5);
@@ -122,7 +123,7 @@ export class CharacterScene extends BaseScene {
 
         this.slots.forEach((s, i) => s.draw(i === index));
 
-        this.preview.setTexture(`${character.id}-x6`);
+        this.preview.setTexture(character.id);
         this.previewName.setText(character.name);
         const personality = getPersonality(character);
         this.previewBadge.setPersonality(personality);
@@ -135,10 +136,10 @@ export class CharacterScene extends BaseScene {
             if (token !== this.blinkToken || !this.preview.active) {
                 return;
             }
-            this.preview.setTexture(`${character.id}-x6-blink`);
+            this.preview.setTexture(`${character.id}-blink`);
             this.time.delayedCall(140, () => {
                 if (token === this.blinkToken) {
-                    this.preview.setTexture(`${character.id}-x6`);
+                    this.preview.setTexture(character.id);
                 }
             });
             this.time.delayedCall(Phaser.Math.Between(1800, 4200), blink);

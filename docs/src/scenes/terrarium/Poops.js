@@ -51,7 +51,8 @@ export class Poops {
         const { minX, maxX } = this.walkArea;
         const px = Phaser.Math.Clamp(Math.round(x), minX, maxX);
         const image = scene.add.image(px, this.groundY, 'poop')
-            .setOrigin(0.5, 1)
+            // Its middle column (rounded down), so it stays on whole pixels.
+            .setOrigin(Math.floor(scene.textures.getFrame('poop').width / 2) / scene.textures.getFrame('poop').width, 1)
             .setDepth(DEPTH.poop);
 
         // Bigger than the drawing so small fingers find it; above the glass so it gets the tap.

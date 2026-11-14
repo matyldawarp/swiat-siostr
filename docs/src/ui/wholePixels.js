@@ -65,7 +65,8 @@ function offGrid(picture) {
 export function snapTweensToGrid(scene) {
     const snap = () => {
         scene.tweens.getTweens().forEach((tween) => {
-            (tween.targets || []).forEach((target) => {
+            // A chain of tweens (tweens.chain) moves its current tween's targets.
+            (tween.targets || (tween.currentTween && tween.currentTween.targets) || []).forEach((target) => {
                 if (target && target.type && typeof target.x === 'number') {
                     target.x = Math.round(target.x);
                     target.y = Math.round(target.y);
