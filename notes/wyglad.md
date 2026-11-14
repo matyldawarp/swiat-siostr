@@ -3,11 +3,11 @@
 ## Pixel art
 
 - Grafika w stylu pixel art: niska rozdzielczość bazowa, `pixelArt: true` w konfiguracji gry, ostre krawędzie bez wygładzania i gradientów, czcionki pikselowe.
-- **Obrazki to pliki PNG** w `docs/assets/gfx/<folder>/<nazwa>.png`, jeden piksel PNG to jeden piksel gry. Można je edytować w dowolnym programie graficznym. Folder to zwykle ekran (`kuchnia-lakotka/`, `szpital/`), a do tego `postacie/`, `ikony64/`, `drobne/`. Klucz obrazka to jego ścieżka bez `.png`, np. `kuchnia-lakotka/lodowka`.
+- **Obrazki to pliki PNG** w `docs/assets/gfx/<folder>/<nazwa>.png`, jeden piksel PNG to jeden piksel gry. Można je edytować w dowolnym programie graficznym. Folder to zwykle ekran (`kuchnia-lakotka/`, `szpital/`), a do tego `postacie/`, `ikony64/` i `wspolne/` (drobiazgi używane w wielu scenach). Każdy folder ma od 10 do 30 obrazków: większe dzielimy na podfoldery (np. `kuchnia/torty/`, `ikony64/przyciski/`), a mniejsze łączymy. Klucz obrazka to jego ścieżka bez `.png`, np. `kuchnia-lakotka/lodowka`.
   - `docs/assets/gfx/images.json` wymienia każdy obrazek z jego **kotwicą** (`anchor: [x, y]`): pikselem PNG, który gra stawia w podanym punkcie, np. środek podstawy tortu albo lewy górny róg szafki. Po zmianie rozmiaru płótna w programie graficznym trzeba poprawić kotwicę.
   - W kodzie: `addImage(scene, x, y, klucz)`, zmiana stanu (otwarta lodówka, gorący piekarnik) przez `setImage(obrazek, klucz)`, a powtarzający się wzór na całe okno (tapeta, podłoga) przez `addPattern` (`docs/src/gfx/images.js`). Gra wczytuje wszystkie obrazki z listy przed startem.
-  - Nazwa pliku mówi, co przedstawia (np. `dentysta/okruszek-karmelowy`, `postacie/titi-oczy-zamkniete`), bez samych numerów. Każdy obrazek ma opis w `notes/obrazki.md` (wymiary, kotwica, kształty, kolory), z którego da się go narysować od nowa.
-  - Nowy obrazek: plik PNG do folderu, wpis w `images.json` i opis w `notes/obrazki.md`. `npm run check` sprawdza, że lista i pliki się zgadzają i że każdy klucz użyty w kodzie istnieje.
+  - Nazwa pliku mówi, co przedstawia (np. `dentysta/okruszek-karmelowy`, `postacie/titi-oczy-zamkniete`), bez samych numerów. Każdy obrazek ma opis w `notes/obrazki/<folder>.md` (wymiary, kotwica, kształty, kolory), z którego da się go narysować od nowa; zasady i spis w `notes/obrazki/README.md`.
+  - Nowy obrazek: plik PNG do folderu, wpis w `images.json` i opis w `notes/obrazki/<folder>.md`. `npm run check` sprawdza, że lista i pliki się zgadzają i że każdy klucz użyty w kodzie istnieje.
   - W kodzie zostają tylko jednolite kolory tła na całe okno, gradient nieba, ramki przycisków i okien o zmiennym rozmiarze, jednokolorowe drobinki efektów, warstwy farby w kolorowankach i obraz malowany w pracowni.
 - **Siatka pikseli sceny** to jeden piksel gry (scena 540×405). Każdy obrazek w scenie musi się jej trzymać:
   - Obrazek pokazujemy zawsze w skali 1: jeden piksel PNG to jeden piksel gry. Nie skalujemy go ani nie obracamy, także w animacjach.

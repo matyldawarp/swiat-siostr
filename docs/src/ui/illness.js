@@ -5,8 +5,8 @@ import { PixelUI, S } from './pixel.js';
 import { addImage } from '../gfx/images.js';
 import { playSneeze } from '../audio/sfx.js';
 
-// Pictures: docs/assets/gfx/choroba/. The bubble comes in two sizes.
-const BUBBLES = { [S(26)]: 'choroba/dymek-duzy', [S(20)]: 'choroba/dymek-maly' };
+// Pictures: docs/assets/gfx/wspolne/ (dymek-duzy, dymek-maly, kichniecie).
+const BUBBLES = { [S(26)]: 'wspolne/dymek-duzy', [S(20)]: 'wspolne/dymek-maly' };
 
 export const ILLNESS = {
     // A fresh cold can't start this soon after being healed.
@@ -65,7 +65,7 @@ export const Illness = {
         playSneeze(scene);
 
         [-1, 0, 1].forEach((dir) => {
-            const puff = addImage(scene, Math.round(mouth.x), Math.round(mouth.y), 'choroba/kichniecie').setDepth(20);
+            const puff = addImage(scene, Math.round(mouth.x), Math.round(mouth.y), 'wspolne/kichniecie').setDepth(20);
             scene.tweens.add({
                 targets: puff,
                 x: puff.x + dir * S(14),

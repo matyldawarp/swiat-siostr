@@ -6,8 +6,8 @@ import { addPersonalityBadge } from '../ui/effects.js';
 import { addImage, setImage } from '../gfx/images.js';
 import { BaseScene } from './BaseScene.js';
 
-// Pictures of this scene: docs/assets/gfx/postacie-ekran/.
-const P = 'postacie-ekran/';
+// Pictures of this scene: docs/assets/gfx/start-i-wybor-postaci/.
+const P = 'start-i-wybor-postaci/';
 
 export class CharacterScene extends BaseScene {
     constructor() {

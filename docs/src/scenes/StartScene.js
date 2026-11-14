@@ -2,10 +2,10 @@ import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { addImage, addPattern } from '../gfx/images.js';
 import { BaseScene } from './BaseScene.js';
 
-// Pictures of this scene: docs/assets/gfx/start/.
-const P = 'start/';
+// Pictures of this scene: docs/assets/gfx/start-i-wybor-postaci/.
+const P = 'start-i-wybor-postaci/';
 const SPARKLES = [P + 'iskierka-biala', P + 'iskierka-rozowa', P + 'iskierka-zolta'];
-// Height of the hills strip (start/wzgorza), a third of the stage so it lines up with its pattern.
+// Height of the hills strip (start-i-wybor-postaci/wzgorza-wzor), a third of the stage so it lines up with its pattern.
 const HILLS_H = 135;
 
 export class StartScene extends BaseScene {

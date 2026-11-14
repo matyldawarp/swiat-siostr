@@ -8,7 +8,8 @@
 //    errors and mistakes in top-level code.
 // 4. Data: characters, cakes and the music list are complete and point at existing files.
 // 5. House rules from CLAUDE.md that are easy to check mechanically.
-// 6. Pictures: docs/assets/gfx/ and its images.json agree, and the code's keys exist.
+// 6. Pictures: docs/assets/gfx/ and its images.json agree, the code's keys exist and every
+//    picture is described in notes/obrazki/.
 //
 // Exits with code 1 and lists the problems if anything is wrong.
 
@@ -202,7 +203,7 @@ if (charactersModule) {
     }
     // Every character bakes its own cake in the kitchen (KitchenScene).
     CHARACTERS.forEach((c) => {
-        [`kuchnia/tort-${c.picture}`, `kuchnia/lukier-${c.picture}`, `kuchnia/dodatek-${c.picture}`, `kuchnia/kawalek-${c.picture}`, `ikony64/tort-${c.picture}`]
+        [`kuchnia/torty/tort-${c.picture}`, `kuchnia/lukier/lukier-${c.picture}`, `kuchnia/dodatki-i-kawalki/dodatek-${c.picture}`, `kuchnia/dodatki-i-kawalki/kawalek-${c.picture}`, `ikony64/torty-postaci/tort-${c.picture}`]
             .filter((key) => !existsSync(join(DOCS, 'assets', 'gfx', `${key}.png`)))
             .forEach((key) => fail(charactersFile, `character ${c.id}: no cake picture docs/assets/gfx/${key}.png`));
     });
@@ -445,11 +446,25 @@ pngKeys.forEach((key) => {
         fail(gfxManifestFile, `docs/assets/gfx/${key}.png is not listed`);
     }
 });
-// Picture keys in the code: string literals starting with a folder of docs/assets/gfx.
+// Every picture has a description in notes/obrazki/<folder>.md (## `<key>.png`), from which
+// it can be drawn again.
+for (const key of Object.keys(gfxManifest)) {
+    const notesFile = join(ROOT, 'notes', 'obrazki', `${key.slice(0, key.lastIndexOf('/'))}.md`);
+    const notes = existsSync(notesFile) ? readFileSync(notesFile, 'utf8') : '';
+    if (!notes.includes('## `' + key + '.png`')) {
+        fail(gfxManifestFile, `${key}: no description in ${rel(notesFile)}`);
+    }
+}// Picture keys in the code: string literals starting with a folder of docs/assets/gfx.
 const gfxFolders = new Set([...pngKeys].map((key) => key.split('/')[0]));
 for (const mod of modules.values()) {
     const source = mod.source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:\\])\/\/.*$/gm, '$1');
-    for (const m of source.matchAll(/'([a-z0-9-]+\/[a-z0-9/-]+)'/g)) {
+    // Keys built in a template string (`ikony64/torty-postaci/tort-${...}`): some picture must
+    // start with the fixed beginning.
+    for (const m of source.matchAll(/`([a-z0-9-]+\/[a-z0-9/-]*)\$\{/g)) {
+        if (gfxFolders.has(m[1].split('/')[0]) && !Object.keys(gfxManifest).some((key) => key.startsWith(m[1]))) {
+            fail(mod.file, `builds picture keys starting with '${m[1]}', but no picture in images.json starts so`);
+        }
+    }    for (const m of source.matchAll(/'([a-z0-9-]+\/[a-z0-9/-]+)'/g)) {
         if (gfxFolders.has(m[1].split('/')[0]) && !gfxManifest[m[1]]) {
             fail(mod.file, `uses the picture '${m[1]}', which is not in docs/assets/gfx/images.json`);
         }

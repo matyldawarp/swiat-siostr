@@ -48,7 +48,7 @@ export class HospitalScene extends BaseScene {
         this.createTools(width, height);
 
         // Bottom-right: rest in bed, and invite the other hamster.
-        PixelUI.createIconButton(this, width - S(26), height - S(26), S(36), 'ikony64/ksiezyc', () => this.toggleRest());
+        PixelUI.createIconButton(this, width - S(26), height - S(26), S(36), 'ikony64/przyciski/ksiezyc', () => this.toggleRest());
         if (this.friend) {
             createHamsterTextures(this, this.friend);
             const visit = PixelUI.createIconButton(this, width - S(26), height - S(70), S(36), null, () => this.visit());
@@ -152,9 +152,9 @@ export class HospitalScene extends BaseScene {
         const gap = S(56);
         const y = height - S(30);
         const icons = {
-            thermometer: 'ikony64/termometr',
-            syrup: 'ikony64/lyzka',
-            plaster: 'ikony64/plaster'
+            thermometer: 'ikony64/przyciski/termometr',
+            syrup: 'ikony64/przyciski/lyzka',
+            plaster: 'ikony64/przyciski/plaster'
         };
 
         TREATMENTS.forEach((key, i) => {
@@ -283,7 +283,7 @@ export class HospitalScene extends BaseScene {
 
         // Small heart on the used tool marks it as done.
         const button = this.toolButtons[key];
-        button.add(addImage(this, S(14), -S(14), 'ikony/serce-narzedzie-uzyte'));
+        button.add(addImage(this, S(14), -S(14), 'wspolne/serce-narzedzie-uzyte'));
 
         this.updateHints();
         if (this.done.size === TREATMENTS.length) {

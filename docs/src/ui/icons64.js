@@ -11,8 +11,9 @@ const ICON64_DRAW_SIZE = 58;
 let icon64Count = 0;
 
 // An ikona 64 centred on (x, y), whose drawing is drawnSize game pixels across. `picture` is
-// the key of its PNG, e.g. 'ikony64/zebatka', or null for none. icon.setIcon(picture) shows
-// another one (e.g. the music note crossed out); the canvas goes with the image.
+// the key of its PNG, e.g. 'ikony64/przyciski/zebatka', or null for none.
+// icon.setIcon(picture) shows another one (e.g. the music note crossed out); the canvas goes
+// with the image.
 export function addIcon64(scene, x, y, drawnSize, picture) {
     const key = `icon64-${icon64Count++}`;
     const texture = scene.textures.createCanvas(key, ICON64_GRID, ICON64_GRID);

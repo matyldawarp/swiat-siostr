@@ -33,7 +33,7 @@ export function floatAway(scene, target, { dx = 0, dy = 0, duration = 800, steps
 
 // A pixel heart rising from (x, y): the "that was nice" reward after a tap.
 export function floatHeart(scene, x, y, { depth = 20, delay = 0, rise = S(24), duration = 800 } = {}) {
-    const heart = addImage(scene, x, y, 'drobne/serce').setDepth(depth);
+    const heart = addImage(scene, x, y, 'wspolne/serce').setDepth(depth);
     floatAway(scene, heart, { dy: -rise, duration, delay });
     return heart;
 }
@@ -41,7 +41,7 @@ export function floatHeart(scene, x, y, { depth = 20, delay = 0, rise = S(24), d
 // One sleepy "z" drifting up and to the right; pass a running count, every third is a capital Z.
 export function floatZ(scene, x, y, index, { depth = 16 } = {}) {
     const big = index % 3 === 2;
-    const z = addImage(scene, x, y, big ? 'efekty/litera-z-duza' : 'efekty/litera-z-mala').setDepth(depth);
+    const z = addImage(scene, x, y, big ? 'wspolne/litera-z-duza' : 'wspolne/litera-z-mala').setDepth(depth);
     floatAway(scene, z, { dx: S(14), dy: -S(24), duration: 1800 });
     return z;
 }

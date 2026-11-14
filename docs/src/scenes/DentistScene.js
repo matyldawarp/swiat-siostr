@@ -366,15 +366,15 @@ export class DentistScene extends BaseScene {
         const gap = S(56);
         const y = height - S(30);
         const defs = {
-            mirror: { icon: 'ikony64/lusterko', onTap: () => this.useMirror() },
-            toothbrush: { icon: 'ikony64/szczoteczka', onTap: () => this.startBrushing() },
-            cup: { icon: 'ikony64/kubek', onTap: () => this.rinse() }
+            mirror: { icon: 'ikony64/przyciski/lusterko', onTap: () => this.useMirror() },
+            toothbrush: { icon: 'ikony64/przyciski/szczoteczka', onTap: () => this.startBrushing() },
+            cup: { icon: 'ikony64/przyciski/kubek', onTap: () => this.rinse() }
         };
         this.tools = {};
         Object.entries(defs).forEach(([key, def], i) => {
             const button = PixelUI.createIconButton(this, Math.round(width / 2 + (i - 1) * gap), y, size, def.icon, def.onTap);
             // Small heart marks a step that is done.
-            const mark = addImage(this, S(14), -S(14), 'ikony/serce-narzedzie-uzyte').setVisible(false);
+            const mark = addImage(this, S(14), -S(14), 'wspolne/serce-narzedzie-uzyte').setVisible(false);
             button.add(mark);
             button.mark = mark;
             this.tools[key] = button;

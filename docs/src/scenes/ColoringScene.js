@@ -253,7 +253,7 @@ export class ColoringScene extends BaseScene {
         this.refreshTools();
         preparePrint(this, pictureTexture(this.page), this.page.id);
         this.printButton = PixelUI.createIconButton(this, toolsX, height - S(6) - button / 2, button,
-            'ikony64/drukarka', () => this.print());
+            'ikony64/przyciski/drukarka', () => this.print());
         this.printButton.baseY = this.printButton.y;
     }
 
@@ -425,7 +425,7 @@ export class ColoringScene extends BaseScene {
         const button = S(30);
         const topY = y + S(6) + button / 2;
         this.undoButton = PixelUI.createIconButton(this, x + w / 2, topY, button,
-            'ikony64/cofnij', () => this.undo());
+            'ikony64/przyciski/cofnij', () => this.undo());
         this.undoButton.baseY = topY;
 
         const rows = Math.ceil(PAINTS.length / 2);

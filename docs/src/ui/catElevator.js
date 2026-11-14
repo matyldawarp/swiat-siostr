@@ -8,17 +8,17 @@ import { PALETTE, PixelUI, S } from './pixel.js';
 import { addImage, imageTexture } from '../gfx/images.js';
 import { playNotes } from '../audio/sfx.js';
 
-// Pictures: docs/assets/gfx/winda/ and the room icons in ikony64/.
+// Pictures: docs/assets/gfx/domek-gabi/ (szyb-z-kocia-glowa, drzwi-windy) and the room icons in ikony64/przyciski/.
 export const GABI_ROOMS = [
-    { scene: 'GabiKitchenScene', icon: 'ikony64/pokoj-kuchnia' },
-    { scene: 'GabiCraftScene', icon: 'ikony64/pokoj-pracownia' }
+    { scene: 'GabiKitchenScene', icon: 'ikony64/przyciski/pokoj-kuchnia' },
+    { scene: 'GabiCraftScene', icon: 'ikony64/przyciski/pokoj-pracownia' }
 ];
 
 // Set while riding, so the room at the other end opens its elevator doors on arrival.
 const ARRIVING = 'gabiElevatorArriving';
 
 // One sliding door: its picture is the narrowest door, and its middle column stretches.
-const DOOR_KEY = 'winda/drzwi-windy';
+const DOOR_KEY = 'domek-gabi/drzwi-windy';
 const DOOR_EDGE = 2;
 
 function playDing(scene) {
@@ -76,7 +76,7 @@ export function addCatElevator(scene, x, floorY, { rider }) {
     const cabin = { x: left + S(5), y: top + S(16), w: w - S(10), h: h - S(20) };
 
     // Shaft with the cabin and the cat head on top, standing on (x, floorY).
-    const shaft = addImage(scene, x, floorY, 'winda/szyb-z-kocia-glowa').setDepth(15);
+    const shaft = addImage(scene, x, floorY, 'domek-gabi/szyb-z-kocia-glowa').setDepth(15);
     const r = Math.round(w / 2);
 
     // Doors in front of whoever rides; `open` from 0 (shut) to 1.

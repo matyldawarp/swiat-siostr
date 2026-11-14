@@ -39,7 +39,7 @@ export const CHARACTERS = [
 // redrawn as 16x16 pixel pictures and, from those, with Scale2x in both sizes. Every
 // character's pictures are named after it (`picture`): docs/assets/gfx/postacie/<picture>.png,
 // <picture>-oczy-zamkniete (blinking) and <picture>-je (eating), and the same in
-// postacie-male; its cake pictures too (kuchnia/tort-<picture> and so on).
+// postacie-male; its cake pictures too (kuchnia/torty/tort-<picture> and so on).
 CHARACTERS.push(
     {
         id: 'postac1',

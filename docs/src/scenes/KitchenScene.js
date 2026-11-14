@@ -18,18 +18,18 @@ const KITCHEN_COLORS = {
 
 // Ingredients: the picture on its button, the one flying into the bowl, the blob it leaves.
 const INGREDIENTS = [
-    { key: 'flour', icon: 'ikony64/maka', piece: 'kuchnia/maka', blob: 'kuchnia/kleks-maka' },
-    { key: 'egg', icon: 'ikony64/jajko', piece: 'kuchnia/jajko', blob: 'kuchnia/kleks-jajko' },
-    { key: 'sugar', icon: 'ikony64/cukier', piece: 'kuchnia/cukier', blob: 'kuchnia/kleks-cukier' },
-    { key: 'milk', icon: 'ikony64/mleko', piece: 'kuchnia/mleko', blob: 'kuchnia/kleks-mleko' }
+    { key: 'flour', icon: 'ikony64/kuchnia-i-cukiernia/maka', piece: 'kuchnia/maka', blob: 'kuchnia/kleks-maka' },
+    { key: 'egg', icon: 'ikony64/kuchnia-i-cukiernia/jajko', piece: 'kuchnia/jajko', blob: 'kuchnia/kleks-jajko' },
+    { key: 'sugar', icon: 'ikony64/kuchnia-i-cukiernia/cukier', piece: 'kuchnia/cukier', blob: 'kuchnia/kleks-cukier' },
+    { key: 'milk', icon: 'ikony64/kuchnia-i-cukiernia/mleko', piece: 'kuchnia/mleko', blob: 'kuchnia/kleks-mleko' }
 ];
 
 // Decorations for a character's own cake: icing in its colour, sprinkles and its topping.
 function cakeDecorations(character) {
     return [
-        { key: 'icing', icon: `ikony64/lukier-${character.picture}` },
-        { key: 'sprinkles', icon: 'ikony64/posypka' },
-        { key: 'topping', icon: `ikony64/dodatek-${character.picture}` }
+        { key: 'icing', icon: `ikony64/torty-postaci/lukier-${character.picture}` },
+        { key: 'sprinkles', icon: 'ikony64/kuchnia-i-cukiernia/posypka' },
+        { key: 'topping', icon: `ikony64/torty-postaci/dodatek-${character.picture}` }
     ];
 }
 
@@ -235,7 +235,7 @@ export class KitchenScene extends BaseScene {
     markDone(button) {
         button.setAlpha(0.45);
         button.done = true;
-        button.add(addImage(this, S(13), -S(13), 'ikony/serce-narzedzie-uzyte'));
+        button.add(addImage(this, S(13), -S(13), 'wspolne/serce-narzedzie-uzyte'));
     }
 
     showIngredientButtons() {
@@ -244,7 +244,7 @@ export class KitchenScene extends BaseScene {
             icon: ing.icon,
             onTap: (button) => this.addIngredient(ing, button)
         }));
-        defs.push({ key: 'whisk', icon: 'ikony64/trzepaczka', onTap: (button) => this.mix(button) });
+        defs.push({ key: 'whisk', icon: 'ikony64/kuchnia-i-cukiernia/trzepaczka', onTap: (button) => this.mix(button) });
         this.setRow(defs);
         this.whiskButton = this.rowButtons[this.rowButtons.length - 1];
         this.whiskButton.setAlpha(0.45);
@@ -386,7 +386,7 @@ export class KitchenScene extends BaseScene {
         this.busy = false;
 
         const defs = cakeDecorations(this.character).map((t) => ({ key: t.key, icon: t.icon, onTap: (button) => this.addTopping(t, button) }));
-        defs.push({ key: 'serve', icon: 'ikony64/serce-podaj-tort', onTap: () => this.serve() });
+        defs.push({ key: 'serve', icon: 'ikony64/kuchnia-i-cukiernia/serce-podaj-tort', onTap: () => this.serve() });
         this.setRow(defs);
         this.hint(this.rowButtons[0]);
     }
@@ -396,10 +396,10 @@ export class KitchenScene extends BaseScene {
         const { x, y } = this.bowlPos;
         const id = this.character.picture;
         this.cakeLayers = {
-            base: addImage(this, x, y, `${P}tort-${id}`),
-            icing: addImage(this, x, y, `${P}lukier-${id}`),
+            base: addImage(this, x, y, `${P}torty/tort-${id}`),
+            icing: addImage(this, x, y, `${P}lukier/lukier-${id}`),
             sprinkles: addImage(this, x, y, P + 'posypka-na-torcie'),
-            topping: addImage(this, x, y, `${P}dodatek-${id}`)
+            topping: addImage(this, x, y, `${P}dodatki-i-kawalki/dodatek-${id}`)
         };
         this.cake = this.add.container(0, 0, Object.values(this.cakeLayers)).setVisible(false);
     }
@@ -410,11 +410,11 @@ export class KitchenScene extends BaseScene {
         const layers = this.cakeLayers;
         const suffix = bites ? `-kes-${bites}` : '';
         const eaten = bites >= 3;
-        setImage(layers.base, eaten ? P + 'talerzyk-pusty' : `${P}tort-${id}${suffix}`);
+        setImage(layers.base, eaten ? P + 'talerzyk-pusty' : `${P}torty/tort-${id}${suffix}`);
         layers.icing.setVisible(!eaten && Boolean(this.toppings.icing));
         layers.sprinkles.setVisible(!eaten && Boolean(this.toppings.sprinkles));
         if (!eaten) {
-            setImage(layers.icing, `${P}lukier-${id}${suffix}`);
+            setImage(layers.icing, `${P}lukier/lukier-${id}${suffix}`);
             setImage(layers.sprinkles, `${P}posypka-na-torcie${suffix}`);
         }
         // The topping goes with the second bite.
@@ -448,7 +448,7 @@ export class KitchenScene extends BaseScene {
     }
 
     biteCake(bite) {
-        const key = `${P}kawalek-${this.character.picture}${this.toppings.icing ? '' : '-bez-lukru'}`;
+        const key = `${P}dodatki-i-kawalki/kawalek-${this.character.picture}${this.toppings.icing ? '' : '-bez-lukru'}`;
         const piece = addImage(this, this.bowlPos.x + S(16), this.bowlPos.y - S(14), key).setDepth(20);
 
         this.drawCake(bite);
@@ -501,7 +501,7 @@ export class KitchenScene extends BaseScene {
         // Bake again, or go back home (the back button).
         this.setRow([{
             key: 'again',
-            icon: `ikony64/tort-${this.character.picture}`,
+            icon: `ikony64/torty-postaci/tort-${this.character.picture}`,
             onTap: () => this.scene.restart({ resized: true })
         }]);
         this.hint(this.rowButtons[0]);

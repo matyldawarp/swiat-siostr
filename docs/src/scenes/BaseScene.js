@@ -87,7 +87,7 @@ export class BaseScene extends Phaser.Scene {
         const left = this.view.bleed.x + 1 + margin;
         const top = this.view.bleed.y + 1 + margin + toGame(SAFE_AREA.top);
         return PixelUI.createIconButton(this, left + size / 2, top + size / 2, size,
-            'ikony64/wstecz', () => this.backPressed()).setDepth(1000);
+            'ikony64/przyciski/wstecz', () => this.backPressed()).setDepth(1000);
     }
 
     // The character chosen on the character screen.

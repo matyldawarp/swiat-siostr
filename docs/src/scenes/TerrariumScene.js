@@ -82,12 +82,12 @@ export class TerrariumScene extends BaseScene {
             textStyle(S(8), { color: TEXT_COLORS.hint })).setOrigin(0.5);
 
         // Map to travel to other places, e.g. the hospital; right of the back button.
-        this.mapButton = PixelUI.createIconButton(this, S(52), S(20), S(28), 'ikony64/mapa', () => {
+        this.mapButton = PixelUI.createIconButton(this, S(52), S(20), S(28), 'ikony64/przyciski/mapa', () => {
             this.registry.set('mapLocation', 'home');
             PixelUI.fadeTo(this, 'MapScene');
         });
-        // Kitchen: bake this character's own cake, which the button shows (ikony64/tort-<id>).
-        PixelUI.createIconButton(this, S(86), S(20), S(28), `ikony64/tort-${this.character.picture}`,
+        // Kitchen: bake this character's own cake, which the button shows (ikony64/torty-postaci/tort-<picture>).
+        PixelUI.createIconButton(this, S(86), S(20), S(28), `ikony64/torty-postaci/tort-${this.character.picture}`,
             () => PixelUI.fadeTo(this, 'KitchenScene'));
 
         if (Illness.isSick(this)) {

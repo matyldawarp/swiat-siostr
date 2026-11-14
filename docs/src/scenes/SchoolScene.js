@@ -203,7 +203,7 @@ export class SchoolScene extends BaseScene {
         const title = PixelUI.addTitle(this, Math.round(width / 2), S(20), this.lesson.title);
         this.speech = this.lesson.say;
         PixelUI.createIconButton(this, Math.round(width / 2 + title.width / 2 + S(18)), S(20), S(22),
-            'ikony64/glosnik', () => say(this, this.speech));
+            'ikony64/przyciski/glosnik', () => say(this, this.speech));
 
         this.stars = this.round.tasks.map((_, i) => addImage(this,
             Math.round(width / 2 + (i - (this.round.tasks.length - 1) / 2) * S(22)), Math.round((FLOOR_Y + height) / 2), P + 'gwiazda-postepu-pusta'));

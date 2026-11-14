@@ -22,7 +22,7 @@ const PAINTS = [
     { color: 'rainbow', bottle: 'farba-teczowa' }
 ];
 const RAINBOW = [0xf59bbd, 0xffb37a, 0xffe066, 0x8fd9a0, 0x8cc4f2, 0xc3a6f0];
-// Pompom colours (pictures pompon-<name>, -oczy with eyes, -uszy with ears too).
+// Pompom colours (pictures pompony/pompon-<name>, -oczy with eyes, -uszy with ears too).
 const POMPOM_COLORS = ['malinowy', 'brzoskwiniowy', 'zolty', 'zielony', 'niebieski', 'fioletowy', 'rozowy'];
 const POMPOM_STAGES = ['', '-oczy', '-uszy'];
 const BRUSH = 4;
@@ -200,7 +200,7 @@ export class GabiCraftScene extends BaseScene {
         // New sheet, under the board: a white page with a sparkle.
         const x = this.sheet.x + Math.round(this.sheet.w / 2);
         const y = this.sheet.y + this.sheet.h + S(36);
-        PixelUI.createIconButton(this, x, y, S(32), 'ikony64/nowa-kartka', () => {
+        PixelUI.createIconButton(this, x, y, S(32), 'ikony64/przyciski/nowa-kartka', () => {
             playSparkle(this);
             this.clearSheet();
             for (let i = 0; i < 5; i++) {
@@ -262,7 +262,7 @@ export class GabiCraftScene extends BaseScene {
             stage: 0,
             groundY,
             container: this.add.container(basket.x, this.table.top - S(20)).setDepth(10),
-            image: addImage(this, 0, 0, `${P}pompon-${POMPOM_COLORS[colorIndex]}`)
+            image: addImage(this, 0, 0, `${P}pompony/pompon-${POMPOM_COLORS[colorIndex]}`)
         };
         pompom.container.add(pompom.image);
         pompom.container.setSize(S(22), S(22));
@@ -286,7 +286,7 @@ export class GabiCraftScene extends BaseScene {
         const pitch = 600 + pompom.colorIndex * 90;
         if (pompom.stage < 2) {
             pompom.stage++;
-            setImage(pompom.image, `${P}pompon-${POMPOM_COLORS[pompom.colorIndex]}${POMPOM_STAGES[pompom.stage]}`);
+            setImage(pompom.image, `${P}pompony/pompon-${POMPOM_COLORS[pompom.colorIndex]}${POMPOM_STAGES[pompom.stage]}`);
             playSparkle(this);
         } else {
             playNotes(this, [{ freq: pitch, duration: 0.08 }, { freq: pitch * 1.5, duration: 0.12 }], 'triangle', 0.12);

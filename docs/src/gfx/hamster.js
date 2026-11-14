@@ -31,15 +31,15 @@ export function createHamsterTextures(scene, character, scale = CHARACTER_SCALE)
 }
 
 export function createHeartTexture(scene) {
-    imageTexture(scene, 'drobne/serce', 'heart');
+    imageTexture(scene, 'wspolne/serce', 'heart');
 }
 
 export function createSeedTexture(scene) {
-    imageTexture(scene, 'drobne/ziarenko', 'seed');
+    imageTexture(scene, 'wspolne/ziarenko', 'seed');
 }
 
 export function createPoopTexture(scene) {
-    imageTexture(scene, 'drobne/kupka', 'poop');
+    imageTexture(scene, 'wspolne/kupka', 'poop');
 }
 
 // A character at (x, groundY): a container to move and hop (PixelUI.hop with groundY)

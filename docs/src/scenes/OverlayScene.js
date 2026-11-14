@@ -58,7 +58,7 @@ export class OverlayScene extends BaseScene {
         this.createReloadButton(right - size / 2, top + size / 2, size);
         // Settings sit left of the music button (which may be missing), on every screen.
         this.settingsButton = PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
-            'ikony64/zebatka',
+            'ikony64/przyciski/zebatka',
             () => (this.menu ? this.closeMenu() : this.openSettings()));
         // Above the game over screen (depth 90), below open panels (100).
         this.settingsButton.setDepth(95);
@@ -217,8 +217,8 @@ export class OverlayScene extends BaseScene {
         y += titleH;
 
         settings.forEach(({ key, label }) => {
-            const box = addImage(this, -w / 2 + S(12), 0, 'efekty/pole-wyboru');
-            const drawBox = () => setImage(box, Settings.get(key) ? 'efekty/pole-wyboru-zaznaczone' : 'efekty/pole-wyboru');
+            const box = addImage(this, -w / 2 + S(12), 0, 'wspolne/pole-wyboru');
+            const drawBox = () => setImage(box, Settings.get(key) ? 'wspolne/pole-wyboru-zaznaczone' : 'wspolne/pole-wyboru');
             drawBox();
             const text = PixelUI.addText(this, -w / 2 + S(28), 0, label,
                 textStyle(S(11), { bold: true, color: TEXT_COLORS.button })).setOrigin(0, 0.5);
@@ -400,9 +400,9 @@ export class OverlayScene extends BaseScene {
 
         const cx = Math.round(width / 2);
         const cy = Math.round(height / 2);
-        screen.add(addImage(this, cx, cy - S(70), 'efekty/koniec-gry-ksiezyc'));
+        screen.add(addImage(this, cx, cy - S(70), 'wspolne/koniec-gry-ksiezyc'));
         [[-0.32, -0.3], [0.3, -0.22], [-0.22, 0.28], [0.36, 0.3], [-0.4, 0.05]].forEach(([fx, fy]) => {
-            screen.add(addImage(this, Math.round(cx + fx * width), Math.round(cy + fy * height), 'efekty/koniec-gry-gwiazdka'));
+            screen.add(addImage(this, Math.round(cx + fx * width), Math.round(cy + fy * height), 'wspolne/koniec-gry-gwiazdka'));
         });
 
         // The chosen character, eyes closed.
@@ -454,7 +454,7 @@ export class OverlayScene extends BaseScene {
     }
 
     musicIcon() {
-        return Music.enabled ? 'ikony64/nutka' : 'ikony64/nutka-wylaczona';
+        return Music.enabled ? 'ikony64/przyciski/nutka' : 'ikony64/przyciski/nutka-wylaczona';
     }
 
     refreshMusicIcon() {
@@ -501,7 +501,7 @@ export class OverlayScene extends BaseScene {
         } else if (song) {
             parts.push(PixelUI.addText(this, badgeX, 1, String(index + 1), textStyle(S(16), { bold: true })).setOrigin(0.5));
         } else {
-            parts.push(addImage(this, badgeX, 0, 'efekty/piosenki-nutka-wylaczona'));
+            parts.push(addImage(this, badgeX, 0, 'wspolne/piosenki-nutka-wylaczona'));
         }
 
         const textX = badgeX + badgeW / 2 + S(8);
@@ -514,7 +514,7 @@ export class OverlayScene extends BaseScene {
 
         // Heart marks what is on now.
         if (playing) {
-            parts.push(addImage(this, w / 2 - S(14), 0, 'efekty/piosenki-serce'));
+            parts.push(addImage(this, w / 2 - S(14), 0, 'wspolne/piosenki-serce'));
         }
 
         return this.addPanelRow(parts, left, cy, w, h, () => {
@@ -527,7 +527,7 @@ export class OverlayScene extends BaseScene {
     // Reloads the newest files and always starts again on the start screen: the address
     // after # (scenes/routes.js) is dropped first. Reloading in the browser keeps it.
     createReloadButton(x, y, size) {
-        const button = PixelUI.createIconButton(this, x, y, size, 'ikony64/odswiez', () => {
+        const button = PixelUI.createIconButton(this, x, y, size, 'ikony64/przyciski/odswiez', () => {
             if (this.reloading) {
                 return;
             }

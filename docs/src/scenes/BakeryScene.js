@@ -203,17 +203,17 @@ export class BakeryScene extends BaseScene {
         const place = (i, count) => Math.round(centerX + (i - (count - 1) / 2) * gap);
 
         const creamDefs = CREAMS.map(({ color, name }) => ({
-            icon: `ikony64/krem-${name}`,
+            icon: `ikony64/kuchnia-i-cukiernia/krem-${name}`,
             onTap: () => this.choose('cream', color),
             isChosen: () => this.design.cream === color
         }));
         creamDefs.push({
-            icon: 'ikony64/posypka',
+            icon: 'ikony64/kuchnia-i-cukiernia/posypka',
             onTap: () => this.choose('sprinkles', !this.design.sprinkles),
             isChosen: () => this.design.sprinkles
         });
         const toppingDefs = BAKERY_TOPPINGS.map((key) => ({
-            icon: `ikony64/dodatek-${TOPPING_NAMES[key]}`,
+            icon: `ikony64/kuchnia-i-cukiernia/dodatek-${TOPPING_NAMES[key]}`,
             onTap: () => this.choose('topping', this.design.topping === key ? null : key),
             isChosen: () => this.design.topping === key
         }));
@@ -223,7 +223,7 @@ export class BakeryScene extends BaseScene {
             defs.forEach((def, i) => {
                 const button = PixelUI.createIconButton(this, place(i, defs.length), rowY[row], size, def.icon, def.onTap);
                 // Small heart marks what is on the cupcake now.
-                const mark = addImage(this, S(12), -S(12), 'ikony/serce-dodatek-wybrany');
+                const mark = addImage(this, S(12), -S(12), 'wspolne/serce-dodatek-wybrany');
                 button.add(mark);
                 button.mark = mark;
                 button.isChosen = def.isChosen;
@@ -233,7 +233,7 @@ export class BakeryScene extends BaseScene {
         });
 
         this.doneButton = PixelUI.createIconButton(this, width - S(42), height - S(44), S(44),
-            'ikony64/serce-babeczka-gotowa', () => this.finish());
+            'ikony64/kuchnia-i-cukiernia/serce-babeczka-gotowa', () => this.finish());
         this.refreshButtons();
     }
 
