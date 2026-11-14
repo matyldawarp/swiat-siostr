@@ -23,6 +23,12 @@ export const ICON_COLORS = {
 };
 
 export const Icons = {
+    // Width of a thin line in an icon of this size: one pixel in small drawings, more on
+    // the 64x64 grid of the button icons (PixelUI.createIconButton).
+    line(size) {
+        return Math.max(1, Math.round(size / 20));
+    },
+
     // Fills every pixel whose centre lies inside the polygon, so edges stay on the grid.
     fillPolygon(g, points) {
         const poly = new Phaser.Geom.Polygon(points);
@@ -318,16 +324,19 @@ export const Icons = {
         }
 
         if (!on) {
-            // Thick dark slash so "off" is obvious at a glance.
+            // Thick dark slash so "off" is obvious at a glance, from the top left so it
+            // crosses the stem and leaves the note's head in sight.
             const half = Math.round(size * 0.45);
-            const slash = Math.max(3, Math.round(size / 7));
+            const slash = Math.max(3, Math.round(size / 9));
+            // A white edge keeps the slash apart from the note.
+            const edge = Math.max(1, Math.round(size / 24));
             g.fillStyle(ICON_COLORS.white, 1);
             for (let i = -half; i <= half; i++) {
-                g.fillRect(cx + i - 1, cy - i - 1, slash + 2, slash + 2);
+                g.fillRect(cx + i - edge, cy + i - edge, slash + edge * 2, slash + edge * 2);
             }
             g.fillStyle(PALETTE.buttonBorder, 1);
             for (let i = -half; i <= half; i++) {
-                g.fillRect(cx + i, cy - i, slash, slash);
+                g.fillRect(cx + i, cy + i, slash, slash);
             }
         }
     },
@@ -502,18 +511,19 @@ export const Icons = {
         const handleH = Math.round(size * 0.32);
         const loopRy = Math.round(size * 0.3);
         const loopCy = Math.round(cy - size * 0.12);
+        const wire = Icons.line(size);
         g.fillStyle(ICON_COLORS.lavenderDark, 1);
-        g.fillRect(cx - 1, Math.round(cy + size * 0.12), 3, handleH);
+        g.fillRect(cx - wire, Math.round(cy + size * 0.12), wire * 3, handleH);
         g.fillStyle(0x9a94ad, 1);
         [0.3, 0.18].forEach((f) => {
             const rx = Math.round(size * f);
             for (let dy = -loopRy; dy <= loopRy; dy++) {
                 const dx = Math.round(rx * Math.sqrt(1 - (dy * dy) / (loopRy * loopRy)));
-                g.fillRect(cx - dx, loopCy + dy, 1, 1);
-                g.fillRect(cx + dx, loopCy + dy, 1, 1);
+                g.fillRect(cx - dx, loopCy + dy, wire, wire);
+                g.fillRect(cx + dx, loopCy + dy, wire, wire);
             }
         });
-        g.fillRect(cx, loopCy - loopRy, 1, loopRy * 2);
+        g.fillRect(cx, loopCy - loopRy, wire, loopRy * 2);
     },
 
     // Piping bag of icing in the given colour.
@@ -528,7 +538,7 @@ export const Icons = {
             g.fillRect(cx - half, top + r, half * 2 + 1, 1);
         }
         g.fillStyle(color, 1);
-        g.fillRect(cx, top + rows, 1, Math.round(size * 0.12));
+        g.fillRect(cx, top + rows, Icons.line(size), Math.round(size * 0.12));
     },
 
     // Shaker with colourful sprinkles falling out.
@@ -541,9 +551,10 @@ export const Icons = {
         g.fillStyle(ICON_COLORS.lavender, 1);
         g.fillRect(left + 2, top + 2, w - 4, 3);
         const colors = [ICON_COLORS.pinkDark, ICON_COLORS.mintDark, ICON_COLORS.goldDark, ICON_COLORS.lavenderDark];
+        const bit = Icons.line(size);
         for (let i = 0; i < 6; i++) {
             g.fillStyle(colors[i % colors.length], 1);
-            g.fillRect(left + 2 + ((i * 5) % (w - 4)), top + h + 2 + (i % 3) * 3, 2, 1);
+            g.fillRect(left + 2 + ((i * 5 * bit) % (w - 4)), top + h + 2 + (i % 3) * 3 * bit, 2 * bit, bit);
         }
     },
 
@@ -1371,9 +1382,10 @@ export const CAKE_TOPPINGS = {
     cherry(g, cx, cy, size) {
         const r = Math.max(2, Math.round(size * 0.24));
         const by = Math.round(cy + r * 0.4);
-        g.fillStyle(0x9fd6b8, 1);
+        g.fillStyle(0x7fc49e, 1);
+        const stem = Icons.line(size);
         for (let i = 0; i < Math.round(size * 0.4); i++) {
-            g.fillRect(cx + Math.round(i * 0.5), by - r - i, 1, 1);
+            g.fillRect(cx + Math.round(i * 0.5), by - r - i, stem, 1);
         }
         g.fillStyle(PALETTE.outline, 1);
         PixelUI.fillCircle(g, cx, by, r + 1);
@@ -1396,17 +1408,18 @@ export const CAKE_TOPPINGS = {
         const h = Math.round(size * 0.5);
         const left = Math.round(cx - w / 2);
         const top = Math.round(cy - h / 2 + size * 0.12);
+        const stripe = 2 * Icons.line(size);
         g.fillStyle(PALETTE.outline, 1);
         g.fillRect(left - 1, top - 1, w + 2, h + 1);
         for (let y = 0; y < h; y++) {
-            g.fillStyle(Math.floor(y / 2) % 2 ? ICON_COLORS.pink : 0xffffff, 1);
+            g.fillStyle(Math.floor(y / stripe) % 2 ? ICON_COLORS.pink : 0xffffff, 1);
             g.fillRect(left, top + y, w, 1);
         }
         // Flame.
         g.fillStyle(ICON_COLORS.goldDark, 1);
         Icons.fillEllipse(g, cx, top - Math.round(size * 0.14), Math.max(1, Math.round(w / 2)), Math.round(size * 0.12));
         g.fillStyle(0xfff7e0, 1);
-        g.fillRect(cx, top - Math.round(size * 0.14), 1, 2);
+        g.fillRect(cx, top - Math.round(size * 0.14), Icons.line(size), stripe);
     },
 
     flower(g, cx, cy, size) {

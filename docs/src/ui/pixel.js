@@ -82,6 +82,56 @@ export function fitScale(w, h, dpr) {
     return Math.max(fit, 0.25);
 }
 
+// Button icons are drawn on a fixed ICON_GRID x ICON_GRID pixel canvas (PixelUI.
+// createIconButton), at ICON_DRAW_SIZE so outlines past the nominal size still fit.
+export const ICON_GRID = 64;
+const ICON_DRAW_SIZE = 58;
+let iconCount = 0;
+
+// The two Graphics calls the Icons use, painting whole pixels of a canvas instead;
+// (ox, oy) is where the icon's (0, 0) lands.
+function iconPainter(ctx, ox, oy) {
+    return {
+        fillStyle(color, alpha = 1) {
+            ctx.fillStyle = `rgba(${(color >> 16) & 255}, ${(color >> 8) & 255}, ${color & 255}, ${alpha})`;
+            return this;
+        },
+        fillRect(x, y, w, h) {
+            const x1 = Math.round(ox + Math.min(x, x + w));
+            const y1 = Math.round(oy + Math.min(y, y + h));
+            const x2 = Math.round(ox + Math.max(x, x + w));
+            const y2 = Math.round(oy + Math.max(y, y + h));
+            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+            return this;
+        }
+    };
+}
+
+// The Icons draw their outlines one pixel wide, which on the finer grid is much thinner
+// than before. Every dark pixel (outlines, the button border colour) spreads to its four
+// neighbours, so lines are three grid pixels wide: the same weight the icons always had.
+function thickenLines(ctx) {
+    const image = ctx.getImageData(0, 0, ICON_GRID, ICON_GRID);
+    const src = new Uint8ClampedArray(image.data);
+    const dark = (i) => src[i + 3] > 128 && src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114 < 130;
+    for (let y = 0; y < ICON_GRID; y++) {
+        for (let x = 0; x < ICON_GRID; x++) {
+            const i = (y * ICON_GRID + x) * 4;
+            if (dark(i)) {
+                continue;
+            }
+            const from = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+                .filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < ICON_GRID && ny < ICON_GRID)
+                .map(([nx, ny]) => (ny * ICON_GRID + nx) * 4)
+                .find(dark);
+            if (from !== undefined) {
+                image.data.set(src.subarray(from, from + 4), i);
+            }
+        }
+    }
+    ctx.putImageData(image, 0, 0);
+}
+
 // Text styles used across scenes; pass the size through S().
 export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}) {
     return {
@@ -220,7 +270,10 @@ export const PixelUI = {
     },
 
     // Square button showing a drawn icon instead of a word, for players who can't read yet.
-    // drawIcon(g, size) draws centred on (0, 0).
+    // drawIcon(g, size) draws centred on (0, 0) with fillStyle and fillRect, like the Icons.
+    // Every icon is painted on the same ICON_GRID canvas and scaled to the button, so all
+    // icons share one pixel size, whatever the button's size. button.setIcon(drawIcon)
+    // repaints it (e.g. the music note crossed out).
     createIconButton(scene, x, y, size, drawIcon, onClick) {
         const bg = scene.add.graphics();
         const draw = (fill) => {
@@ -229,8 +282,23 @@ export const PixelUI = {
         };
         draw(PALETTE.button);
 
-        const icon = scene.add.graphics();
-        drawIcon(icon, Math.round(size * 0.7));
+        const key = `icon-${iconCount++}`;
+        const texture = scene.textures.createCanvas(key, ICON_GRID, ICON_GRID);
+        const paint = (drawIconNow) => {
+            const ctx = texture.getContext();
+            ctx.clearRect(0, 0, ICON_GRID, ICON_GRID);
+            drawIconNow(iconPainter(ctx, ICON_GRID / 2, ICON_GRID / 2), ICON_DRAW_SIZE);
+            thickenLines(ctx);
+            texture.refresh();
+        };
+        paint(drawIcon);
+        // The icon's drawing fills 70% of the button, as before the grid. Shown with fewer
+        // screen pixels than the grid has, it is smoothed so thin lines don't drop out.
+        const shown = Math.round((size * 0.7 * ICON_GRID) / ICON_DRAW_SIZE);
+        if (shown * RENDER_SCALE < ICON_GRID) {
+            texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+        }
+        const icon = scene.add.image(0, 0, key).setDisplaySize(shown, shown);
 
         const button = scene.add.container(x, y, [bg, icon]);
         button.setSize(size, size);
@@ -238,6 +306,8 @@ export const PixelUI = {
         button.on('pointerover', () => draw(PALETTE.buttonHover));
         button.on('pointerout', () => draw(PALETTE.button));
         button.on('pointerup', onClick);
+        button.setIcon = paint;
+        button.once('destroy', () => scene.textures.remove(key));
         return button;
     },
 

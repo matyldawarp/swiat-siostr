@@ -4,6 +4,7 @@
 
 - Grafika w stylu pixel art: niska rozdzielczość bazowa, `pixelArt: true` w konfiguracji gry, ostre krawędzie bez wygładzania i gradientów, czcionki pikselowe.
 - Rozmiary interfejsu w scenach przechodzą przez `S()` (`UI_SCALE` w `docs/src/ui/pixel.js`), a sprite'y skalujemy całkowitymi krotnościami.
+- Ikony na przyciskach (`PixelUI.createIconButton`) mają stałą siatkę 64×64 pikseli (`ICON_GRID`). Każda ikona jest rysowana na takim płótnie i skalowana do przycisku, więc wszystkie mają ten sam rozmiar piksela. Ciemne linie są pogrubiane do 3 pikseli siatki, a cienkie jasne linie w ikonach mają grubość `Icons.line(size)`. Nowa ikona przycisku rysuje się tylko przez `fillStyle` i `fillRect`, w rozmiarze podanym do `drawIcon`.
 - Jasna, pastelowa paleta: jasne tła, miękkie pastele (róż, lawenda, mięta, brzoskwinia, błękit), bez ciemnych, nocnych ani nasyconych barw. Tekst w ciemniejszym odcieniu z tej samej palety, a nie w czerni.
 
 ## Scena i skala

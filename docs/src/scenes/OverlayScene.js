@@ -27,6 +27,7 @@ export class OverlayScene extends BaseScene {
 
     build({ width }) {
         this.menu = null;
+        this.musicButton = null;
 
         const size = S(22);
         const margin = S(6);
@@ -37,7 +38,7 @@ export class OverlayScene extends BaseScene {
         this.createReloadButton(right - size / 2, top + size / 2, size);
         // Settings sit left of the music button (which may be missing), on every screen.
         this.settingsButton = PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
-            (g) => Icons.gear(g, 0, 0, Math.round(size * 0.7)),
+            (g, iconSize) => Icons.gear(g, 0, 0, iconSize),
             () => (this.menu ? this.closeMenu() : this.openSettings()));
         // Above the game over screen (depth 90), below open panels (100).
         this.settingsButton.setDepth(95);
@@ -345,7 +346,7 @@ export class OverlayScene extends BaseScene {
         this.pausedScenes.forEach((s) => s.scene.pause());
         if (Music.enabled) {
             Music.select(-1);
-            if (this.musicIcon) {
+            if (this.musicButton) {
                 this.refreshMusicIcon();
             }
         }
@@ -414,17 +415,16 @@ export class OverlayScene extends BaseScene {
 
     // Opens the song chooser; the note is crossed out while it's silent.
     createMusicButton(x, y, size) {
-        const iconSize = Math.round(size * 0.7);
-        const button = PixelUI.createIconButton(this, x, y, size,
-            (g) => Icons.note(g, 0, 0, iconSize, Music.enabled),
+        this.musicButton = PixelUI.createIconButton(this, x, y, size, (g, iconSize) => this.drawMusicIcon(g, iconSize),
             () => (this.menu ? this.closeMenu() : this.openMusicMenu()));
-        this.musicIcon = button.list[1];
-        this.musicIconSize = iconSize;
+    }
+
+    drawMusicIcon(g, iconSize) {
+        Icons.note(g, 0, 0, iconSize, Music.enabled);
     }
 
     refreshMusicIcon() {
-        this.musicIcon.clear();
-        Icons.note(this.musicIcon, 0, 0, this.musicIconSize, Music.enabled);
+        this.musicButton.setIcon((g, iconSize) => this.drawMusicIcon(g, iconSize));
     }
 
     // One big coloured row per song, plus "Cisza" (silence). Colours and numbers tell
@@ -493,9 +493,9 @@ export class OverlayScene extends BaseScene {
     // Reloads the newest files and always starts again on the start screen: the address
     // after # (scenes/routes.js) is dropped first. Reloading in the browser keeps it.
     createReloadButton(x, y, size) {
-        PixelUI.createIconButton(this, x, y, size, (g) => {
+        PixelUI.createIconButton(this, x, y, size, (g, iconSize) => {
             g.fillStyle(PALETTE.buttonBorder, 1);
-            this.drawReloadIcon(g, 0, 1, S(6));
+            this.drawReloadIcon(g, 0, 1, Math.round(iconSize * 0.4));
         }, () => {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
             window.location.reload();
