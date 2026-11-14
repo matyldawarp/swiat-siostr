@@ -12,6 +12,7 @@ import { ColoringScene } from './scenes/ColoringScene.js';
 import { SchoolScene } from './scenes/SchoolScene.js';
 import { GabiHouseScene } from './scenes/GabiHouseScene.js';
 import { GabiKitchenScene } from './scenes/GabiKitchenScene.js';
+import { GabiCraftScene } from './scenes/GabiCraftScene.js';
 import { OverlayScene } from './scenes/OverlayScene.js';
 import { routeFromAddress } from './scenes/routes.js';
 
@@ -31,7 +32,7 @@ const config = {
     },
     // OverlayScene must stay last so it draws on top of every other scene. The first one
     // starts the game (StartScene, or the screen named after # in the address).
-    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, SchoolScene, GabiHouseScene, GabiKitchenScene, OverlayScene]
+    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, SchoolScene, GabiHouseScene, GabiKitchenScene, GabiCraftScene, OverlayScene]
 };
 
 // Started from the iPad's home screen (not in a Safari tab).

@@ -3,6 +3,7 @@ import { addCharacter } from '../gfx/hamster.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { floatHeart } from '../ui/effects.js';
 import { playCharacterSound, playDoorbell, playFanfare, playNotes, playPat, playSparkle } from '../audio/sfx.js';
+import { rideTo, showRoomPicker } from '../ui/catElevator.js';
 import { BaseScene } from './BaseScene.js';
 
 // One note per window, low floor to high: tapping them all plays a little scale.
@@ -11,7 +12,7 @@ const KITTEN_COLORS = { head: 0xfff0f6, ear: 0xf7b2cc };
 
 // Gabi's dollhouse, a big toy to tap: windows light up with a kitten peeking out (each
 // with its own note), the round eyes in the roof blink, the heart nose purrs and the door
-// opens with a doorbell and leads into Łakotek's kitchen (GabiKitchenScene). Lighting
+// opens with a doorbell and shows the rooms inside (ui/catElevator.js) to go to. Lighting
 // every window makes the whole house cheer.
 export class GabiHouseScene extends BaseScene {
     constructor() {
@@ -189,8 +190,8 @@ export class GabiHouseScene extends BaseScene {
         [0, 1, 2].forEach((i) => floatHeart(this, x + (i - 1) * S(8), y, { depth: 30, delay: i * 120 }));
     }
 
-    // Ding-dong: the door swings open to a warm light, the character hops for joy and
-    // goes in, to Łakotek's kitchen.
+    // Ding-dong: the door swings open to a warm light, the character hops for joy and the
+    // rooms to go to show up as buttons; tapping elsewhere shuts the door again.
     openDoor() {
         if (this.doorOpen || this.leaving) {
             return;
@@ -207,7 +208,15 @@ export class GabiHouseScene extends BaseScene {
             playSparkle(this);
             floatHeart(this, door.x + door.w / 2, door.y, { depth: 30 });
         });
-        this.time.delayedCall(900, () => PixelUI.fadeTo(this, 'GabiKitchenScene'));
+        this.time.delayedCall(400, () => {
+            showRoomPicker(this, door.x + door.w / 2, door.y - S(50), {
+                onPick: (room) => rideTo(this, room),
+                onCancel: () => {
+                    this.overlay.clear();
+                    this.doorOpen = false;
+                }
+            });
+        });
     }
 
     goBack() {

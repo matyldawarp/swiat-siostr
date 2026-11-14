@@ -2,6 +2,7 @@ import { PALETTE, PixelUI, S } from '../ui/pixel.js';
 import { addCharacter, paintPixels } from '../gfx/hamster.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { floatAway, floatHeart } from '../ui/effects.js';
+import { addCatElevator } from '../ui/catElevator.js';
 import {
     playCharacterSound, playCrunch, playDing, playFanfare, playNotes, playPlop, playSparkle, playWhisk
 } from '../audio/sfx.js';
@@ -53,7 +54,8 @@ const CAKEY_COLORS = {
 // Łakotek's kitchen in Gabi's house, everything to tap: the oven bakes cupcakes (tap the
 // tray to share them), every tap on the cake adds a cherry until there is a party, the cat
 // fridge opens and hands out a strawberry, the pink cupboard and the hood open up, and
-// the pans ring like bells. Nothing can go wrong; every tap ends in something sweet.
+// the pans ring like bells. Nothing can go wrong; every tap ends in something sweet. The
+// cat elevator on the right rides to the other rooms.
 export class GabiKitchenScene extends BaseScene {
     constructor() {
         super('GabiKitchenScene');
@@ -84,10 +86,10 @@ export class GabiKitchenScene extends BaseScene {
         this.createCupboard();
         this.createCake();
         this.createFridge();
-        this.createCakey(Math.round(width * 0.89));
+        this.createCakey(Math.round(width * 0.82));
 
         this.charGroundY = this.floorY + S(30);
-        const char = addCharacter(this, this.character, Math.round(width * 0.6), this.charGroundY, {
+        const char = addCharacter(this, this.character, Math.round(width * 0.58), this.charGroundY, {
             depth: 20,
             onTap: () => {
                 playCharacterSound(this, this.character.sound);
@@ -96,6 +98,7 @@ export class GabiKitchenScene extends BaseScene {
             }
         });
         this.char = char.container;
+        addCatElevator(this, width - S(30), this.floorY, { rider: this.char });
     }
 
     // --- Room -------------------------------------------------------------------
