@@ -55,14 +55,17 @@ export function S(n) {
 // window, so its buttons may sit outside the stage.
 export const STAGE = { width: 540, height: 405 };
 
-// Device pixels per game pixel, set by fitToWindow() in main.js: as large as the stage
-// allows. The canvas renders at the screen's native resolution and every scene camera
-// zooms by this, so pixel art stays blocky while text is rasterised at full resolution.
-// Importers see the current value (ES module live binding); only setRenderScale changes it.
+// Device pixels per game pixel, set by fitToWindow() in main.js: always a whole number, the
+// largest that fits (MAX_RENDER_SCALE) or smaller with the slider in Settings. The canvas
+// renders at the screen's native resolution and every scene camera zooms by this, so
+// pixel art stays blocky while text is rasterised at full resolution. Importers see the
+// current values (ES module live bindings); only setRenderScale changes them.
 export let RENDER_SCALE = 1;
+export let MAX_RENDER_SCALE = 1;
 
-export function setRenderScale(value) {
+export function setRenderScale(value, max = value) {
     RENDER_SCALE = value;
+    MAX_RENDER_SCALE = max;
 }
 
 // Parts of the window covered by the status bar or rounded corners (iPad started from the
@@ -70,18 +73,14 @@ export function setRenderScale(value) {
 // but OverlayScene keeps its buttons clear of these.
 export const SAFE_AREA = { top: 0, right: 0 };
 
-// The scale at which the stage fits a window of w x h CSS px at this device pixel ratio.
-// A whole number keeps every game pixel exactly the same size (and the iPad at exactly 4,
-// i.e. 2 CSS px). On a sharp screen (dpr >= 2, phones) where rounding down would shrink the
-// stage by more than 15%, the exact fit is used: pixels then differ by one device pixel,
-// which can't be seen at that density.
+// The largest whole number of device pixels per game pixel at which the stage fits a
+// window of w x h CSS px at this device pixel ratio. Game pixels are only ever multiplied
+// by whole numbers, so every one is exactly the same size (the iPad at exactly 4, i.e.
+// 2 CSS px); the rest of the window shows the backgrounds' bleed. At least 1, even when
+// the window is too small for the stage.
 export function fitScale(w, h, dpr) {
     const fit = Math.min((w * dpr) / STAGE.width, (h * dpr) / STAGE.height);
-    const whole = Math.floor(fit);
-    if (whole >= 1 && (dpr < 2 || (fit - whole) / fit < 0.15)) {
-        return whole;
-    }
-    return Math.max(fit, 0.25);
+    return Math.max(1, Math.floor(fit + 1e-6));
 }
 
 // Text styles used across scenes; pass the size through S().

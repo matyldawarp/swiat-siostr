@@ -1,8 +1,8 @@
-import { PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { MAX_RENDER_SCALE, PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
-import { PlayTime, STAGE_SCALE, Settings } from '../ui/settings.js';
+import { PlayTime, Settings } from '../ui/settings.js';
 import { floatZ } from '../ui/effects.js';
 import { getCharacter } from '../data/characters.js';
 import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
@@ -268,12 +268,16 @@ export class OverlayScene extends BaseScene {
         this.menuTimer = this.time.addEvent({ delay: 1000, loop: true, callback: () => this.refreshTimeLeft() });
     }
 
-    // "Wielkość gry" with its percentage, over a slider from STAGE_SCALE.min to max. The
-    // knob follows the finger; letting go anywhere applies the size (main.js fitToWindow,
-    // through a resize event), which rebuilds every scene and opens Settings again.
+    // "Wielkość gry: 3 z 4" over a slider of the whole numbers of screen pixels per game
+    // pixel, from 1 to the largest that fits (MAX_RENDER_SCALE): game pixels are never
+    // multiplied by a fraction. The knob jumps between them under the finger; letting go
+    // anywhere applies the size (main.js fitToWindow, through a resize event), which rebuilds
+    // every scene and opens Settings again. Stored as a percentage of the largest, so it
+    // means about the same in another window.
     addScaleSlider(left, top, w, labelH, sliderH) {
-        const { min, max, step } = STAGE_SCALE;
-        let value = Settings.get('stageScale');
+        const min = 1;
+        const max = MAX_RENDER_SCALE;
+        let value = RENDER_SCALE;
         const label = PixelUI.addText(this, left, top + labelH / 2, '',
             textStyle(S(11), { bold: true, color: TEXT_COLORS.button })).setOrigin(0, 0.5);
         const cy = top + labelH + sliderH / 2;
@@ -282,10 +286,15 @@ export class OverlayScene extends BaseScene {
         const trackW = w - knobR * 2;
         const g = this.add.graphics();
         const draw = () => {
-            label.setText(`Wielkość gry: ${value}%`);
+            label.setText(`Wielkość gry: ${value} z ${max}`);
             g.clear();
             PixelUI.drawBox(g, trackLeft - S(3), cy - S(4), trackW + S(6), S(8), 0xffffff, PALETTE.buttonBorder);
-            const x = Math.round(trackLeft + ((value - min) / (max - min)) * trackW);
+            // A notch for every size the knob can stop at.
+            g.fillStyle(PALETTE.buttonBorder, 1);
+            for (let k = min; k <= max && max > min; k++) {
+                g.fillRect(Math.round(trackLeft + ((k - min) / (max - min)) * trackW), cy + S(5), 1, S(3));
+            }
+            const x = max > min ? Math.round(trackLeft + ((value - min) / (max - min)) * trackW) : trackLeft + trackW;
             g.fillStyle(PALETTE.button, 1);
             g.fillRect(trackLeft, cy - S(2), x - trackLeft, S(4));
             g.fillStyle(PALETTE.buttonBorder, 1);
@@ -297,7 +306,7 @@ export class OverlayScene extends BaseScene {
         };
         const valueAt = (px) => {
             const f = Phaser.Math.Clamp((px - trackLeft) / trackW, 0, 1);
-            return Math.round((min + f * (max - min)) / step) * step;
+            return Math.round(min + f * (max - min));
         };
         draw();
 
@@ -314,8 +323,8 @@ export class OverlayScene extends BaseScene {
             this.sliding = false;
             this.input.off('pointermove', move);
             this.input.off('pointerupoutside', this.endSlide);
-            if (value !== Settings.get('stageScale')) {
-                Settings.set('stageScale', value);
+            if (value !== RENDER_SCALE) {
+                Settings.set('stageScale', (value / max) * 100);
                 reopenSettings = true;
                 window.dispatchEvent(new Event('resize'));
             }

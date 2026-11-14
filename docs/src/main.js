@@ -72,8 +72,10 @@ function fitToWindow(game) {
     const cssW = wholePixelSize(w, dpr);
     const cssH = wholePixelSize(h, dpr);
 
-    // The stage scale slider in Settings shrinks the whole game below the largest fit.
-    setRenderScale(fitScale(cssW, cssH, dpr) * (Settings.get('stageScale') / 100));
+    // The slider in Settings (a percentage of the largest fit) can make the game smaller,
+    // always by whole numbers.
+    const max = fitScale(cssW, cssH, dpr);
+    setRenderScale(Math.max(1, Math.round((max * Settings.get('stageScale')) / 100)), max);
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR. Phaser
     // would write that size as width times 1/dpr, which can come out a hair off a whole

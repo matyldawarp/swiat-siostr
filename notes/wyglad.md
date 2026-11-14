@@ -10,12 +10,12 @@
 ## Scena i skala
 
 - Gra ma zawsze poziomy kształt ekranu iPada dziewczynek: 1080×810 px CSS (4:3), zmierzone w trybie debug. Każda scena jest układana na stałej scenie 540×405 pikseli gry (`STAGE` w `docs/src/ui/pixel.js`).
-- Na tym iPadzie trzymanym poziomo, uruchomionym z ekranu początkowego, scena wypełnia ekran przy 2 px CSS na piksel gry. W Safari z paskami narzędzi jest trochę mniejsza.
+- Na tym iPadzie trzymanym poziomo, uruchomionym z ekranu początkowego, scena wypełnia ekran przy 2 px CSS (4 pikselach ekranu) na piksel gry. W Safari z paskami narzędzi jest mniejsza: 3 piksele ekranu na piksel gry, a wokół widać tło.
 - W trybie aplikacji gra rysuje się pod paskiem stanu (`black-translucent`, `viewport-fit=cover`), ale iOS zgłasza wysokość okna bez paska, więc `fitToWindow` dolicza ją z powrotem. Przyciski overlaya omijają pasek dzięki `SAFE_AREA`. Pod samym paskiem leży jednolity `#status-bar` (`style.css`), bo bez niego iPadOS 27 rozmywa tam górę gry.
 - Na innych ekranach, także w pionie, cała scena jest zmniejszana albo powiększana, żeby się zmieściła, i wyśrodkowana.
 - Tła scen (niebo, ściany, podłoga, trawa) rysujemy na `view.bleed`, czyli na całym oknie, a nie tylko na scenie. Dzięki temu wokół sceny widać dalszy ciąg tła zamiast pustych pasów, także w nowych scenach.
 - Tylko przyciski z `OverlayScene` (ustawienia, muzyka, przeładowanie) trzymają się rogów okna i mogą wystawać poza scenę.
-- Skalę liczy `fitScale` (wywoływana z `fitToWindow` w `docs/src/main.js`): całkowitą liczbę pikseli urządzenia na piksel gry, a na ostrych ekranach (dpr ≥ 2), gdzie zaokrąglenie zabrałoby ponad 15%, dokładne dopasowanie.
+- Skalę liczy `fitScale` (wywoływana z `fitToWindow` w `docs/src/main.js`): największą całkowitą liczbę pikseli urządzenia na piksel gry, przy której scena mieści się w oknie. Piksele gry mnożymy tylko przez liczby całkowite, także na ostrych ekranach i przy suwaku „Wielkość gry”. Resztę okna wypełnia tło (`view.bleed`). Pilnuje tego `ui/wholePixels.js`.
 
 ## Kamera i tekst
 
