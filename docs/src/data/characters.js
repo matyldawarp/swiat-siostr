@@ -253,6 +253,53 @@ CHARACTERS.push({
     }
 });
 
+// Gabi, a mermaid doll with cat ears and curly blue, turquoise and pink hair.
+CHARACTERS.push({
+    id: 'gabi',
+    name: 'Gabi',
+    species: '',
+    colors: { body: 0xeea2d4 },
+    palette: {
+        O: 0x6a5a8c, // outline
+        K: 0xf5b3dc, // cat ears and shoulder frills
+        H: 0x9db4f0, // blue hair
+        T: 0x92e2d8, // turquoise curls and heart necklace
+        S: 0xe0aa86, // skin
+        E: 0x4a3040, // eyes
+        W: 0xffffff,
+        P: 0xeea2d4, // pink mermaid tail
+        F: 0xcfc6f5 // lavender fin
+    },
+    pixels: [
+        '..OO........OO..',
+        '.OKKO......OKKO.',
+        '.OKKKOOOOOOKKKO.',
+        'OHHTTHHHHHTTHHHO',
+        'OHTHSSSSSSSSHTHO',
+        'OHHSWESSSSWESHHO',
+        'OTHSEESSSSEESHTO',
+        'OHTSSSSPPSSSSTHO',
+        'OHHHOSSSSSSOHHHO',
+        'OTHOSKKTTKKSOHTO',
+        '.OHTOPPPPPPOTHO.',
+        '..OOOPPPPPPOOO..',
+        '.....OPPPPO.....',
+        '......OPPO......',
+        '....OFFFFFFO....',
+        '...OOOOOOOOOO...'
+    ],
+    // A bubbly, splashy sing-song.
+    sound: {
+        wave: 'sine',
+        gap: 0.03,
+        chirps: [
+            { from: 800, to: 1200, duration: 0.08 },
+            { from: 1000, to: 1500, duration: 0.08 },
+            { from: 1300, to: 900, duration: 0.15 }
+        ]
+    }
+});
+
 // Every character has its own cake: sponge and icing colours and a topping on top.
 // Shown on the "bake a cake" button and baked in the kitchen.
 export const CHARACTER_CAKES = {
@@ -263,7 +310,8 @@ export const CHARACTER_CAKES = {
     postac3: { sponge: 0xd8b39c, icing: 0xf6d098, topping: 'heart' },
     postac4: { sponge: 0xf6d098, icing: 0xf7b2cc, topping: 'strawberry' },
     postac5: { sponge: 0xf6d098, icing: 0xcfe8ff, topping: 'candle' },
-    postac6: { sponge: 0xf6d098, icing: 0x8fdcea, topping: 'flower' }
+    postac6: { sponge: 0xf6d098, icing: 0x8fdcea, topping: 'flower' },
+    gabi: { sponge: 0xf6d098, icing: 0xf5b3dc, topping: 'star' }
 };
 const DEFAULT_CAKE = { sponge: 0xf6d098, icing: 0xf7b2cc, topping: 'strawberry' };
 
