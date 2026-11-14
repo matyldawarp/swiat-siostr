@@ -15,7 +15,7 @@
 - Na innych ekranach, także w pionie, cała scena jest zmniejszana albo powiększana, żeby się zmieściła, i wyśrodkowana.
 - Tła scen (niebo, ściany, podłoga, trawa) rysujemy na `view.bleed`, czyli na całym oknie, a nie tylko na scenie. Dzięki temu wokół sceny widać dalszy ciąg tła zamiast pustych pasów, także w nowych scenach.
 - Tylko przyciski z `OverlayScene` (ustawienia, muzyka, przeładowanie) trzymają się rogów okna i mogą wystawać poza scenę.
-- Skalę liczy `fitScale` (wywoływana z `fitToWindow` w `docs/src/main.js`): największą całkowitą liczbę pikseli urządzenia na piksel gry, przy której scena mieści się w oknie. Piksele gry mnożymy tylko przez liczby całkowite, także na ostrych ekranach i przy suwaku „Wielkość gry”. Resztę okna wypełnia tło (`view.bleed`). Pilnuje tego `ui/wholePixels.js`.
+- Skalę liczy `fitScale` (wywoływana z `fitToWindow` w `docs/src/main.js`): największą całkowitą liczbę pikseli urządzenia na piksel gry, przy której scena mieści się w oknie. Piksele scen gry mnożymy tylko przez liczby całkowite, także na ostrych ekranach i przy suwaku „Wielkość gry”. Resztę okna wypełnia tło (`view.bleed`). Pilnuje tego `ui/wholePixels.js`. Przyciski w rogach i Ustawienia (`OverlayScene`) mają osobną skalę `UI_RENDER_SCALE` (`uiFitScale`): nie zmienia jej suwak, a na ostrych ekranach może być ułamkowa, np. 3,65 na iPadzie w Safari.
 
 ## Kamera i tekst
 

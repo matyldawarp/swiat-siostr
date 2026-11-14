@@ -1,4 +1,4 @@
-import { MAX_RENDER_SCALE, PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { MAX_RENDER_SCALE, PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, UI_RENDER_SCALE, textStyle } from '../ui/pixel.js';
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
@@ -51,7 +51,7 @@ export class OverlayScene extends BaseScene {
         const size = S(22);
         const margin = S(6);
         // Below the iPad's status bar and clear of rounded corners (CSS px -> game px).
-        const toGame = (css) => Math.ceil((css * (window.devicePixelRatio || 1)) / RENDER_SCALE);
+        const toGame = (css) => Math.ceil((css * (window.devicePixelRatio || 1)) / UI_RENDER_SCALE);
         const top = margin + toGame(SAFE_AREA.top);
         const right = width - margin - toGame(SAFE_AREA.right);
         this.createReloadButton(right - size / 2, top + size / 2, size);
@@ -109,7 +109,8 @@ export class OverlayScene extends BaseScene {
             `okno ${window.innerWidth}x${window.innerHeight} CSS, dpr ${dpr}`,
             `gra ${Math.round(this.scale.width / dpr)}x${Math.round(this.scale.height / dpr)} CSS`,
             `ekran ${window.screen.width}x${window.screen.height}`,
-            `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`
+            `piksel gry ${(RENDER_SCALE / dpr).toFixed(2)} CSS, przycisków ${(UI_RENDER_SCALE / dpr).toFixed(2)} CSS`,
+            `safe top ${SAFE_AREA.top} right ${SAFE_AREA.right}`
         ];
         // A plain sans-serif font, large enough to read and copy off a photo.
         this.debugInfo = PixelUI.addText(this, S(6), this.view.height - S(6), lines.join('\n'), {

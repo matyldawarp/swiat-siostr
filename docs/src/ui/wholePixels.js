@@ -1,5 +1,5 @@
-// The canvas and the ikony 64 are never a fraction of a pixel in size, and game pixels are
-// only ever multiplied by whole numbers: a fraction makes the browser or the GPU smear or
+// The canvas and the ikony 64 are never a fraction of a pixel in size, and the pixels of
+// the game's scenes are only ever multiplied by whole numbers: a fraction makes the browser or the GPU smear or
 // unevenly size the pixels. Checked all the time while the game runs, after
 // every resize and every second. A problem is reported as an error (in the console, and in
 // the corner in debug mode, index.html), once per kind.
@@ -48,8 +48,9 @@ export function checkWholePixels(game) {
 
     game.scene.getScenes(true).forEach((scene) => {
         const zoom = scene.cameras.main.zoom;
-        // Game pixels are only ever multiplied by whole numbers (RENDER_SCALE).
-        if (!whole(zoom)) {
+        // The scenes' pixels are only ever multiplied by whole numbers (RENDER_SCALE); the
+        // overlay over the whole window (fillsWindow) has its own scale.
+        if (!scene.fillsWindow && !whole(zoom)) {
             problems.push(`scena ${scene.scene.key} jest powiększona ${zoom} razy`);
         }
         allObjects(scene.children.list).filter((o) => o.isIcon64 && o.visible).forEach((icon) => {

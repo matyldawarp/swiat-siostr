@@ -1,4 +1,4 @@
-import { SAFE_AREA, STAGE, fitScale, setRenderScale } from './ui/pixel.js';
+import { SAFE_AREA, STAGE, fitScale, setRenderScale, uiFitScale } from './ui/pixel.js';
 import { Music } from './audio/music.js';
 import { Settings } from './ui/settings.js';
 import { watchWholePixels } from './ui/wholePixels.js';
@@ -72,10 +72,10 @@ function fitToWindow(game) {
     const cssW = wholePixelSize(w, dpr);
     const cssH = wholePixelSize(h, dpr);
 
-    // The slider in Settings (a percentage of the largest fit) can make the game smaller,
-    // always by whole numbers.
+    // The slider in Settings (a percentage of the largest fit) can make the game's scenes
+    // smaller, always by whole numbers. The buttons and Settings over them don't change.
     const max = fitScale(cssW, cssH, dpr);
-    setRenderScale(Math.max(1, Math.round((max * Settings.get('stageScale')) / 100)), max);
+    setRenderScale(Math.max(1, Math.round((max * Settings.get('stageScale')) / 100)), max, uiFitScale(cssW, cssH, dpr));
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR. Phaser
     // would write that size as width times 1/dpr, which can come out a hair off a whole

@@ -55,17 +55,22 @@ export function S(n) {
 // window, so its buttons may sit outside the stage.
 export const STAGE = { width: 540, height: 405 };
 
-// Device pixels per game pixel, set by fitToWindow() in main.js: always a whole number, the
-// largest that fits (MAX_RENDER_SCALE) or smaller with the slider in Settings. The canvas
-// renders at the screen's native resolution and every scene camera zooms by this, so
-// pixel art stays blocky while text is rasterised at full resolution. Importers see the
-// current values (ES module live bindings); only setRenderScale changes them.
+// Device pixels per game pixel of the game's scenes (the stage), set by fitToWindow() in
+// main.js: always a whole number, the largest that fits (MAX_RENDER_SCALE) or smaller with
+// the slider in Settings. The canvas renders at the screen's native resolution and every
+// scene camera zooms by this, so pixel art stays blocky while text is rasterised at full
+// resolution. Importers see the current values (ES module live bindings); only
+// setRenderScale changes them.
 export let RENDER_SCALE = 1;
 export let MAX_RENDER_SCALE = 1;
+// The same for OverlayScene (buttons in the corners, Settings), which covers the whole
+// window: the fit before the slider, and not always a whole number (uiFitScale).
+export let UI_RENDER_SCALE = 1;
 
-export function setRenderScale(value, max = value) {
+export function setRenderScale(value, max, ui) {
     RENDER_SCALE = value;
     MAX_RENDER_SCALE = max;
+    UI_RENDER_SCALE = ui;
 }
 
 // Parts of the window covered by the status bar or rounded corners (iPad started from the
@@ -81,6 +86,19 @@ export const SAFE_AREA = { top: 0, right: 0 };
 export function fitScale(w, h, dpr) {
     const fit = Math.min((w * dpr) / STAGE.width, (h * dpr) / STAGE.height);
     return Math.max(1, Math.floor(fit + 1e-6));
+}
+
+// The scale for the buttons and Settings over the whole window (UI_RENDER_SCALE): a whole
+// number as well, except on a sharp screen (dpr >= 2, phones, the iPad in Safari) where
+// rounding down would shrink them by more than 15%; there the exact fit is used, as pixels
+// then differ by one device pixel, which can't be seen at that density.
+export function uiFitScale(w, h, dpr) {
+    const fit = Math.min((w * dpr) / STAGE.width, (h * dpr) / STAGE.height);
+    const whole = Math.floor(fit + 1e-6);
+    if (whole >= 1 && (dpr < 2 || (fit - whole) / fit < 0.15)) {
+        return whole;
+    }
+    return Math.max(fit, 0.25);
 }
 
 // Text styles used across scenes; pass the size through S().
@@ -104,10 +122,12 @@ export const PixelUI = {
         const camera = scene.cameras.main;
         camera.setSize(scene.scale.width, scene.scale.height);
         camera.setOrigin(0, 0);
-        camera.setZoom(RENDER_SCALE);
+        // The stage's scenes use the game's whole-number scale, the window-wide overlay its own.
+        const zoom = stage ? RENDER_SCALE : UI_RENDER_SCALE;
+        camera.setZoom(zoom);
 
-        const viewW = scene.scale.width / RENDER_SCALE;
-        const viewH = scene.scale.height / RENDER_SCALE;
+        const viewW = scene.scale.width / zoom;
+        const viewH = scene.scale.height / zoom;
         const full = { x: 0, y: 0, width: Math.ceil(viewW), height: Math.ceil(viewH) };
         if (!stage) {
             camera.setScroll(0, 0);
@@ -130,7 +150,8 @@ export const PixelUI = {
         if (style.fontFamily === FONT && style.fontSize) {
             sized.fontSize = `${Math.round(parseFloat(style.fontSize) * FONT_SCALE)}px`;
         }
-        return scene.add.text(x, y, text, { ...sized, resolution: RENDER_SCALE });
+        // Rasterised at the scene's own zoom, so one texture pixel is one device pixel.
+        return scene.add.text(x, y, text, { ...sized, resolution: scene.cameras.main.zoom });
     },
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
