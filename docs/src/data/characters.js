@@ -129,7 +129,8 @@ CHARACTERS.push({
     }
 });
 
-// Gabi, a mermaid doll with cat ears and curly blue, turquoise and pink hair.
+// Gabi, a mermaid doll with cat ears and curly blue, turquoise and pink hair, drawn after the
+// photo assets/scans/gabi-syrena.jpg (32x32 in postacie-male, enlarged with Scale2x/3x).
 CHARACTERS.push({
     id: 'gabi',
     name: 'Gabi',
