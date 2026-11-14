@@ -3,7 +3,9 @@
 // Serves the game in docs/ (the same files GitHub Pages publishes) without caching, on
 // all network interfaces so the game can be played from an iPad on the same Wi-Fi. With
 // --livereload it also injects a small EventSource client into index.html and tells every
-// connected browser to reload when a game file changes.
+// connected browser to reload when a game file changes. /version.json, which the Pages
+// workflow writes, comes from the checked-out commit in .git (read directly, git isn't
+// needed), so Settings show the version locally too.
 //
 // Usage: node tools/dev-server.mjs [port] [--livereload]
 
@@ -111,9 +113,36 @@ function watchForChanges() {
     });
 }
 
+// The checked-out commit's SHA from .git (HEAD, then its branch's ref file or packed-refs),
+// and when the ref last changed, as the "build" time.
+async function serveVersion(res) {
+    const gitDir = resolve(ROOT, '..', '.git');
+    try {
+        const head = (await readFile(join(gitDir, 'HEAD'), 'utf8')).trim();
+        let sha = head;
+        let date = (await stat(join(gitDir, 'HEAD'))).mtime;
+        if (head.startsWith('ref: ')) {
+            const ref = head.slice(5);
+            try {
+                sha = (await readFile(join(gitDir, ref), 'utf8')).trim();
+                date = (await stat(join(gitDir, ref))).mtime;
+            } catch {
+                const packed = await readFile(join(gitDir, 'packed-refs'), 'utf8');
+                sha = packed.split('\n').find((line) => line.endsWith(` ${ref}`)).split(' ')[0];
+            }
+        }
+        send(res, 200, JSON.stringify({ sha, date: date.toISOString(), local: true }), MIME_TYPES['.json']);
+    } catch {
+        send(res, 404, 'Not found');
+    }
+}
+
 const server = createServer((req, res) => {
-    if (LIVE_RELOAD && req.url.split('?')[0] === RELOAD_PATH) {
+    const path = req.url.split('?')[0];
+    if (LIVE_RELOAD && path === RELOAD_PATH) {
         streamReloads(req, res);
+    } else if (path === '/version.json') {
+        serveVersion(res);
     } else {
         serveFile(req, res);
     }

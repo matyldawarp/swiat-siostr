@@ -2,6 +2,7 @@ import { SAFE_AREA, STAGE, fitScale, setRenderScale, uiFitScale } from './ui/pix
 import { Music } from './audio/music.js';
 import { Settings } from './ui/settings.js';
 import { watchWholePixels } from './ui/wholePixels.js';
+import { loadVersion } from './ui/version.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
 import { TerrariumScene } from './scenes/TerrariumScene.js';
@@ -158,6 +159,8 @@ function startGame() {
         performance.setResourceTimingBufferSize(2000);
     }
     registerServiceWorker();
+    // The version shown in Settings: read now, so it's the one of the files just loaded.
+    loadVersion();
     keepScreenAwake();
     playFullscreen();
     Music.init();

@@ -1,3 +1,6 @@
+# Written by the Pages workflow on every build (docs/src/ui/version.js)
+docs/version.json
+
 # Logs
 logs
 *.log

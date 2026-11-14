@@ -3,6 +3,7 @@ import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
 import { PlayTime, Settings } from '../ui/settings.js';
+import { loadVersion, versionText } from '../ui/version.js';
 import { floatZ } from '../ui/effects.js';
 import { getCharacter } from '../data/characters.js';
 import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
@@ -194,7 +195,8 @@ export class OverlayScene extends BaseScene {
     // --- Settings -----------------------------------------------------------------
 
     // Settings for the grown-ups: checkbox rows, the stage scale slider, then the play time
-    // limit with a button per choice and how much time is left (the only place that shows it).
+    // limit with a button per choice and how much time is left (the only place that shows
+    // it), and the game's version at the bottom.
     openSettings() {
         const rowH = S(34);
         const pad = S(10);
@@ -204,7 +206,8 @@ export class OverlayScene extends BaseScene {
         const sliderH = S(28);
         const panelW = Math.min(this.view.width - S(24), S(300));
         const settings = [{ key: 'debug', label: 'Tryb debug' }];
-        const panelH = pad * 2 + titleH + settings.length * rowH + labelH + sliderH + labelH + chipH + S(6) + labelH;
+        const versionH = S(16);
+        const panelH = pad * 2 + titleH + settings.length * rowH + labelH + sliderH + labelH + chipH + S(6) + labelH + versionH;
         const { panelX, panelY } = this.openPanel(panelW, panelH);
         const w = panelW - pad * 2;
         let y = panelY + pad;
@@ -267,6 +270,17 @@ export class OverlayScene extends BaseScene {
         this.menu.add(this.timeLeftText);
         this.refreshTimeLeft();
         this.menuTimer = this.time.addEvent({ delay: 1000, loop: true, callback: () => this.refreshTimeLeft() });
+        y += labelH;
+
+        // The running version's commit and build time (ui/version.js), small at the bottom.
+        const versionLine = PixelUI.addText(this, panelX + panelW / 2, y + versionH / 2, '',
+            textStyle(S(8), { color: TEXT_COLORS.subtitle })).setOrigin(0.5);
+        this.menu.add(versionLine);
+        loadVersion().then((version) => {
+            if (versionLine.active) {
+                versionLine.setText(versionText(version));
+            }
+        });
     }
 
     // "Wielkość gry: 3 z 4" over a slider of the whole numbers of screen pixels per game
