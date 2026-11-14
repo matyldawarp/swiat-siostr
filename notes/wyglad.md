@@ -20,5 +20,5 @@
 ## Kamera i tekst
 
 - Canvas renderuje się w natywnej rozdzielczości urządzenia, a kamera każdej sceny ma zoom `RENDER_SCALE` i jest przesunięta tak, że scena stoi na środku okna. Ustawia ją `PixelUI.setupView(this)`, które wywołuje za scenę `BaseScene`.
-- Tekst tworzymy przez `PixelUI.addText` (styl z `textStyle()`), nigdy przez `this.add.text`, bo tylko tak czcionka jest ostra i czytelna.
+- Tekst tworzymy przez `PixelUI.addText` (styl z `textStyle()`), nigdy przez `this.add.text`, bo tylko tak czcionka jest ostra i czytelna. Na ekranach o zwykłej gęstości (dpr < 2, np. Windows ze skalowaniem 100%) wygładzone brzegi liter wyglądały na rozmyte. Tam każdy piksel tekstu jest więc albo pełny, albo przezroczysty (`hardenTextEdges`, próg `TEXT_EDGE_ALPHA`), jak w pixel arcie. Na iPadzie tekst zostaje gładki.
 - Układ scen liczymy względem `width`/`height` przekazanych do `build()` (także `this.view`): to zawsze `STAGE`, niezależnie od urządzenia.

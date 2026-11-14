@@ -101,6 +101,31 @@ export function uiFitScale(w, h, dpr) {
     return Math.max(fit, 0.25);
 }
 
+// Makes a Text object's glyphs crisp: whenever it is drawn, each pixel of its canvas becomes
+// fully opaque or fully clear. Phaser's Text.updateText draws, ends with context.restore(),
+// then sends the canvas to the GPU, so the pixels are changed right after that restore.
+function hardenTextEdges(text) {
+    const ctx = text.context;
+    const restore = ctx.restore.bind(ctx);
+    ctx.restore = () => {
+        restore();
+        const { width, height } = text.canvas;
+        if (!width || !height) {
+            return;
+        }
+        const image = ctx.getImageData(0, 0, width, height);
+        const data = image.data;
+        for (let i = 3; i < data.length; i += 4) {
+            data[i] = data[i] >= TEXT_EDGE_ALPHA ? 255 : 0;
+        }
+        ctx.putImageData(image, 0, 0);
+    };
+    text.updateText();
+}
+
+// Edge pixels at least this opaque (of 255) become solid; the rest clear.
+const TEXT_EDGE_ALPHA = 60;
+
 // Text styles used across scenes; pass the size through S().
 export function textStyle(size, { bold = false, color = TEXT_COLORS.title } = {}) {
     return {
@@ -144,14 +169,20 @@ export const PixelUI = {
     },
 
     // Text rasterised at device resolution so glyph edges stay sharp when zoomed. Text in
-    // FONT gets FONT_SCALE times its fontSize.
+    // FONT gets FONT_SCALE times its fontSize. On a screen of ordinary density (dpr < 2) the
+    // browser's smoothed glyph edges look blurry next to the pixel art, so there every edge
+    // pixel is made either solid or clear (hardenTextEdges).
     addText(scene, x, y, text, style) {
         const sized = { ...style };
         if (style.fontFamily === FONT && style.fontSize) {
             sized.fontSize = `${Math.round(parseFloat(style.fontSize) * FONT_SCALE)}px`;
         }
         // Rasterised at the scene's own zoom, so one texture pixel is one device pixel.
-        return scene.add.text(x, y, text, { ...sized, resolution: scene.cameras.main.zoom });
+        const object = scene.add.text(x, y, text, { ...sized, resolution: scene.cameras.main.zoom });
+        if ((window.devicePixelRatio || 1) < 2) {
+            hardenTextEdges(object);
+        }
+        return object;
     },
     // Filled circle made of 1px rows, so its edge stays on the pixel grid.
     fillCircle(g, cx, cy, r) {
