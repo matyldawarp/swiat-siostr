@@ -1,6 +1,7 @@
 import { SAFE_AREA, STAGE, fitScale, setRenderScale } from './ui/pixel.js';
 import { Music } from './audio/music.js';
 import { Settings } from './ui/settings.js';
+import { watchWholePixels } from './ui/wholePixels.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
 import { TerrariumScene } from './scenes/TerrariumScene.js';
@@ -65,12 +66,32 @@ function fitToWindow(game) {
     document.documentElement.style.height = `${h}px`;
     document.body.style.height = `${h}px`;
 
-    // The stage scale slider in Settings shrinks the whole game below the largest fit.
-    setRenderScale(fitScale(w, h, dpr) * (Settings.get('stageScale') / 100));
+    // The canvas is never a fraction of a pixel in size (checkWholePixels): its CSS size is
+    // the largest that is a whole number of device pixels too, which with Windows display
+    // scaling (dpr 1.25, 1.5) can leave a strip of a few pixels at the right and bottom.
+    const cssW = wholePixelSize(w, dpr);
+    const cssH = wholePixelSize(h, dpr);
 
-    // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
-    game.scale.resize(Math.round(w * dpr), Math.round(h * dpr));
+    // The stage scale slider in Settings shrinks the whole game below the largest fit.
+    setRenderScale(fitScale(cssW, cssH, dpr) * (Settings.get('stageScale') / 100));
+
+    // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR. Phaser
+    // would write that size as width times 1/dpr, which can come out a hair off a whole
+    // number, so the CSS size is set exactly afterwards.
+    game.scale.resize(Math.round(cssW * dpr), Math.round(cssH * dpr));
     game.scale.setZoom(1 / dpr);
+    game.canvas.style.width = `${cssW}px`;
+    game.canvas.style.height = `${cssH}px`;
+}
+
+// The largest size up to `css` CSS px that is also a whole number of device pixels.
+function wholePixelSize(css, dpr) {
+    for (let size = Math.floor(css); size > Math.floor(css) - 64 && size > 0; size--) {
+        if (Math.abs(size * dpr - Math.round(size * dpr)) < 1e-4) {
+            return size;
+        }
+    }
+    return Math.floor(css);
 }
 
 // The game is played by touch only, so the iPad would auto-lock mid-game. NoSleep uses the
@@ -168,7 +189,10 @@ function startGame() {
         game.registry.set('schoolLesson', route.details[0] || null);
     }
 
-    game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));
+    game.events.once(Phaser.Core.Events.READY, () => {
+        fitToWindow(game);
+        watchWholePixels(game);
+    });
 
     let resizeTimer;
     window.addEventListener('resize', () => {

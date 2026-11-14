@@ -68,13 +68,16 @@ export function addIcon64(scene, x, y, drawnSize, drawIcon) {
         texture.refresh();
     };
     paint(drawIcon);
-    // Shown with fewer screen pixels than the grid has, it is smoothed so thin lines
-    // don't drop out.
-    const shown = Math.round((drawnSize * ICON64_GRID) / ICON64_DRAW_SIZE);
-    if (shown * RENDER_SCALE < ICON64_GRID) {
+    // Never a fraction of a pixel in size (checkWholePixels): a whole, even number of device
+    // pixels, so its edges land on whole pixels around its centre too. Shown with fewer
+    // screen pixels than the grid has, it is smoothed so thin lines don't drop out.
+    const devicePixels = 2 * Math.round((drawnSize * ICON64_GRID * RENDER_SCALE) / ICON64_DRAW_SIZE / 2);
+    if (devicePixels < ICON64_GRID) {
         texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     }
+    const shown = devicePixels / RENDER_SCALE;
     const icon = scene.add.image(x, y, key).setDisplaySize(shown, shown);
+    icon.isIcon64 = true;
     icon.setIcon = paint;
     icon.once('destroy', () => scene.textures.remove(key));
     return icon;
