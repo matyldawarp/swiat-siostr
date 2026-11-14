@@ -387,7 +387,7 @@ export class TerrariumScene extends BaseScene {
                 if (chewing) {
                     playCrunch(this);
                 }
-                // The seed gets shorter as it is nibbled, a whole drawing pixel (SEED_SCALE)
+                // The seed gets shorter as it is nibbled, SEED_SCALE pixels at a time
                 // at a time, from the top: its picture is cut, never scaled.
                 const cut = Math.round((seed.height * bite) / bites / SEED_SCALE) * SEED_SCALE;
                 seed.setCrop(0, cut, seed.width, seed.height - cut);

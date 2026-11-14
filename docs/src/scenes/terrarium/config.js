@@ -8,7 +8,7 @@ export const P = 'terrarium/';
 // Whole-number sprite scale for the hamster inside the tank.
 export const HAMSTER_SCALE = CHARACTER_SCALE;
 export const MAX_SEEDS = 5;
-// The seed picture (drobne/ziarenko) is drawn 3 game pixels per pixel.
+// The seed (drobne/ziarenko) gets shorter by this many game pixels per bite step.
 export const SEED_SCALE = 3;
 // Droppings left on the bedding at once, at most; then the hamster waits for a clean-up.
 export const MAX_POOPS = 6;

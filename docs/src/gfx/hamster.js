@@ -8,12 +8,12 @@ export function spriteHalf(scale) {
     return (SPRITE_SIZE / 2) * scale;
 }
 
-// Sprite scale for characters standing in a room (terrarium, kitchen, hospital): how many
-// game pixels one pixel of the drawing takes.
+// Sprite scale for characters standing in a room (terrarium, kitchen, hospital): the
+// character is SPRITE_SIZE times this many game pixels across (64).
 export const CHARACTER_SCALE = 4;
 
 // Scene pictures are never scaled (the scene's pixel grid, notes/wyglad.md), so every size a
-// character is shown in has its own pictures, already enlarged.
+// character is shown in has its own pictures, drawn at that size in full detail.
 const CHARACTER_FOLDERS = { 1: 'postacie-mini', 2: 'postacie-male', 4: 'postacie', 6: 'postacie-duze' };
 
 // The textures `<key>`, `<key>-blink` and `<key>-chew` of a character at a sprite scale of
