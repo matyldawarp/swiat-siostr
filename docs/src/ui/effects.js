@@ -1,19 +1,18 @@
 // Small animations shared by the scenes: rewards floating away and walking bounces.
 
-import { PALETTE, PixelUI, S, textStyle } from './pixel.js';
-import { createHeartTexture } from '../gfx/hamster.js';
+import { PALETTE, PixelUI, S } from './pixel.js';
+import { addImage } from '../gfx/images.js';
 import { addIcon64 } from './icons64.js';
 
 // Round-cornered badge showing a personality's icon (data/personalities.js) as an ikona 64
-// (ui/icons64.js), centred on (x, y). Returns a container; redraw it for another
-// personality with setPersonality().
+// (ui/icons64.js), centred on (x, y). Returns a container; show another personality's
+// icon with setPersonality().
 export function addPersonalityBadge(scene, x, y, personality, size = S(22)) {
     const g = scene.add.graphics();
     PixelUI.drawBox(g, -size / 2, -size / 2, size, size, 0xffffff, PALETTE.buttonBorder);
-    const drawIcon = (p) => (ig, iconSize) => p.icon(ig, 0, 0, iconSize);
-    const icon = addIcon64(scene, 0, 0, size * 0.7, drawIcon(personality));
+    const icon = addIcon64(scene, 0, 0, size * 0.7, personality.icon);
     const badge = scene.add.container(x, y, [g, icon]);
-    badge.setPersonality = (p) => icon.setIcon(drawIcon(p));
+    badge.setPersonality = (p) => icon.setIcon(p.icon);
     return badge;
 }
 
@@ -34,8 +33,7 @@ export function floatAway(scene, target, { dx = 0, dy = 0, duration = 800, steps
 
 // A pixel heart rising from (x, y): the "that was nice" reward after a tap.
 export function floatHeart(scene, x, y, { depth = 20, delay = 0, rise = S(24), duration = 800 } = {}) {
-    createHeartTexture(scene);
-    const heart = scene.add.image(x, y, 'heart').setScale(3).setDepth(depth);
+    const heart = addImage(scene, x, y, 'drobne/serce').setScale(3).setDepth(depth);
     floatAway(scene, heart, { dy: -rise, duration, delay });
     return heart;
 }
@@ -43,9 +41,7 @@ export function floatHeart(scene, x, y, { depth = 20, delay = 0, rise = S(24), d
 // One sleepy "z" drifting up and to the right; pass a running count, every third is a capital Z.
 export function floatZ(scene, x, y, index, { depth = 16 } = {}) {
     const big = index % 3 === 2;
-    const z = PixelUI.addText(scene, x, y, big ? 'Z' : 'z', textStyle(big ? S(12) : S(9), { bold: true }))
-        .setOrigin(0.5)
-        .setDepth(depth);
+    const z = addImage(scene, x, y, big ? 'efekty/z-duze' : 'efekty/z-male').setDepth(depth);
     floatAway(scene, z, { dx: S(14), dy: -S(24), duration: 1800 });
     return z;
 }

@@ -1,9 +1,12 @@
 // The hamster sometimes catches a cold. It never gets worse: it just sneezes and shows a
 // thermometer bubble until the girls take it to the hospital.
 
-import { PALETTE, PixelUI, S } from './pixel.js';
-import { Icons } from '../gfx/icons.js';
+import { PixelUI, S } from './pixel.js';
+import { addImage } from '../gfx/images.js';
 import { playSneeze } from '../audio/sfx.js';
+
+// Pictures: docs/assets/gfx/choroba/. The bubble comes in two sizes.
+const BUBBLES = { [S(26)]: 'choroba/dymek', [S(20)]: 'choroba/dymek-maly' };
 
 export const ILLNESS = {
     // A fresh cold can't start this soon after being healed.
@@ -30,21 +33,10 @@ export const Illness = {
         return !Illness.isSick(scene) && Date.now() - lastHealed > ILLNESS.cooldownMs;
     },
 
-    // Speech bubble with a thermometer, bobbing gently. Position it each frame.
+    // Speech bubble with a thermometer and a tail pointing down-left towards the hamster,
+    // bobbing gently; `size` is S(26) or S(20). Position it each frame.
     createBubble(scene, size = S(26)) {
-        const g = scene.add.graphics();
-        const half = Math.round(size / 2);
-
-        PixelUI.drawBox(g, -half, -half, size, size, 0xffffff, PALETTE.outline);
-        // Tail pointing down-left towards the hamster.
-        for (let i = 0; i < S(5); i++) {
-            g.fillStyle(PALETTE.outline, 1);
-            g.fillRect(-half + S(3) - i, half - 1 + i, S(5) - i + 1, 1);
-            g.fillStyle(0xffffff, 1);
-            g.fillRect(-half + S(3) - i + 1, half - 1 + i, Math.max(0, S(5) - i - 1), 1);
-        }
-        Icons.thermometer(g, 0, 0, Math.round(size * 0.7), 0.85);
-
+        const g = addImage(scene, 0, 0, BUBBLES[size]);
         const bubble = scene.add.container(0, 0, [g]);
         scene.tweens.add({
             targets: g,
@@ -73,9 +65,7 @@ export const Illness = {
         playSneeze(scene);
 
         [-1, 0, 1].forEach((dir) => {
-            const puff = scene.add.graphics({ x: Math.round(mouth.x), y: Math.round(mouth.y) }).setDepth(20);
-            puff.fillStyle(0xffffff, 1);
-            PixelUI.fillCircle(puff, 0, 0, S(2));
+            const puff = addImage(scene, Math.round(mouth.x), Math.round(mouth.y), 'choroba/kichniecie').setDepth(20);
             scene.tweens.add({
                 targets: puff,
                 x: puff.x + dir * S(14),

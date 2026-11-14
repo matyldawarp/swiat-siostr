@@ -1,5 +1,4 @@
 import { PixelUI, RENDER_SCALE, S, SAFE_AREA } from '../ui/pixel.js';
-import { Icons } from '../gfx/icons.js';
 import { getCharacter } from '../data/characters.js';
 import { SCENE_PARENTS, SCENE_ROUTES, setRoute } from './routes.js';
 
@@ -84,7 +83,7 @@ export class BaseScene extends Phaser.Scene {
         const left = this.view.bleed.x + 1 + margin;
         const top = this.view.bleed.y + 1 + margin + toGame(SAFE_AREA.top);
         return PixelUI.createIconButton(this, left + size / 2, top + size / 2, size,
-            (g, iconSize) => Icons.back(g, 0, 0, iconSize), () => this.backPressed()).setDepth(1000);
+            'ikony64/wstecz', () => this.backPressed()).setDepth(1000);
     }
 
     // The character chosen on the character screen.

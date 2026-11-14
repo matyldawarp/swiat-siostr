@@ -6,7 +6,6 @@ export const CHARACTERS = [
         id: 'mordka',
         name: 'Mordka',
         species: 'chomik',
-        colors: { body: 0xf2b880, light: 0xfff1e0, pink: 0xf7a8b8 },
         // Two warm, lower squeaks.
         sound: {
             wave: 'sine',
@@ -21,7 +20,6 @@ export const CHARACTERS = [
         id: 'mysia',
         name: 'Mysia',
         species: 'chomik',
-        colors: { body: 0xc9c3d6, light: 0xfbf8ff, pink: 0xf7a8c4 },
         // Quick, high trill.
         sound: {
             wave: 'triangle',
@@ -36,31 +34,13 @@ export const CHARACTERS = [
 ];
 
 // Characters designed by the girls on paper (scanned in assets/scans/postacie-1-5.png),
-// redrawn as 16x16 masks: '#' body, 'E' pen detail, 'W' white, 'O' loose pen line.
+// redrawn as 16x16 pictures. Every character's picture is docs/assets/gfx/postacie/<id>.png;
+// the hamsters also have <id>-blink and <id>-chew.
 CHARACTERS.push(
     {
         id: 'postac1',
         name: 'Titi',
         species: '',
-        colors: { body: 0xd9ccf5 },
-        pixels: [
-            '........####....',
-            '.......######...',
-            '.......#######..',
-            '.......########.',
-            '........#######.',
-            '........#######.',
-            '........######..',
-            '...##########...',
-            '..###########...',
-            '.###########....',
-            '.###########....',
-            '.##########.....',
-            '.##########.....',
-            '..#########.....',
-            '..###.###.##....',
-            '...#...#..#.....'
-        ],
         // Low, round "boo-oop".
         sound: {
             wave: 'sine',
@@ -75,25 +55,6 @@ CHARACTERS.push(
         id: 'postac2',
         name: 'Lili',
         species: '',
-        colors: { body: 0xbfe8d6 },
-        pixels: [
-            '................',
-            '................',
-            '........#..##...',
-            '.......###.####.',
-            '......#########.',
-            '......##########',
-            '.##############.',
-            '##.####E###E###.',
-            '.######E###E###.',
-            '..####E##E##E##.',
-            '....###EEEEE###.',
-            '.....#########..',
-            '.....########...',
-            '.....########...',
-            '......##.###....',
-            '......#...#.....'
-        ],
         // Cheerful rising giggle.
         sound: {
             wave: 'triangle',
@@ -109,25 +70,6 @@ CHARACTERS.push(
         id: 'postac3',
         name: 'Harry',
         species: '',
-        colors: { body: 0xffd6b8 },
-        pixels: [
-            '................',
-            '................',
-            '..........##....',
-            '.........####...',
-            '....##########..',
-            '...###########..',
-            '..############..',
-            '..#####EEE####..',
-            '.#####EWWWE##E#.',
-            '.#####EWWWE#E#E.',
-            '.######EEE###E#.',
-            '.##############.',
-            '.##############.',
-            '.##############.',
-            '.##############.',
-            '.#.#.#.#.#.#.#..'
-        ],
         // Deep, wobbly rumble (soft, not scary).
         sound: {
             wave: 'triangle',
@@ -143,25 +85,6 @@ CHARACTERS.push(
         id: 'postac4',
         name: 'Harbin',
         species: '',
-        colors: { body: 0xfbd3e2 },
-        pixels: [
-            '...OOOOOOOOOO...',
-            '..O..........O..',
-            '.O...######...O.',
-            '.O..########..O.',
-            'O..###EE#EE##..O',
-            'O..###EE#EE##..O',
-            'O..#####E####..O',
-            'O..##EEEEE###..O',
-            'O...########...O',
-            'O..##########..O',
-            'O..##########..O',
-            'O..##########..O',
-            'O...########...O',
-            'O...###..###...O',
-            'O...###..###...O',
-            'O..............O'
-        ],
         // Bright little tune.
         sound: {
             wave: 'sine',
@@ -176,25 +99,6 @@ CHARACTERS.push(
         id: 'postac5',
         name: 'Karabilein',
         species: '',
-        colors: { body: 0xcfe8ff },
-        pixels: [
-            '................',
-            '................',
-            '................',
-            '.....###.###....',
-            '....#########...',
-            '...###########..',
-            '...###########..',
-            '...###########..',
-            '...##########...',
-            '...##########...',
-            '...#########....',
-            '...#########....',
-            '...#########....',
-            '...#########....',
-            '...###.###......',
-            '....#...#.......'
-        ],
         // Airy, floating "woo".
         sound: {
             wave: 'sine',
@@ -213,35 +117,6 @@ CHARACTERS.push({
     id: 'postac6',
     name: 'Leili',
     species: '',
-    colors: { body: 0x8fdcea },
-    palette: {
-        O: 0x4f74c8, // blue outline
-        T: 0x8fdcea, // turquoise fur
-        G: 0xc4ecc8, // light green fur
-        M: 0xd9a6d6, // inside of the ears
-        P: 0xf5bfd2, // pink lip
-        S: 0xf4aaae, // big pink mouth
-        E: 0x3d5cb0, // pupils and nose
-        W: 0xffffff
-    },
-    pixels: [
-        '................',
-        '..OO........OO..',
-        '.OMTO......OGMO.',
-        '.OMTTOOOOOOGTMO.',
-        '.OTTTGGTTGGGTTO.',
-        'OGGGGGGTTGGGTTTO',
-        'OGGWETTTTTTWETTO',
-        'OGGEETTTTTTEETTO',
-        'OGPPPPPPPPPPPPTO',
-        'OGGSSSSEESSSSTTO',
-        'OGSSSSSSSSSSSSTO',
-        'OTSSSSSSSSSSSSGO',
-        'OTTSSSSSSSSSSGGO',
-        '.OTTPSSSSSPPGGO.',
-        '..OOTGGGTTTTOO..',
-        '....OOOOOOOO....'
-    ],
     // A little "miau".
     sound: {
         wave: 'triangle',
@@ -258,36 +133,6 @@ CHARACTERS.push({
     id: 'gabi',
     name: 'Gabi',
     species: '',
-    colors: { body: 0xeea2d4 },
-    palette: {
-        O: 0x6a5a8c, // outline
-        K: 0xf5b3dc, // cat ears and shoulder frills
-        H: 0x9db4f0, // blue hair
-        T: 0x92e2d8, // turquoise curls and heart necklace
-        S: 0xe0aa86, // skin
-        E: 0x4a3040, // eyes
-        W: 0xffffff,
-        P: 0xeea2d4, // pink mermaid tail
-        F: 0xcfc6f5 // lavender fin
-    },
-    pixels: [
-        '..OO........OO..',
-        '.OKKO......OKKO.',
-        '.OKKKOOOOOOKKKO.',
-        'OHHTTHHHHHTTHHHO',
-        'OHTHSSSSSSSSHTHO',
-        'OHHSWESSSSWESHHO',
-        'OTHSEESSSSEESHTO',
-        'OHTSSSSPPSSSSTHO',
-        'OHHHOSSSSSSOHHHO',
-        'OTHOSKKTTKKSOHTO',
-        '.OHTOPPPPPPOTHO.',
-        '..OOOPPPPPPOOO..',
-        '.....OPPPPO.....',
-        '......OPPO......',
-        '....OFFFFFFO....',
-        '...OOOOOOOOOO...'
-    ],
     // A bubbly, splashy sing-song.
     sound: {
         wave: 'sine',
@@ -299,25 +144,6 @@ CHARACTERS.push({
         ]
     }
 });
-
-// Every character has its own cake: sponge and icing colours and a topping on top.
-// Shown on the "bake a cake" button and baked in the kitchen.
-export const CHARACTER_CAKES = {
-    mordka: { sponge: 0xf6d098, icing: 0xffd6b8, topping: 'seed' },
-    mysia: { sponge: 0xf6d098, icing: 0xd9ccf5, topping: 'blueberry' },
-    postac1: { sponge: 0xf6d098, icing: 0xc3b3ea, topping: 'star' },
-    postac2: { sponge: 0xf6d098, icing: 0xbfe8d6, topping: 'cherry' },
-    postac3: { sponge: 0xd8b39c, icing: 0xf6d098, topping: 'heart' },
-    postac4: { sponge: 0xf6d098, icing: 0xf7b2cc, topping: 'strawberry' },
-    postac5: { sponge: 0xf6d098, icing: 0xcfe8ff, topping: 'candle' },
-    postac6: { sponge: 0xf6d098, icing: 0x8fdcea, topping: 'flower' },
-    gabi: { sponge: 0xf6d098, icing: 0xf5b3dc, topping: 'star' }
-};
-const DEFAULT_CAKE = { sponge: 0xf6d098, icing: 0xf7b2cc, topping: 'strawberry' };
-
-export function getCake(character) {
-    return CHARACTER_CAKES[character.id] || DEFAULT_CAKE;
-}
 
 export function getCharacter(id) {
     return CHARACTERS.find((c) => c.id === id) || CHARACTERS[0];

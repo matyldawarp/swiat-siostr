@@ -3,8 +3,13 @@
 ## Pixel art
 
 - Grafika w stylu pixel art: niska rozdzielczość bazowa, `pixelArt: true` w konfiguracji gry, ostre krawędzie bez wygładzania i gradientów, czcionki pikselowe.
+- **Obrazki to pliki PNG** w `docs/assets/gfx/<folder>/<nazwa>.png`, jeden piksel PNG to jeden piksel gry. Można je edytować w dowolnym programie graficznym. Folder to zwykle ekran (`kuchnia-lakotka/`, `szpital/`), a do tego `postacie/`, `ikony64/`, `drobne/`. Klucz obrazka to jego ścieżka bez `.png`, np. `kuchnia-lakotka/lodowka`.
+  - `docs/assets/gfx/images.json` wymienia każdy obrazek z jego **kotwicą** (`anchor: [x, y]`): pikselem PNG, który gra stawia w podanym punkcie, np. środek podstawy tortu albo lewy górny róg szafki. Po zmianie rozmiaru płótna w programie graficznym trzeba poprawić kotwicę.
+  - W kodzie: `addImage(scene, x, y, klucz)`, zmiana stanu (otwarta lodówka, gorący piekarnik) przez `setImage(obrazek, klucz)`, a powtarzający się wzór na całe okno (tapeta, podłoga) przez `addPattern` (`docs/src/gfx/images.js`). Gra wczytuje wszystkie obrazki z listy przed startem.
+  - Nowy obrazek: plik PNG do folderu i wpis w `images.json`. `npm run check` sprawdza, że lista i pliki się zgadzają i że każdy klucz użyty w kodzie istnieje.
+  - W kodzie zostają tylko jednolite kolory tła na całe okno, gradient nieba, ramki przycisków i okien o zmiennym rozmiarze, jednokolorowe drobinki efektów, warstwy farby w kolorowankach i obraz malowany w pracowni.
 - Rozmiary interfejsu w scenach przechodzą przez `S()` (`UI_SCALE` w `docs/src/ui/pixel.js`), a sprite'y skalujemy całkowitymi krotnościami.
-- **Ikony 64** to wszystko, co ma stałą siatkę 64×64 pikseli (`docs/src/ui/icons64.js`: `ICON64_GRID`, `addIcon64`): ikony na przyciskach (`PixelUI.createIconButton`) i plakietki osobowości (`addPersonalityBadge`). Każda ikona 64 jest rysowana na takim płótnie i skalowana do swojego rozmiaru, więc wszystkie mają ten sam rozmiar piksela. Ciemne linie są pogrubiane do 3 pikseli siatki, a cienkie jasne linie w ikonach mają grubość `Icons.line(size)`. Nowa ikona 64 rysuje się tylko przez `fillStyle` i `fillRect`, w rozmiarze podanym do `drawIcon`.
+- **Ikony 64** to wszystko, co ma stałą siatkę 64×64 pikseli (`docs/src/ui/icons64.js`: `ICON64_GRID`, `addIcon64`): ikony na przyciskach (`PixelUI.createIconButton`) i plakietki osobowości (`addPersonalityBadge`). Każda ikona 64 to obrazek 64×64 w `docs/assets/gfx/ikony64/`, skalowany do swojego rozmiaru, więc wszystkie mają ten sam rozmiar piksela. Rysunek zajmuje środkowe 58×58 pikseli, a kontury mają grubość 3 pikseli siatki.
 - Jasna, pastelowa paleta: jasne tła, miękkie pastele (róż, lawenda, mięta, brzoskwinia, błękit), bez ciemnych, nocnych ani nasyconych barw. Tekst w ciemniejszym odcieniu z tej samej palety, a nie w czerni.
 
 ## Scena i skala

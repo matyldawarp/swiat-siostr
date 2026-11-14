@@ -1,25 +1,20 @@
-import { PALETTE, PixelUI, S } from '../ui/pixel.js';
+import { ICON_COLORS, PALETTE, PixelUI, S } from '../ui/pixel.js';
 import { CHARACTERS } from '../data/characters.js';
 import { CHARACTER_SCALE, addCharacter, createHamsterTextures, spriteHalf } from '../gfx/hamster.js';
-import { ICON_COLORS, Icons } from '../gfx/icons.js';
+import { addImage, addPattern, setImage } from '../gfx/images.js';
 import { Illness } from '../ui/illness.js';
 import { floatHeart, floatZ, walkBob } from '../ui/effects.js';
 import { playCharacterSound, playDing, playDoorbell, playFanfare, playLullaby, playPat } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
+// Pictures of this scene: docs/assets/gfx/szpital/.
+const P = 'szpital/';
 const HOSPITAL_COLORS = {
     wall: 0xe4f1ff,
-    wainscot: 0xf7d6e4,
-    tileA: 0xffffff,
-    tileB: 0xd4f2e4,
-    bedFrame: 0xd9ccf5,
-    bedFrameDark: 0xc3b3ea,
-    mattress: 0xffffff,
-    pillow: 0xfbd3e2,
-    blanket: 0xffe1c4,
-    blanketStripe: 0xf7b2cc,
-    windowFrame: 0xffffff
+    wainscot: 0xf7d6e4
 };
+// Steps of the thermometer's rising column (szpital/termometr-0 ... -6).
+const THERMOMETER_STEPS = 6;
 
 // Treatment steps, suggested in this order (the next one pulses) but any order works.
 const TREATMENTS = ['thermometer', 'syrup', 'plaster'];
@@ -53,11 +48,10 @@ export class HospitalScene extends BaseScene {
         this.createTools(width, height);
 
         // Bottom-right: rest in bed, and invite the other hamster.
-        PixelUI.createIconButton(this, width - S(26), height - S(26), S(36),
-            (g, size) => Icons.moon(g, 0, 0, size), () => this.toggleRest());
+        PixelUI.createIconButton(this, width - S(26), height - S(26), S(36), 'ikony64/ksiezyc', () => this.toggleRest());
         if (this.friend) {
             createHamsterTextures(this, this.friend);
-            const visit = PixelUI.createIconButton(this, width - S(26), height - S(70), S(36), () => {}, () => this.visit());
+            const visit = PixelUI.createIconButton(this, width - S(26), height - S(70), S(36), null, () => this.visit());
             visit.add(this.add.image(0, 0, this.friend.id).setScale(2));
         }
 
@@ -66,91 +60,35 @@ export class HospitalScene extends BaseScene {
 
     drawRoom(width, height, floorY) {
         const C = HOSPITAL_COLORS;
-        const g = this.add.graphics();
         // Wall and floor reach the edges of the whole window, beyond the stage.
         const b = this.view.bleed;
-        const bottom = b.y + b.height;
 
-        g.fillStyle(C.wall, 1);
-        g.fillRect(b.x, b.y, b.width, floorY - b.y);
-        g.fillStyle(C.wainscot, 1);
-        g.fillRect(b.x, floorY - S(10), b.width, S(10));
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(b.x, floorY, b.width, 1);
-
+        this.add.rectangle(b.x, b.y, b.width, floorY - b.y, C.wall).setOrigin(0);
+        this.add.rectangle(b.x, floorY - S(10), b.width, S(10), C.wainscot).setOrigin(0);
+        this.add.rectangle(b.x, floorY, b.width, 1, PALETTE.outline).setOrigin(0);
         // Checkered floor, lined up with the stage's left edge.
-        const tile = S(12);
-        const firstX = Math.floor(b.x / tile) * tile;
-        for (let y = floorY + 1; y < bottom; y += tile) {
-            for (let x = firstX; x < b.x + b.width; x += tile) {
-                const odd = Math.abs(Math.floor(x / tile) + Math.floor((y - floorY) / tile)) % 2;
-                g.fillStyle(odd ? C.tileB : C.tileA, 1);
-                g.fillRect(x, y, tile, tile);
-            }
-        }
+        addPattern(this, b.x, floorY + 1, b.width, b.y + b.height - floorY - 1, P + 'podloga');
 
         // Cross sign on the wall.
-        const sign = S(30);
-        const signX = Math.round(width * 0.16);
-        const signY = Math.round(floorY * 0.32);
-        PixelUI.drawBox(g, signX - sign / 2, signY - sign / 2, sign, sign, ICON_COLORS.cream, PALETTE.outline);
-        Icons.cross(g, signX, signY, Math.round(sign * 0.7));
+        addImage(this, Math.round(width * 0.16), Math.round(floorY * 0.32), P + 'znak');
 
-        // Window with sky and a cloud.
+        // Window with sky and a cloud, left of the door on the right wall.
         const winW = S(56);
         const winH = S(40);
-        // Left of the door on the right wall.
-        const winX = Math.round(width * 0.72 - winW / 2);
-        const winY = Math.round(floorY * 0.28 - winH / 2);
-        PixelUI.drawBox(g, winX, winY, winW, winH, PALETTE.sky[0], PALETTE.outline);
-        Icons.cloud(g, winX + Math.round(winW * 0.45), winY + Math.round(winH * 0.5), S(26), S(14));
-        g.fillStyle(C.windowFrame, 1);
-        g.fillRect(winX + Math.round(winW / 2) - 1, winY + 2, 2, winH - 4);
-        g.fillRect(winX + 2, winY + Math.round(winH / 2) - 1, winW - 4, 2);
+        addImage(this, Math.round(width * 0.72 - winW / 2), Math.round(floorY * 0.28 - winH / 2), P + 'okno');
     }
 
     createDoor(width, floorY) {
         this.door = { x: width - S(30), bottom: floorY, w: S(34), h: S(62) };
-        this.doorGraphics = this.add.graphics();
-        this.drawDoor(false);
+        this.doorImage = addImage(this, this.door.x, this.door.bottom, P + 'drzwi');
     }
 
+    // Open: the doorway to the corridor with the door swung against the wall.
     drawDoor(open) {
-        const g = this.doorGraphics;
-        const { x, bottom, w, h } = this.door;
-        const left = Math.round(x - w / 2);
-        const top = bottom - h;
-
-        g.clear();
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(left - 2, top - 2, w + 4, h + 2);
-
-        if (open) {
-            // Doorway with the corridor beyond.
-            g.fillStyle(ICON_COLORS.lavender, 1);
-            g.fillRect(left, top, w, h);
-            g.fillStyle(HOSPITAL_COLORS.tileB, 1);
-            g.fillRect(left, bottom - S(8), w, S(8));
-            // Door swung open against the wall.
-            g.fillStyle(PALETTE.outline, 1);
-            g.fillRect(left - S(8) - 1, top, S(8) + 1, h);
-            g.fillStyle(ICON_COLORS.pink, 1);
-            g.fillRect(left - S(8), top + 1, S(8) - 1, h - 2);
-            return;
-        }
-
-        g.fillStyle(ICON_COLORS.pink, 1);
-        g.fillRect(left, top, w, h);
-        g.fillStyle(ICON_COLORS.cream, 1);
-        g.fillRect(left + S(5), top + S(6), w - S(10), S(14));
-        g.fillStyle(ICON_COLORS.pinkDark, 1);
-        g.fillRect(left + S(5), top + S(26), w - S(10), S(28));
-        g.fillStyle(ICON_COLORS.goldDark, 1);
-        PixelUI.fillCircle(g, left + w - S(7), top + Math.round(h * 0.55), S(2));
+        setImage(this.doorImage, P + (open ? 'drzwi-otwarte' : 'drzwi'));
     }
 
     createBed(cx, floorY) {
-        const C = HOSPITAL_COLORS;
         const bedW = S(130);
         const left = Math.round(cx - bedW / 2);
         const legH = S(12);
@@ -161,20 +99,8 @@ export class HospitalScene extends BaseScene {
         const mattressTop = frameTop - mattressH;
         this.bed = { left, right: left + bedW, mattressTop, bottom };
 
-        const back = this.add.graphics();
-        // Headboard on the left.
-        PixelUI.drawBox(back, left - S(4), mattressTop - S(34), S(12), S(34) + frameH + mattressH + legH, C.bedFrame, PALETTE.outline);
-        // Legs, frame, mattress.
-        back.fillStyle(PALETTE.outline, 1);
-        back.fillRect(left + S(8), frameTop, S(5), legH + frameH);
-        back.fillRect(left + bedW - S(12), frameTop, S(5), legH + frameH);
-        back.fillStyle(C.bedFrameDark, 1);
-        back.fillRect(left + S(8) + 1, frameTop, S(5) - 2, legH + frameH - 1);
-        back.fillRect(left + bedW - S(12) + 1, frameTop, S(5) - 2, legH + frameH - 1);
-        PixelUI.drawBox(back, left, frameTop, bedW, frameH, C.bedFrame, PALETTE.outline);
-        PixelUI.drawBox(back, left + 2, mattressTop, bedW - 4, mattressH + 2, C.mattress, PALETTE.outline);
-        // Pillow.
-        PixelUI.drawBox(back, left + S(8), mattressTop - S(8), S(26), S(10), C.pillow, PALETTE.outline);
+        // Headboard on the left, legs, frame, mattress and pillow.
+        addImage(this, left, mattressTop, P + 'lozko');
 
         // Hamster sits on the mattress next to the pillow.
         const scale = CHARACTER_SCALE;
@@ -218,28 +144,22 @@ export class HospitalScene extends BaseScene {
         };
 
         // Blanket over the hamster's lower half.
-        const front = this.add.graphics();
-        const blanketLeft = hx - S(26);
-        const blanketTop = mattressTop - S(10);
-        const blanketW = left + bedW - 2 - blanketLeft;
-        PixelUI.drawBox(front, blanketLeft, blanketTop, blanketW, S(10) + mattressH, C.blanket, PALETTE.outline);
-        front.fillStyle(C.blanketStripe, 1);
-        front.fillRect(blanketLeft + 2, blanketTop + S(4), blanketW - 4, S(2));
+        addImage(this, hx - S(26), mattressTop - S(10), P + 'koldra');
     }
 
     createTools(width, height) {
         const size = S(40);
         const gap = S(56);
         const y = height - S(30);
-        const draws = {
-            thermometer: (g, s) => Icons.thermometer(g, 0, 0, s, 0.3),
-            syrup: (g, s) => Icons.spoon(g, 0, 0, s),
-            plaster: (g, s) => Icons.plaster(g, 0, 0, s)
+        const icons = {
+            thermometer: 'ikony64/termometr',
+            syrup: 'ikony64/lyzka',
+            plaster: 'ikony64/plaster'
         };
 
         TREATMENTS.forEach((key, i) => {
             const x = Math.round(width / 2 + (i - 1) * gap);
-            this.toolButtons[key] = PixelUI.createIconButton(this, x, y, size, draws[key], () => this.useTool(key));
+            this.toolButtons[key] = PixelUI.createIconButton(this, x, y, size, icons[key], () => this.useTool(key));
         });
     }
 
@@ -275,10 +195,9 @@ export class HospitalScene extends BaseScene {
         actions[key]();
     }
 
-    // Moves a fresh graphics object drawn by `draw` from the button to `to`, then calls onArrive.
-    flyTool(button, to, draw, onArrive) {
-        const tool = this.add.graphics({ x: button.x, y: button.y }).setDepth(20);
-        draw(tool);
+    // Moves the picture `key` from the button to `to`, then calls onArrive.
+    flyTool(button, to, key, onArrive) {
+        const tool = addImage(this, button.x, button.y, key).setDepth(20);
         this.tweens.add({
             targets: tool,
             x: Math.round(to.x),
@@ -290,20 +209,16 @@ export class HospitalScene extends BaseScene {
     }
 
     measureTemperature(button) {
-        const size = S(40);
         const to = { x: this.spots.armpit.x, y: this.spots.armpit.y };
-        this.flyTool(button, to, (g) => Icons.thermometer(g, 0, 0, size, 0.2), (tool) => {
-            const reading = { level: 0.2 };
+        this.flyTool(button, to, P + 'termometr-0', (tool) => {
+            const reading = { step: 0 };
             this.tweens.add({
                 targets: reading,
-                level: 0.75,
+                step: THERMOMETER_STEPS,
                 duration: 1400,
                 ease: 'Stepped',
-                easeParams: [6],
-                onUpdate: () => {
-                    tool.clear();
-                    Icons.thermometer(tool, 0, 0, size, reading.level);
-                },
+                easeParams: [THERMOMETER_STEPS],
+                onUpdate: () => setImage(tool, `${P}termometr-${Math.round(reading.step)}`),
                 onComplete: () => {
                     playDing(this);
                     this.time.delayedCall(400, () => {
@@ -319,7 +234,7 @@ export class HospitalScene extends BaseScene {
         const size = S(40);
         const bowlOffset = size / 2 - Math.round(size * 0.22) - 1;
         const to = { x: this.spots.mouth.x + bowlOffset, y: this.spots.mouth.y };
-        this.flyTool(button, to, (g) => Icons.spoon(g, 0, 0, size, true), (tool) => {
+        this.flyTool(button, to, P + 'lyzka-pelna', (tool) => {
             const id = this.character.id;
             let bite = 0;
             this.time.addEvent({
@@ -329,8 +244,7 @@ export class HospitalScene extends BaseScene {
                     bite++;
                     this.hamsterImage.setTexture(bite % 2 ? `${id}-chew` : id);
                     if (bite === 1) {
-                        tool.clear();
-                        Icons.spoon(tool, 0, 0, size, false);
+                        setImage(tool, P + 'lyzka-pusta');
                         playCharacterSound(this, this.character.sound);
                     }
                     if (bite === 6) {
@@ -351,8 +265,7 @@ export class HospitalScene extends BaseScene {
     }
 
     stickPlaster(button) {
-        const w = S(16);
-        this.flyTool(button, this.spots.cheek, (g) => Icons.plaster(g, 0, 0, w), (tool) => {
+        this.flyTool(button, this.spots.cheek, P + 'plaster', (tool) => {
             // Stays on the cheek: move it into the hamster so it follows its hops.
             tool.setPosition(tool.x - this.hamster.x, tool.y - this.hamster.y);
             this.hamster.add(tool);
@@ -371,9 +284,7 @@ export class HospitalScene extends BaseScene {
 
         // Small heart on the used tool marks it as done.
         const button = this.toolButtons[key];
-        const mark = this.add.graphics();
-        Icons.heart(mark, S(14), -S(14), S(12));
-        button.add(mark);
+        button.add(addImage(this, S(14), -S(14), 'ikony/serce-18'));
 
         this.updateHints();
         if (this.done.size === TREATMENTS.length) {
@@ -406,9 +317,7 @@ export class HospitalScene extends BaseScene {
             this.tweens.add({ targets: bubble, alpha: 0, duration: 300, onComplete: () => bubble.destroy() });
         }
 
-        const star = this.add.graphics({ x: cx, y: cy }).setDepth(30);
-        Icons.star(star, 0, 0, S(26));
-        star.setScale(0);
+        const star = addImage(this, cx, cy, P + 'naklejka').setDepth(30).setScale(0);
         this.tweens.add({ targets: star, scale: 1, duration: 500, ease: 'Back.easeOut' });
 
         const label = PixelUI.addTitle(this, cx, cy + S(36), 'Dzielny pacjent!', S(14)).setDepth(30).setAlpha(0);
@@ -513,8 +422,7 @@ export class HospitalScene extends BaseScene {
 
     // The visitor hands over a flower that stays on the blanket.
     giveGift() {
-        const gift = this.add.graphics({ x: this.visitor.x, y: this.visitor.y }).setDepth(13);
-        Icons.flower(gift, 0, 0, S(20));
+        const gift = addImage(this, this.visitor.x, this.visitor.y, P + 'kwiatek').setDepth(13);
         const to = { x: Math.round(this.hamster.x + S(34)), y: Math.round(this.bed.mattressTop - S(14)) };
 
         playCharacterSound(this, this.friend.sound);

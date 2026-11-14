@@ -1,6 +1,5 @@
 import { PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
 import { addCharacter, createSeedTexture, spriteHalf } from '../gfx/hamster.js';
-import { Icons } from '../gfx/icons.js';
 import { ILLNESS, Illness } from '../ui/illness.js';
 import { addPersonalityBadge, floatHeart, walkBob } from '../ui/effects.js';
 import { getPersonality } from '../data/personalities.js';
@@ -83,13 +82,12 @@ export class TerrariumScene extends BaseScene {
             textStyle(S(8), { color: TEXT_COLORS.hint })).setOrigin(0.5);
 
         // Map to travel to other places, e.g. the hospital; right of the back button.
-        this.mapButton = PixelUI.createIconButton(this, S(52), S(20), S(28), (g, size) => Icons.map(g, 0, 0, size), () => {
+        this.mapButton = PixelUI.createIconButton(this, S(52), S(20), S(28), 'ikony64/mapa', () => {
             this.registry.set('mapLocation', 'home');
             PixelUI.fadeTo(this, 'MapScene');
         });
-        // Kitchen: bake this character's own cake, which the button shows.
-        PixelUI.createIconButton(this, S(86), S(20), S(28),
-            (g, size) => Icons.characterCake(g, this.character, 0, Math.round(size * 0.3), Math.round(size * 0.8)),
+        // Kitchen: bake this character's own cake, which the button shows (ikony64/tort-<id>).
+        PixelUI.createIconButton(this, S(86), S(20), S(28), `ikony64/tort-${this.character.id}`,
             () => PixelUI.fadeTo(this, 'KitchenScene'));
 
         if (Illness.isSick(this)) {

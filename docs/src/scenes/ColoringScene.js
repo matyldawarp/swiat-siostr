@@ -1,16 +1,22 @@
-import { PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
-import { ICON_COLORS, Icons } from '../gfx/icons.js';
+import { ICON_COLORS, PALETTE, PixelUI, RENDER_SCALE, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { addImage, addPattern } from '../gfx/images.js';
 import { COLORING_GROUPS, COLORING_PAGES, coloringImage, getColoringGroup, getColoringPage, groupPages } from '../data/coloring.js';
 import { PAINTS, PaintLayer, areaAt, areaBox, coloringInfo, makeLineArt, paintColor, preparePrint, printBlankPage } from '../gfx/coloring.js';
 import { floatHeart } from '../ui/effects.js';
 import { playPat, playPlop, playSparkle, playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
+// Pictures of this scene: docs/assets/gfx/kolorowanki/.
+const P = 'kolorowanki/';
 const STUDIO_COLORS = {
-    wall: 0xf3ecfb,
-    wallStripe: 0xebe2f7,
     mat: 0xd9ccf5,
     panel: 0xfff7fb
+};
+// Paint blob pictures (P + 'farba-<name>') by paint id (PAINTS in gfx/coloring.js).
+const PAINT_NAMES = {
+    pink: 'rozowa', red: 'czerwona', orange: 'pomaranczowa', yellow: 'zolta', lime: 'limonkowa', green: 'zielona',
+    sky: 'blekitna', blue: 'niebieska', lavender: 'lawendowa', brown: 'brazowa', white: 'biala', rainbow: 'teczowa',
+    dots: 'w-kropki', sparkle: 'brokat'
 };
 
 // The open group and the page being colored, kept in the registry so a rebuild (resize)
@@ -84,13 +90,7 @@ export class ColoringScene extends BaseScene {
     // Soft striped wallpaper over the whole window (view.bleed).
     drawWall() {
         const b = this.view.bleed;
-        const g = this.add.graphics();
-        const stripe = S(12);
-        const firstX = Math.floor(b.x / stripe) * stripe;
-        for (let x = firstX; x < b.x + b.width; x += stripe) {
-            g.fillStyle(Math.abs(Math.floor(x / stripe)) % 2 ? STUDIO_COLORS.wallStripe : STUDIO_COLORS.wall, 1);
-            g.fillRect(x, b.y, stripe, b.height);
-        }
+        addPattern(this, b.x, b.y, b.width, b.height, P + 'tapeta');
     }
 
     // --- Shelves of groups and pages ---------------------------------------------------
@@ -245,13 +245,13 @@ export class ColoringScene extends BaseScene {
         // Tools on the left, level with the top of the panel; the printer at the bottom.
         const toolY = panelTop + S(6) + button / 2;
         this.toolButtons = [
-            this.createToolButton('fill', toolsX, toolY, button, Icons.bucket),
-            this.createToolButton('brush', toolsX, toolY + button + S(8), button, Icons.brush)
+            this.createToolButton('fill', toolsX, toolY, button, P + 'wiaderko'),
+            this.createToolButton('brush', toolsX, toolY + button + S(8), button, P + 'pedzel')
         ];
         this.refreshTools();
         preparePrint(this, pictureTexture(this.page), this.page.id);
         this.printButton = PixelUI.createIconButton(this, toolsX, height - S(6) - button / 2, button,
-            (gfx, size) => Icons.printer(gfx, 0, 0, size), () => this.print());
+            'ikony64/drukarka', () => this.print());
         this.printButton.baseY = this.printButton.y;
     }
 
@@ -375,10 +375,12 @@ export class ColoringScene extends BaseScene {
     // --- Tools --------------------------------------------------------------------------
 
     // A big square button showing the tool in the chosen paint; the tool in use is lit up
-    // and framed in white.
-    createToolButton(tool, x, y, size, drawIcon) {
+    // and framed in white. The tool's picture `icon` has its paint part in `icon`-farba,
+    // tinted with the paint.
+    createToolButton(tool, x, y, size, icon) {
         const g = this.add.graphics();
-        const button = this.add.container(x, y, [g]);
+        const paint = addImage(this, 0, 0, `${icon}-farba`);
+        const button = this.add.container(x, y, [g, addImage(this, 0, 0, icon), paint]);
         button.baseY = y;
         button.tool = tool;
         button.draw = (selected) => {
@@ -391,7 +393,7 @@ export class ColoringScene extends BaseScene {
             }
             PixelUI.drawBox(g, -size / 2, -size / 2, size, size, selected ? PALETTE.buttonHover : PALETTE.button,
                 PALETTE.buttonBorder, PALETTE.buttonLight);
-            drawIcon(g, 0, 0, Math.round(size * 0.7), paintColor(this.paint, 0, 0));
+            paint.setTint(paintColor(this.paint, 0, 0));
         };
         button.setSize(size, size);
         button.setInteractive({ useHandCursor: true });
@@ -421,43 +423,22 @@ export class ColoringScene extends BaseScene {
         const button = S(30);
         const topY = y + S(6) + button / 2;
         this.undoButton = PixelUI.createIconButton(this, x + w / 2, topY, button,
-            (gfx, size) => Icons.undo(gfx, 0, 0, size), () => this.undo());
+            'ikony64/cofnij', () => this.undo());
         this.undoButton.baseY = topY;
 
         const rows = Math.ceil(PAINTS.length / 2);
         const listTop = topY + button / 2 + S(8);
         const rowH = Math.min(S(30), Math.floor((y + h - S(6) - listTop) / rows));
+        // The blob pictures are drawn for this radius.
         const r = Math.min(S(12), Math.floor(rowH / 2) - 2);
         this.swatches = PAINTS.map((paint, i) => {
             const cx = Math.round(x + (i % 2 ? (w * 3) / 4 : w / 4));
             const cy = Math.round(listTop + Math.floor(i / 2) * rowH + rowH / 2);
-            const swatch = this.add.container(cx, cy);
+            // A white ring marks the paint in use.
+            const ring = addImage(this, 0, 0, P + 'farba-wybrana');
+            const swatch = this.add.container(cx, cy, [ring, addImage(this, 0, 0, `${P}farba-${PAINT_NAMES[paint.id]}`)]);
             swatch.baseY = cy;
-            const sg = this.add.graphics();
-            swatch.add(sg);
-            swatch.draw = (selected) => {
-                sg.clear();
-                // A white ring and a bigger blob mark the paint in use.
-                if (selected) {
-                    sg.fillStyle(PALETTE.buttonBorder, 1);
-                    PixelUI.fillCircle(sg, 0, 0, r + 4);
-                    sg.fillStyle(0xffffff, 1);
-                    PixelUI.fillCircle(sg, 0, 0, r + 3);
-                }
-                sg.fillStyle(PALETTE.outline, 1);
-                PixelUI.fillCircle(sg, 0, 0, r + 1);
-                // Paint pixel by pixel, so patterns show as they will on the page.
-                for (let dy = -r; dy <= r; dy++) {
-                    const dx = Math.round(Math.sqrt(r * r - dy * dy));
-                    for (let px = -dx; px <= dx; px++) {
-                        sg.fillStyle(paintColor(paint, px + 100, dy + 100), 1);
-                        sg.fillRect(px, dy, 1, 1);
-                    }
-                }
-                // Glossy highlight.
-                sg.fillStyle(0xffffff, 0.7);
-                sg.fillRect(-Math.round(r / 2), -Math.round(r / 2), 2, 2);
-            };
+            swatch.draw = (selected) => ring.setVisible(selected);
             swatch.setSize(r * 2 + 6, rowH);
             swatch.setInteractive({ useHandCursor: true });
             swatch.on('pointerup', () => this.choosePaint(paint));

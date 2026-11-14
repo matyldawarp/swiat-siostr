@@ -1,5 +1,12 @@
 import { PALETTE, PixelUI, S, TEXT_COLORS, textStyle } from '../ui/pixel.js';
+import { addImage, addPattern } from '../gfx/images.js';
 import { BaseScene } from './BaseScene.js';
+
+// Pictures of this scene: docs/assets/gfx/start/.
+const P = 'start/';
+const SPARKLES = [P + 'iskierka-biala', P + 'iskierka-rozowa', P + 'iskierka-zolta'];
+// Height of the hills strip (start/wzgorza), a third of the stage so it lines up with its pattern.
+const HILLS_H = 135;
 
 export class StartScene extends BaseScene {
     constructor() {
@@ -59,13 +66,8 @@ export class StartScene extends BaseScene {
     }
 
     drawSun(x, y) {
-        const glow = this.add.graphics({ x, y });
-        glow.fillStyle(PALETTE.sunGlow, 1);
-        PixelUI.fillCircle(glow, 0, 0, S(20));
-
-        const sun = this.add.graphics({ x, y });
-        sun.fillStyle(PALETTE.sun, 1);
-        PixelUI.fillCircle(sun, 0, 0, S(14));
+        const glow = addImage(this, x, y, P + 'slonce-blask');
+        addImage(this, x, y, P + 'slonce');
 
         this.tweens.add({
             targets: glow,
@@ -79,19 +81,6 @@ export class StartScene extends BaseScene {
     }
 
     drawClouds(width, height) {
-        if (!this.textures.exists('cloud')) {
-            const g = this.make.graphics({ x: 0, y: 0 }, false);
-            g.fillStyle(PALETTE.cloudShade, 1);
-            g.fillRect(S(2), S(10), S(44), S(6));
-            g.fillStyle(PALETTE.cloud, 1);
-            g.fillRect(S(4), S(8), S(40), S(6));
-            g.fillRect(S(8), S(4), S(14), S(6));
-            g.fillRect(S(20), 0, S(16), S(10));
-            g.fillRect(S(34), S(4), S(8), S(6));
-            g.generateTexture('cloud', S(48), S(16));
-            g.destroy();
-        }
-
         const clouds = [
             { x: Math.round(width * 0.13), y: S(22) },
             { x: Math.round(width * 0.5), y: S(14) },
@@ -99,7 +88,7 @@ export class StartScene extends BaseScene {
         ];
 
         clouds.forEach(({ x, y }, i) => {
-            const cloud = this.add.image(x, y, 'cloud');
+            const cloud = addImage(this, x, y, P + 'chmurka');
 
             this.tweens.add({
                 targets: cloud,
@@ -112,24 +101,13 @@ export class StartScene extends BaseScene {
         });
     }
 
-    // Hills along the bottom of the stage, continued across the whole window (bleed).
+    // Hills along the bottom of the stage, continued across the whole window (bleed): a
+    // repeating strip over the stage's last HILLS_H rows, plain front-hill green below it.
     drawHills(height, bleed) {
-        const back = this.add.graphics();
-        const front = this.add.graphics();
+        addPattern(this, bleed.x, height - HILLS_H, bleed.width, HILLS_H, P + 'wzgorza');
         const bottom = bleed.y + bleed.height;
-
-        for (let x = bleed.x; x < bleed.x + bleed.width; x++) {
-            const backTop = Math.round(height - S(46) + Math.sin(x / S(38)) * S(8) + Math.sin(x / S(13)) * S(2));
-            back.fillStyle(PALETTE.hillBack, 1);
-            back.fillRect(x, backTop, 1, bottom - backTop);
-            back.fillStyle(PALETTE.hillBackShade, 1);
-            back.fillRect(x, backTop + S(3), 1, 1);
-
-            const frontTop = Math.round(height - S(24) + Math.sin(x / S(55) + 1.5) * S(6));
-            front.fillStyle(PALETTE.hillFront, 1);
-            front.fillRect(x, frontTop, 1, bottom - frontTop);
-            front.fillStyle(PALETTE.hillFrontLight, 1);
-            front.fillRect(x, frontTop, 1, S(2));
+        if (bottom > height) {
+            this.add.rectangle(bleed.x, height, bleed.width, bottom - height, PALETTE.hillFront).setOrigin(0);
         }
     }
 
@@ -137,13 +115,9 @@ export class StartScene extends BaseScene {
         for (let i = 0; i < 30; i++) {
             const x = Phaser.Math.Between(4, width - 4);
             const y = Phaser.Math.Between(4, height - S(60));
-            const color = Phaser.Utils.Array.GetRandom(PALETTE.sparkles);
 
-            // Small plus-shaped sparkle.
-            const sparkle = this.add.graphics({ x, y });
-            sparkle.fillStyle(color, 1);
-            sparkle.fillRect(0, -1, 1, 3);
-            sparkle.fillRect(-1, 0, 3, 1);
+            // Small plus-shaped sparkle in a random colour.
+            const sparkle = addImage(this, x, y, Phaser.Utils.Array.GetRandom(SPARKLES));
 
             this.tweens.add({
                 targets: sparkle,

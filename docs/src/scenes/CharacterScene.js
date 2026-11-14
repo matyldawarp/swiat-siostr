@@ -3,16 +3,11 @@ import { CHARACTERS, CHARACTER_SLOTS, getCharacter } from '../data/characters.js
 import { createHamsterTextures } from '../gfx/hamster.js';
 import { getPersonality } from '../data/personalities.js';
 import { addPersonalityBadge } from '../ui/effects.js';
+import { addImage, setImage } from '../gfx/images.js';
 import { BaseScene } from './BaseScene.js';
 
-const SLOT_COLORS = {
-    fill: 0xfff7fb,
-    border: 0xd9b8d0,
-    selectedFill: 0xffe1ec,
-    selectedBorder: 0xf59bbd,
-    lockedFill: 0xf1ecf7,
-    lockedBorder: 0xd9ccf5
-};
+// Pictures of this scene: docs/assets/gfx/postacie-ekran/.
+const P = 'postacie-ekran/';
 
 export class CharacterScene extends BaseScene {
     constructor() {
@@ -60,19 +55,14 @@ export class CharacterScene extends BaseScene {
         this.input.keyboard.on('keydown-ENTER', () => this.confirm());
     }
 
+    // A slot's frame is a picture `size` (S(30)) square: pink when selected, lavender when locked.
     createSlot(x, y, size, character) {
-        const g = this.add.graphics();
+        const frame = addImage(this, x, y, character ? P + 'okienko' : P + 'okienko-zamkniete');
         const draw = (selected) => {
-            g.clear();
-            if (!character) {
-                PixelUI.drawBox(g, x, y, size, size, SLOT_COLORS.lockedFill, SLOT_COLORS.lockedBorder);
-            } else if (selected) {
-                PixelUI.drawBox(g, x, y, size, size, SLOT_COLORS.selectedFill, SLOT_COLORS.selectedBorder, 0xffffff);
-            } else {
-                PixelUI.drawBox(g, x, y, size, size, SLOT_COLORS.fill, SLOT_COLORS.border);
+            if (character) {
+                setImage(frame, selected ? P + 'okienko-wybrane' : P + 'okienko');
             }
         };
-        draw(false);
 
         const centerX = x + size / 2;
         const centerY = y + size / 2;

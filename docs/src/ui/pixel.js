@@ -24,6 +24,19 @@ export const PALETTE = {
     fade: [255, 244, 248]
 };
 
+// Pastel colours shared by panels, cards and tiles drawn in code.
+export const ICON_COLORS = {
+    mint: 0xbfe8d6,
+    peach: 0xffe1c4,
+    pink: 0xf7b2cc,
+    pinkDark: 0xf59bbd,
+    lavender: 0xd9ccf5,
+    lavenderDark: 0xc3b3ea,
+    sky: 0xcfe8ff,
+    white: 0xffffff,
+    cream: 0xfff7fb,
+    gold: 0xfff1c9
+};
 export const TEXT_COLORS = {
     title: '#8a5c9e',
     titleShadow: '#e3c2e6',
@@ -181,6 +194,20 @@ export const PixelUI = {
         }
     },
 
+    // Fills every pixel whose centre lies inside the polygon, so edges stay on the grid.
+    fillPolygon(g, points) {
+        const poly = new Phaser.Geom.Polygon(points);
+        const xs = points.map((p) => p.x);
+        const ys = points.map((p) => p.y);
+        for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) {
+            for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+                if (Phaser.Geom.Polygon.Contains(poly, x + 0.5, y + 0.5)) {
+                    g.fillRect(x, y, 1, 1);
+                }
+            }
+        }
+    },
+
     // Rectangle with a 1px cut on each corner, the pixel-art "rounded" box.
     drawBox(g, x, y, w, h, fill, border, light) {
         g.fillStyle(border, 1);
@@ -263,8 +290,8 @@ export const PixelUI = {
     },
 
     // Square button showing an ikona 64 (ui/icons64.js) instead of a word, for players who
-    // can't read yet. button.setIcon(drawIcon) repaints the icon.
-    createIconButton(scene, x, y, size, drawIcon, onClick) {
+    // can't read yet. `picture` is its PNG key (ikony64/...); button.setIcon(key) swaps it.
+    createIconButton(scene, x, y, size, picture, onClick) {
         const bg = scene.add.graphics();
         const draw = (fill) => {
             bg.clear();
@@ -273,7 +300,7 @@ export const PixelUI = {
         draw(PALETTE.button);
 
         // The icon's drawing fills 70% of the button, as before the grid.
-        const icon = addIcon64(scene, 0, 0, size * 0.7, drawIcon);
+        const icon = addIcon64(scene, 0, 0, size * 0.7, picture);
 
         const button = scene.add.container(x, y, [bg, icon]);
         button.setSize(size, size);

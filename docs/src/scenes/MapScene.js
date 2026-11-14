@@ -1,70 +1,65 @@
 import { PixelUI, S, textStyle } from '../ui/pixel.js';
 import { createHamsterTextures, startBlinking } from '../gfx/hamster.js';
-import { Icons } from '../gfx/icons.js';
+import { addImage, addPattern } from '../gfx/images.js';
 import { Illness } from '../ui/illness.js';
 import { playStep } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
-const MAP_COLORS = {
-    grass: 0xd4f2e4,
-    grassLight: 0xe2f7ec,
-    road: 0xf6e3c4,
-    roadEdge: 0xe8cc9e,
-    roadDots: 0xfff7e0,
-    flowers: [0xf7b2cc, 0xfff1c9, 0xd9ccf5, 0xffffff]
-};
+// Pictures of this scene: docs/assets/gfx/mapa/.
+const P = 'mapa/';
 
 // Places on the map. `at` is where the building stands, as fractions of the map; every
 // road starts at home and passes through `bends` on its way to the place. Going between
-// two places other than home walks past home. `trees` are offsets of trees around it.
+// two places other than home walks past home. `image` is the building, anchored on the
+// middle of its base; `trees` are offsets of trees around it.
 // To add a place: an entry here, its scene in main.js and in SCENE_PARENTS (routes.js),
-// and the scene's goBack setting registry 'mapLocation' to the key.
+// the scene's goBack setting registry 'mapLocation' to the key, and its road in mapa/drogi.
 const MAP_PLACES = {
     home: {
         scene: 'TerrariumScene',
         at: [0.16, 0.74],
-        draw: (g, x, y) => Icons.house(g, x, y - S(18), S(44)),
+        image: P + 'dom',
         trees: [[-40, -6], [38, -14]]
     },
     hospital: {
         scene: 'HospitalScene',
         at: [0.8, 0.36],
         bends: [[0.45, 0.8], [0.66, 0.62]],
-        draw: (g, x, y) => Icons.hospital(g, x, y, S(64), S(54)),
+        image: P + 'szpital',
         trees: [[48, -4], [-46, 2]]
     },
     bakery: {
         scene: 'BakeryScene',
         at: [0.84, 0.86],
         bends: [[0.4, 0.95], [0.64, 0.92]],
-        draw: (g, x, y) => Icons.bakery(g, x, y, S(60), S(50)),
+        image: P + 'cukiernia',
         trees: [[-48, 0]]
     },
     dentist: {
         scene: 'DentistScene',
         at: [0.3, 0.32],
         bends: [[0.1, 0.56], [0.2, 0.42]],
-        draw: (g, x, y) => Icons.dentist(g, x, y, S(56), S(52)),
+        image: P + 'dentysta',
         trees: [[44, -2]]
     },
     studio: {
         scene: 'ColoringScene',
         at: [0.56, 0.3],
         bends: [[0.3, 0.6], [0.45, 0.45]],
-        draw: (g, x, y) => Icons.studio(g, x, y, S(60), S(50)),
+        image: P + 'pracownia',
         trees: [[46, 0]]
     },
     school: {
         scene: 'SchoolScene',
         at: [0.1, 0.41],
         bends: [[0.06, 0.58]],
-        draw: (g, x, y) => Icons.school(g, x, y, S(52), S(48))
+        image: P + 'szkola'
     },
     gabi: {
         scene: 'GabiHouseScene',
         at: [0.88, 0.6],
         bends: [[0.45, 0.8], [0.68, 0.68]],
-        draw: (g, x, y) => Icons.gabiHouse(g, x, y, S(46), S(58))
+        image: P + 'domek-gabi'
     }
 };
 
@@ -105,13 +100,14 @@ export class MapScene extends BaseScene {
                 .map((p) => new Phaser.Math.Vector2(p.x, p.y)));
         });
 
-        this.drawGround(this.view.bleed);
-        const roadPoints = Object.values(this.roads).flatMap((road) => this.drawRoad(road));
+        // Grass over the whole window, then every road (one picture over the stage).
+        const b = this.view.bleed;
+        addPattern(this, b.x, b.y, b.width, b.height, P + 'trawa');
+        addImage(this, 0, 0, P + 'drogi');
+        // Points along the roads, for keeping the clouds off them.
+        const roadPoints = Object.values(this.roads).flatMap((road) => road.getSpacedPoints(Math.round(road.getLength() / 2)));
 
-        Object.entries(MAP_PLACES).forEach(([key, place]) => {
-            const { x, y } = positions[key];
-            this.createPlace(key, positions[key], (g) => place.draw(g, x, y));
-        });
+        Object.entries(MAP_PLACES).forEach(([key, place]) => this.createPlace(key, positions[key], place.image));
 
         this.drawTrees(positions, width, height);
         this.createClouds(width, height, Object.values(positions), roadPoints);
@@ -127,49 +123,11 @@ export class MapScene extends BaseScene {
         }
     }
 
-    // Grass over the whole window (`area` is view.bleed), with lighter patches and flowers.
-    drawGround({ x, y, width, height }) {
-        const g = this.add.graphics();
-        g.fillStyle(MAP_COLORS.grass, 1);
-        g.fillRect(x, y, width, height);
-
-        g.fillStyle(MAP_COLORS.grassLight, 1);
-        for (let i = 0; i < (width * height) / 9000; i++) {
-            PixelUI.fillCircle(g, Phaser.Math.Between(x, x + width), Phaser.Math.Between(y, y + height), Phaser.Math.Between(S(6), S(14)));
-        }
-        for (let i = 0; i < (width * height) / 1500; i++) {
-            g.fillStyle(Phaser.Utils.Array.GetRandom(MAP_COLORS.flowers), 1);
-            g.fillRect(Phaser.Math.Between(x, x + width), Phaser.Math.Between(y, y + height), 2, 2);
-        }
-    }
-
-    // Sandy road along a spline; returns its sample points for spacing other things.
-    drawRoad(road) {
-        const g = this.add.graphics();
-        const points = road.getSpacedPoints(Math.round(road.getLength() / 2));
-        const r = S(5);
-
-        g.fillStyle(MAP_COLORS.roadEdge, 1);
-        points.forEach((p) => PixelUI.fillCircle(g, Math.round(p.x), Math.round(p.y), r + 1));
-        g.fillStyle(MAP_COLORS.road, 1);
-        points.forEach((p) => PixelUI.fillCircle(g, Math.round(p.x), Math.round(p.y), r));
-        g.fillStyle(MAP_COLORS.roadDots, 1);
-        points.forEach((p, i) => {
-            if (i % 6 === 0) {
-                g.fillRect(Math.round(p.x) - 1, Math.round(p.y) - 1, 2, 2);
-            }
-        });
-        return points;
-    }
-
-    createPlace(key, pos, draw) {
+    createPlace(key, pos, image) {
         this.places = this.places || {};
 
-        // Drawn in a container around the place so it can pulse in place.
-        const container = this.add.container(pos.x, pos.y);
-        const g = this.add.graphics({ x: -pos.x, y: -pos.y });
-        draw(g);
-        container.add(g);
+        // In a container around the place so it can pulse in place.
+        const container = this.add.container(pos.x, pos.y, [addImage(this, 0, 0, image)]);
         this.places[key] = container;
 
         const zone = this.add.zone(pos.x, pos.y - S(22), S(70), S(64)).setInteractive({ useHandCursor: true });
@@ -177,12 +135,11 @@ export class MapScene extends BaseScene {
     }
 
     drawTrees(positions, width, height) {
-        const g = this.add.graphics();
         const spots = Object.entries(MAP_PLACES).flatMap(([key, place]) => (place.trees || [])
             .map(([dx, dy]) => ({ x: positions[key].x + S(dx), y: positions[key].y + S(dy) })));
         spots
             .filter((p) => p.x > S(12) && p.x < width - S(12) && p.y > S(30) && p.y < height - S(4))
-            .forEach((p) => Icons.tree(g, p.x, p.y, S(22)));
+            .forEach((p) => addImage(this, p.x, p.y, P + 'drzewko'));
         this.treeSpots = spots;
     }
 
@@ -217,13 +174,13 @@ export class MapScene extends BaseScene {
     }
 
     createCloud(x, y) {
+        // Tap area: the cloud picture's size before the outline.
         const w = S(44);
         const h = S(26);
-        const g = this.add.graphics();
-        Icons.cloud(g, 0, 0, w, h);
+        const picture = addImage(this, 0, 0, P + 'chmurka');
         const mark = PixelUI.addText(this, 0, S(1), '?', textStyle(S(14), { bold: true, color: '#b9a6dc' })).setOrigin(0.5);
 
-        const cloud = this.add.container(x, y, [g, mark]);
+        const cloud = this.add.container(x, y, [picture, mark]);
         cloud.setSize(w, h);
         cloud.setInteractive({ useHandCursor: true });
 

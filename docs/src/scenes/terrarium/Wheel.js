@@ -1,9 +1,10 @@
-import { PixelUI, S } from '../../ui/pixel.js';
+import { S } from '../../ui/pixel.js';
 import { spriteHalf } from '../../gfx/hamster.js';
+import { addImage, setImage } from '../../gfx/images.js';
 import { walkBob } from '../../ui/effects.js';
 import { playWheelTick } from '../../audio/sfx.js';
 import { Activity } from './Activity.js';
-import { HAMSTER_SCALE, TERRARIUM_COLORS } from './config.js';
+import { HAMSTER_SCALE, P } from './config.js';
 
 // Running wheel on the left: the hamster hops in and runs while the spokes spin.
 export class Wheel extends Activity {
@@ -17,36 +18,16 @@ export class Wheel extends Activity {
     }
 
     create() {
-        this.graphics = this.scene.add.graphics();
-        this.draw();
+        this.image = addImage(this.scene, this.x, this.y, P + 'kolo-0');
 
         // Tapping the wheel invites the hamster in; sits above the glass zone for input.
         const zone = this.scene.add.zone(this.x, this.y, this.r * 2, this.r * 2).setInteractive({ useHandCursor: true });
         zone.on('pointerdown', () => this.scene.startActivity(this));
     }
 
+    // The four spokes repeat every 90 degrees: pictures kolo-0 to kolo-75 in steps of 15.
     draw() {
-        const C = TERRARIUM_COLORS;
-        const g = this.graphics;
-        const { x, y, r } = this;
-        const rim = S(3);
-
-        g.clear();
-        g.fillStyle(C.wheel, 1);
-        PixelUI.fillCircle(g, x, y, r);
-        g.fillStyle(C.glass, 1);
-        PixelUI.fillCircle(g, x, y, r - rim);
-
-        // Four spokes; redrawn at a new angle on every spin step.
-        g.fillStyle(C.wheel, 1);
-        for (let k = 0; k < 4; k++) {
-            const a = Phaser.Math.DegToRad(this.angle + k * 90);
-            for (let t = 0; t < r - rim; t++) {
-                g.fillRect(Math.round(x + Math.cos(a) * t), Math.round(y + Math.sin(a) * t), 2, 2);
-            }
-        }
-        g.fillStyle(C.wheelStand, 1);
-        PixelUI.fillCircle(g, x, y, S(3));
+        setImage(this.image, `${P}kolo-${this.angle % 90}`);
     }
 
     approachX() {

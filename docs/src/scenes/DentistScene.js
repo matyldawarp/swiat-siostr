@@ -1,32 +1,24 @@
 import { PALETTE, PixelUI, S } from '../ui/pixel.js';
 import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
-import { ICON_COLORS, Icons } from '../gfx/icons.js';
+import { addImage, addPattern } from '../gfx/images.js';
 import { floatAway, floatHeart } from '../ui/effects.js';
 import { Sweets } from '../ui/sweets.js';
 import { playBubble, playCharacterSound, playDing, playFanfare, playSparkle, playWhisk } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
+// Pictures of this scene: docs/assets/gfx/dentysta/.
+const P = 'dentysta/';
 const DENTIST_COLORS = {
     wall: 0xe8f4ff,
     wainscot: 0xd4f2e4,
-    tileA: 0xffffff,
-    tileB: 0xe4f1ff,
-    chair: 0xf7b2cc,
-    chairDark: 0xeea0bd,
     chairBase: 0xd9ccf5,
-    lamp: 0xfff1c9,
-    lips: 0xf28aa5,
-    mouth: 0xf0a0b4,
-    gums: 0xf7b2cc,
-    foam: 0xffffff,
-    foamShade: 0xe4f1ff,
     water: 0x9fd0f5
 };
 
-// Leftover sweets on the teeth: soft pastel crumbs, nothing scary.
-const CRUMB_COLORS = [0xd8b39c, 0xf59bbd, 0xc9a07a, 0xc3b3ea, 0xf6d98b];
-// Sparkles when a crumb comes off: visible on white teeth.
-const SPARKLE_COLORS = [0xf6d98b, 0xf59bbd, 0xc3b3ea, 0x9fd6b8];
+// Leftover sweets on the teeth: soft pastel crumbs, nothing scary (dentysta/okruszek-1 ... -5).
+const CRUMB_PICTURES = 5;
+// Sparkles when a crumb comes off: visible on white teeth (dentysta/iskierka-1 ... -4).
+const SPARKLE_PICTURES = 4;
 // Brush strokes over a crumb before it comes off.
 const STROKES_TO_CLEAN = 4;
 
@@ -67,62 +59,31 @@ export class DentistScene extends BaseScene {
     drawRoom(width) {
         const C = DENTIST_COLORS;
         const b = this.view.bleed;
-        const g = this.add.graphics();
         const floorY = this.floorY;
 
-        g.fillStyle(C.wall, 1);
-        g.fillRect(b.x, b.y, b.width, floorY - b.y);
-        g.fillStyle(C.wainscot, 1);
-        g.fillRect(b.x, floorY - S(10), b.width, S(10));
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(b.x, floorY, b.width, 1);
-
-        const tile = S(12);
-        const firstX = Math.floor(b.x / tile) * tile;
-        for (let y = floorY + 1; y < b.y + b.height; y += tile) {
-            for (let x = firstX; x < b.x + b.width; x += tile) {
-                const odd = Math.abs(Math.floor(x / tile) + Math.floor((y - floorY) / tile)) % 2;
-                g.fillStyle(odd ? C.tileB : C.tileA, 1);
-                g.fillRect(x, y, tile, tile);
-            }
-        }
+        this.add.rectangle(b.x, b.y, b.width, floorY - b.y, C.wall).setOrigin(0);
+        this.add.rectangle(b.x, floorY - S(10), b.width, S(10), C.wainscot).setOrigin(0);
+        this.add.rectangle(b.x, floorY, b.width, 1, PALETTE.outline).setOrigin(0);
+        addPattern(this, b.x, floorY + 1, b.width, b.y + b.height - floorY - 1, P + 'podloga');
 
         // Tooth poster on the wall.
-        const px = Math.round(width * 0.9);
-        const py = Math.round(floorY * 0.62);
-        PixelUI.drawBox(g, px - S(18), py - S(22), S(36), S(44), ICON_COLORS.cream, PALETTE.outline);
-        Icons.tooth(g, px, py - S(2), S(26));
-        Icons.heart(g, px + S(8), py + S(12), S(8));
+        addImage(this, Math.round(width * 0.9), Math.round(floorY * 0.62), P + 'plakat');
     }
 
     // Reclining pastel chair with the character sitting in it, and a lamp above.
     createChair(cx) {
-        const C = DENTIST_COLORS;
-        const g = this.add.graphics();
         const floorY = this.floorY;
         const seatTop = floorY - S(34);
 
         // Lamp on an arm from the ceiling.
         const lampX = cx + S(30);
         const lampY = S(46);
-        g.fillStyle(C.chairBase, 1);
-        g.fillRect(lampX - 1, this.view.bleed.y, 3, lampY - this.view.bleed.y);
-        g.fillStyle(PALETTE.outline, 1);
-        PixelUI.fillCircle(g, lampX, lampY, S(11) + 1);
-        g.fillStyle(C.lamp, 1);
-        PixelUI.fillCircle(g, lampX, lampY, S(11));
-        g.fillStyle(ICON_COLORS.white, 1);
-        PixelUI.fillCircle(g, lampX - S(3), lampY - S(3), S(3));
+        const top = this.view.bleed.y;
+        this.add.rectangle(lampX - 1, top, 3, lampY - top, DENTIST_COLORS.chairBase).setOrigin(0);
+        addImage(this, lampX, lampY, P + 'lampa');
 
-        // Base and seat.
-        PixelUI.drawBox(g, cx - S(18), floorY - S(12), S(36), S(12), C.chairBase, PALETTE.outline);
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(cx - S(4), seatTop + S(8), S(8), floorY - S(12) - seatTop - S(8));
-        PixelUI.drawBox(g, cx - S(34), seatTop, S(76), S(12), C.chair, PALETTE.outline);
-        // Backrest leaning back on the left.
-        PixelUI.drawBox(g, cx - S(40), seatTop - S(40), S(14), S(48), C.chair, PALETTE.outline);
-        g.fillStyle(C.chairDark, 1);
-        g.fillRect(cx - S(32), seatTop + S(8), S(70), S(2));
+        // Base, seat and the backrest leaning back on the left.
+        addImage(this, cx, floorY, P + 'fotel');
 
         // Sits on the seat.
         this.charGroundY = seatTop + S(4) - spriteHalf(CHARACTER_SCALE);
@@ -143,53 +104,31 @@ export class DentistScene extends BaseScene {
     // A speech-bubble-like panel with the character's open mouth: lips, gums and two
     // rows of teeth. Hidden until the mirror (or the toothbrush) opens it.
     createMouthPanel(cx, cy) {
-        const C = DENTIST_COLORS;
         const w = S(170);
         const h = S(104);
         this.panelRect = { x: cx - w / 2, y: cy - h / 2, w, h };
 
-        const g = this.add.graphics();
-        PixelUI.drawBox(g, -w / 2, -h / 2, w, h, ICON_COLORS.white, PALETTE.outline);
-        // Tail towards the character's face, bottom left.
-        for (let i = 0; i < S(10); i++) {
-            g.fillStyle(PALETTE.outline, 1);
-            g.fillRect(-w / 2 - i - 1, h / 4 + i, i + 3, 1);
-            g.fillStyle(ICON_COLORS.white, 1);
-            g.fillRect(-w / 2 - i + 1, h / 4 + i, Math.max(0, i), 1);
-        }
+        // The picture has the tail towards the character's face, bottom left.
+        const picture = addImage(this, 0, 0, P + 'buzia');
 
-        // Lips around the open mouth.
-        const lipW = Math.round(w * 0.86);
+        // Middles of the teeth in the picture, where crumbs land: six on the top gum,
+        // six on the bottom one.
         const lipH = Math.round(h * 0.78);
-        g.fillStyle(PALETTE.outline, 1);
-        Icons.fillEllipse(g, 0, 0, Math.round(lipW / 2) + 1, Math.round(lipH / 2) + 1);
-        g.fillStyle(C.lips, 1);
-        Icons.fillEllipse(g, 0, 0, Math.round(lipW / 2), Math.round(lipH / 2));
-        g.fillStyle(C.mouth, 1);
-        Icons.fillEllipse(g, 0, 0, Math.round(lipW / 2) - S(6), Math.round(lipH / 2) - S(6));
-
-        // Gums along the top and bottom, then the teeth on them.
         const teeth = 6;
         const tw = S(20);
         const rowLeft = -Math.round((teeth * tw) / 2);
         const gumTop = -Math.round(lipH / 2) + S(7);
         const gumBottom = Math.round(lipH / 2) - S(7);
-        g.fillStyle(C.gums, 1);
-        g.fillRect(rowLeft - S(4), gumTop, teeth * tw + S(8), S(5));
-        g.fillRect(rowLeft - S(4), gumBottom - S(5), teeth * tw + S(8), S(5));
-
         this.teeth = [];
         const topH = S(22);
         const bottomH = S(18);
         for (let i = 0; i < teeth; i++) {
             const x = rowLeft + i * tw;
-            this.drawTooth(g, x, gumTop + S(3), tw, topH, false);
             this.teeth.push({ x: x + tw / 2, y: gumTop + S(3) + topH / 2 });
-            this.drawTooth(g, x, gumBottom - S(3) - bottomH, tw, bottomH, true);
             this.teeth.push({ x: x + tw / 2, y: gumBottom - S(3) - bottomH / 2 });
         }
 
-        this.panel = this.add.container(cx, cy, [g]).setDepth(10).setScale(0).setVisible(false);
+        this.panel = this.add.container(cx, cy, [picture]).setDepth(10).setScale(0).setVisible(false);
 
         // Brushing: the brush follows the finger over the panel and scrubs what it touches.
         const zone = this.add.zone(cx, cy, w, h).setInteractive().setDepth(11);
@@ -202,21 +141,6 @@ export class DentistScene extends BaseScene {
         zone.on('pointerup', () => this.moveBrush(null));
         zone.on('pointerout', () => this.moveBrush(null));
         this.panelZone = zone;
-    }
-
-    // One tooth with a rounded biting edge and a glint.
-    drawTooth(g, x, y, w, h, bottomRow) {
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(x, y, w, h);
-        g.fillStyle(ICON_COLORS.white, 1);
-        g.fillRect(x + 1, y + 1, w - 2, h - 2);
-        // Rounded corners on the biting edge.
-        g.fillStyle(DENTIST_COLORS.mouth, 1);
-        const edgeY = bottomRow ? y : y + h - 1;
-        g.fillRect(x, edgeY, 1, 1);
-        g.fillRect(x + w - 1, edgeY, 1, 1);
-        g.fillStyle(ICON_COLORS.sky, 1);
-        g.fillRect(x + w - S(5), y + S(3), 2, Math.max(2, Math.round(h / 3)));
     }
 
     // Opens the close-up with an "aaa" and puts leftover sweets on some teeth.
@@ -246,16 +170,8 @@ export class DentistScene extends BaseScene {
 
     // A little cluster of sweet crumbs on a tooth.
     addCrumb(tooth) {
-        const g = this.add.graphics();
-        const color = Phaser.Utils.Array.GetRandom(CRUMB_COLORS);
-        const bits = [[0, 0, S(4)], [-S(4), S(3), S(3)], [S(4), -S(2), S(3)], [S(2), S(4), S(2)]];
-        g.fillStyle(PALETTE.outline, 1);
-        bits.forEach(([dx, dy, r]) => PixelUI.fillCircle(g, dx, dy, r + 1));
-        g.fillStyle(color, 1);
-        bits.forEach(([dx, dy, r]) => PixelUI.fillCircle(g, dx, dy, r));
-        g.fillStyle(0xffffff, 1);
-        g.fillRect(-S(2), -S(2), 2, 2);
-        g.setPosition(tooth.x + Phaser.Math.Between(-S(2), S(2)), tooth.y + Phaser.Math.Between(-S(2), S(2)));
+        const key = `${P}okruszek-${Phaser.Math.Between(1, CRUMB_PICTURES)}`;
+        const g = addImage(this, tooth.x + Phaser.Math.Between(-S(2), S(2)), tooth.y + Phaser.Math.Between(-S(2), S(2)), key);
         this.panel.add(g);
         this.crumbs.push({ g, strokes: 0, cleaned: false });
     }
@@ -274,8 +190,7 @@ export class DentistScene extends BaseScene {
             this.updateHint();
         });
         if (!this.brush) {
-            this.brush = this.add.graphics().setDepth(40);
-            Icons.toothbrush(this.brush, 0, 0, S(44));
+            this.brush = addImage(this, 0, 0, P + 'szczoteczka').setDepth(40);
         }
         // Waits on the panel's edge until a finger picks it up.
         this.moveBrush(null);
@@ -337,12 +252,8 @@ export class DentistScene extends BaseScene {
         if (this.foam.length > 40) {
             return;
         }
-        const g = this.add.graphics({ x: Math.round(x), y: Math.round(y) });
-        const r = Phaser.Math.Between(S(2), S(4));
-        g.fillStyle(DENTIST_COLORS.foamShade, 1);
-        PixelUI.fillCircle(g, 0, 0, r + 1);
-        g.fillStyle(DENTIST_COLORS.foam, 1);
-        PixelUI.fillCircle(g, 0, 0, r);
+        // Radius 3 to 6: dentysta/piana-3 ... -6.
+        const g = addImage(this, Math.round(x), Math.round(y), `${P}piana-${Phaser.Math.Between(S(2), S(4))}`);
         this.panel.add(g);
         this.foam.push(g);
     }
@@ -368,10 +279,7 @@ export class DentistScene extends BaseScene {
     sparkleAt(x, y) {
         for (let i = 0; i < 5; i++) {
             const angle = (i / 5) * Math.PI * 2;
-            const g = this.add.graphics({ x, y }).setDepth(30);
-            g.fillStyle(SPARKLE_COLORS[i % SPARKLE_COLORS.length], 1);
-            g.fillRect(-1, -S(2), 2, S(4) + 1);
-            g.fillRect(-S(2), -1, S(4) + 1, 2);
+            const g = addImage(this, x, y, `${P}iskierka-${(i % SPARKLE_PICTURES) + 1}`).setDepth(30);
             floatAway(this, g, { dx: Math.round(Math.cos(angle) * S(14)), dy: Math.round(Math.sin(angle) * S(12)), duration: 500, steps: 4 });
         }
     }
@@ -390,8 +298,7 @@ export class DentistScene extends BaseScene {
         this.busy = true;
         this.updateHint();
 
-        const cup = this.add.graphics({ x: this.tools.cup.x, y: this.tools.cup.y }).setDepth(40);
-        Icons.cup(cup, 0, 0, S(34));
+        const cup = addImage(this, this.tools.cup.x, this.tools.cup.y, P + 'kubek').setDepth(40);
         const r = this.panelRect;
         this.tweens.add({
             targets: cup,
@@ -423,9 +330,7 @@ export class DentistScene extends BaseScene {
     }
 
     waterDrop(x, y) {
-        const g = this.add.graphics({ x: Math.round(x), y: Math.round(y) }).setDepth(35);
-        g.fillStyle(DENTIST_COLORS.water, 1);
-        g.fillRect(-1, -S(2), S(2), S(4));
+        const g = this.add.rectangle(Math.round(x) - 1, Math.round(y) - S(2), S(2), S(4), DENTIST_COLORS.water).setOrigin(0).setDepth(35);
         if (Math.random() < 0.5) {
             playBubble(this);
         }
@@ -443,10 +348,7 @@ export class DentistScene extends BaseScene {
         this.charImage.setTexture(this.character.id);
         this.tweens.add({ targets: this.panel, scale: 0, duration: 300, onComplete: () => this.panel.setVisible(false) });
 
-        const star = this.add.graphics({ x: cx, y: cy }).setDepth(50);
-        Icons.star(star, 0, 0, S(24));
-        Icons.tooth(star, 0, S(1), S(18));
-        star.setScale(0);
+        const star = addImage(this, cx, cy, P + 'naklejka').setDepth(50).setScale(0);
         this.tweens.add({ targets: star, scale: 1, duration: 500, ease: 'Back.easeOut' });
         const label = PixelUI.addTitle(this, cx, cy + S(34), 'Piękny uśmiech!', S(14)).setDepth(50).setAlpha(0);
         this.tweens.add({ targets: label, alpha: 1, delay: 300, duration: 400 });
@@ -466,17 +368,15 @@ export class DentistScene extends BaseScene {
         const gap = S(56);
         const y = height - S(30);
         const defs = {
-            mirror: { draw: (g, s) => Icons.dentalMirror(g, 0, 0, s), onTap: () => this.useMirror() },
-            toothbrush: { draw: (g, s) => Icons.toothbrush(g, 0, 0, s), onTap: () => this.startBrushing() },
-            cup: { draw: (g, s) => Icons.cup(g, 0, 0, s), onTap: () => this.rinse() }
+            mirror: { icon: 'ikony64/lusterko', onTap: () => this.useMirror() },
+            toothbrush: { icon: 'ikony64/szczoteczka', onTap: () => this.startBrushing() },
+            cup: { icon: 'ikony64/kubek', onTap: () => this.rinse() }
         };
         this.tools = {};
         Object.entries(defs).forEach(([key, def], i) => {
-            const button = PixelUI.createIconButton(this, Math.round(width / 2 + (i - 1) * gap), y, size, def.draw, def.onTap);
+            const button = PixelUI.createIconButton(this, Math.round(width / 2 + (i - 1) * gap), y, size, def.icon, def.onTap);
             // Small heart marks a step that is done.
-            const mark = this.add.graphics();
-            Icons.heart(mark, S(14), -S(14), S(12));
-            mark.setVisible(false);
+            const mark = addImage(this, S(14), -S(14), 'ikony/serce-18').setVisible(false);
             button.add(mark);
             button.mark = mark;
             this.tools[key] = button;

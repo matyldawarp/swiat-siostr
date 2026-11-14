@@ -1,27 +1,34 @@
 import { PALETTE, PixelUI, S } from '../ui/pixel.js';
 import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
-import { Icons } from '../gfx/icons.js';
+import { addImage, addPattern } from '../gfx/images.js';
 import { floatHeart } from '../ui/effects.js';
 import { Sweets } from '../ui/sweets.js';
 import { playCharacterSound, playCrunch, playFanfare, playPlop, playSparkle } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
+// Pictures of this scene: docs/assets/gfx/cukiernia/. A cupcake is layers on top of each
+// other, all anchored on the middle of the cup's base: papilotka, then biszkopt (no cream)
+// or krem-<colour>, posypka and the topping; -mini ones sit in the display case.
+const P = 'cukiernia/';
 const BAKERY_COLORS = {
-    wallA: 0xfff1e6,
-    wallB: 0xffe8ef,
     counter: 0xf2d0b5,
     counterEdge: 0xe0b89a,
-    front: 0xf7d6e4,
-    frontDark: 0xf0c2d6,
-    caseGlass: 0xeef8ff,
-    caseShelf: 0xd9ccf5,
-    plate: 0xffffff
+    front: 0xf7d6e4
 };
 
 // Cream colours on the first row of buttons; the sprinkles shaker comes after them.
-const CREAMS = [0xf7b2cc, 0xd9ccf5, 0xbfe8d6, 0xfff1c9, 0xd8b39c];
+// The colour is what the saved display case remembers; the name picks the pictures.
+const CREAMS = [
+    { color: 0xf7b2cc, name: 'rozowy' },
+    { color: 0xd9ccf5, name: 'liliowy' },
+    { color: 0xbfe8d6, name: 'mietowy' },
+    { color: 0xfff1c9, name: 'waniliowy' },
+    { color: 0xd8b39c, name: 'czekoladowy' }
+];
 // Toppings on the second row (keys of CAKE_TOPPINGS; npm run check verifies them).
 export const BAKERY_TOPPINGS = ['cherry', 'strawberry', 'star', 'heart', 'candle'];
+// Topping key -> its pictures' name.
+const TOPPING_NAMES = { cherry: 'wisienka', strawberry: 'truskawka', star: 'gwiazdka', heart: 'serduszko', candle: 'swieczka' };
 
 // Cupcakes on display, kept between visits on this device.
 const SHELF_SIZE = 8;
@@ -42,6 +49,28 @@ function saveShelf(shelf) {
     } catch {
         // Storage blocked: the display lasts until the page is closed.
     }
+}
+
+// Fills `container` (placed on the middle of the cup's base) with the layers of a cupcake
+// decorated as `design`; `small` for the display case. Without cream it shows the bare sponge.
+function fillCupcake(scene, container, design, small) {
+    const size = small ? '-mini' : '';
+    container.removeAll(true);
+    const layers = [P + 'papilotka' + size];
+    if (design.cream) {
+        const cream = CREAMS.find((c) => c.color === design.cream) || CREAMS[0];
+        layers.push(`${P}krem-${cream.name}${size}`);
+        if (design.sprinkles) {
+            layers.push(P + 'posypka' + size);
+        }
+        if (TOPPING_NAMES[design.topping]) {
+            layers.push(P + TOPPING_NAMES[design.topping] + size);
+        }
+    } else {
+        layers.push(P + 'biszkopt' + size);
+    }
+    container.add(layers.map((key) => addImage(scene, 0, 0, key)));
+    return container;
 }
 
 // The sweet shop: decorate a cupcake by tapping (cream, sprinkles, a topping, in any
@@ -74,7 +103,7 @@ export class BakeryScene extends BaseScene {
         this.createCharacter(Math.round(width * 0.15));
         this.drawCounter(width, height);
 
-        this.cupcake = this.add.graphics();
+        this.cupcake = this.add.container(this.cupcakePos.x, this.cupcakePos.y);
         this.drawCupcake();
 
         this.createButtons(width, height);
@@ -85,33 +114,17 @@ export class BakeryScene extends BaseScene {
 
     // Striped wallpaper over the whole window (view.bleed).
     drawRoom() {
-        const C = BAKERY_COLORS;
         const b = this.view.bleed;
-        const g = this.add.graphics();
-        const stripe = S(10);
-        const firstX = Math.floor(b.x / stripe) * stripe;
-        for (let x = firstX; x < b.x + b.width; x += stripe) {
-            g.fillStyle(Math.abs(Math.floor(x / stripe)) % 2 ? C.wallB : C.wallA, 1);
-            g.fillRect(x, b.y, stripe, this.counterTop - b.y);
-        }
+        addPattern(this, b.x, b.y, b.width, this.counterTop - b.y, P + 'tapeta');
     }
 
     // Glass display case on the wall with a slot for each cupcake on display.
     createDisplayCase(width) {
-        const C = BAKERY_COLORS;
-        const g = this.add.graphics();
         const caseW = Math.min(width - S(150), S(300));
         const left = Math.round(width * 0.58 - caseW / 2);
         const top = S(38);
         const caseH = S(52);
-        PixelUI.drawBox(g, left, top, caseW, caseH, C.caseGlass, PALETTE.outline);
-        g.fillStyle(C.caseShelf, 1);
-        g.fillRect(left + 2, top + caseH - S(6), caseW - 4, S(4));
-        // Glass shine.
-        g.fillStyle(0xffffff, 1);
-        for (let i = 0; i < S(8); i++) {
-            g.fillRect(left + S(5) + i, top + S(12) - i, 1, 1);
-        }
+        addImage(this, left, top, P + 'gablota');
 
         const slotW = (caseW - S(8)) / SHELF_SIZE;
         this.slots = [];
@@ -119,20 +132,19 @@ export class BakeryScene extends BaseScene {
             this.slots.push({ x: Math.round(left + S(4) + slotW * (i + 0.5)), bottom: top + caseH - S(6) });
         }
         this.slotW = slotW;
-        this.shelfGraphics = this.add.graphics();
+        this.shelfCupcakes = this.add.container(0, 0);
         this.shelfZones = [];
         this.drawShelf();
     }
 
     drawShelf() {
-        const g = this.shelfGraphics;
-        g.clear();
+        this.shelfCupcakes.removeAll(true);
         this.shelfZones.forEach((z) => z.destroy());
         this.shelfZones = [];
         const w = Math.round(Math.min(this.slotW - S(4), S(28)));
         this.shelf.forEach((design, i) => {
             const slot = this.slots[i];
-            Icons.cupcake(g, slot.x, slot.bottom, w, design);
+            this.shelfCupcakes.add(fillCupcake(this, this.add.container(slot.x, slot.bottom), design, true));
             // Tap a cupcake on display to give it to the character.
             const zone = this.add.zone(slot.x, slot.bottom - w / 2, this.slotW, w + S(10)).setInteractive({ useHandCursor: true });
             zone.on('pointerup', () => this.eatFromShelf(i));
@@ -160,39 +172,24 @@ export class BakeryScene extends BaseScene {
     drawCounter(width, height) {
         const C = BAKERY_COLORS;
         const b = this.view.bleed;
-        const g = this.add.graphics();
         const top = this.counterTop;
         const slab = S(12);
 
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(b.x, top, b.width, slab + 1);
-        g.fillStyle(C.counter, 1);
-        g.fillRect(b.x, top + 1, b.width, slab - 2);
-        g.fillStyle(C.counterEdge, 1);
-        g.fillRect(b.x, top + slab - 3, b.width, 2);
+        this.add.rectangle(b.x, top, b.width, slab + 1, PALETTE.outline).setOrigin(0);
+        this.add.rectangle(b.x, top + 1, b.width, slab - 2, C.counter).setOrigin(0);
+        this.add.rectangle(b.x, top + slab - 3, b.width, 2, C.counterEdge).setOrigin(0);
 
-        // Front panels with little hearts.
+        // Front panels down to the stage's bottom, plain front below it.
         const frontTop = top + slab + 1;
-        g.fillStyle(C.front, 1);
-        g.fillRect(b.x, frontTop, b.width, b.y + b.height - frontTop);
-        const panel = S(48);
-        const firstX = Math.floor(b.x / panel) * panel;
-        for (let x = firstX; x < b.x + b.width; x += panel) {
-            g.fillStyle(C.frontDark, 1);
-            g.fillRect(x, frontTop, 2, height - frontTop);
-        }
+        this.add.rectangle(b.x, frontTop, b.width, b.y + b.height - frontTop, C.front).setOrigin(0);
+        addPattern(this, b.x, frontTop, b.width, height - frontTop, P + 'lada');
 
         // Plate under the cupcake.
-        const { x } = this.cupcakePos;
-        g.fillStyle(PALETTE.outline, 1);
-        Icons.fillEllipse(g, x, top - 1, S(30) + 1, S(4) + 1);
-        g.fillStyle(C.plate, 1);
-        Icons.fillEllipse(g, x, top - 1, S(30), S(4));
+        addImage(this, this.cupcakePos.x, top - 1, P + 'talerz');
     }
 
     drawCupcake() {
-        this.cupcake.clear();
-        Icons.cupcake(this.cupcake, this.cupcakePos.x, this.cupcakePos.y, S(56), this.design);
+        fillCupcake(this, this.cupcake, this.design, false);
     }
 
     // --- Buttons ------------------------------------------------------------------
@@ -205,18 +202,18 @@ export class BakeryScene extends BaseScene {
         const rowY = [height - S(64), height - S(24)];
         const place = (i, count) => Math.round(centerX + (i - (count - 1) / 2) * gap);
 
-        const creamDefs = CREAMS.map((color) => ({
-            draw: (g, s) => Icons.icing(g, 0, 0, s, color),
+        const creamDefs = CREAMS.map(({ color, name }) => ({
+            icon: `ikony64/krem-${name}`,
             onTap: () => this.choose('cream', color),
             isChosen: () => this.design.cream === color
         }));
         creamDefs.push({
-            draw: (g, s) => Icons.sprinkles(g, 0, 0, s),
+            icon: 'ikony64/posypka',
             onTap: () => this.choose('sprinkles', !this.design.sprinkles),
             isChosen: () => this.design.sprinkles
         });
         const toppingDefs = BAKERY_TOPPINGS.map((key) => ({
-            draw: (g, s) => Icons.topping(g, key, 0, Math.round(s * 0.1), s),
+            icon: `ikony64/dodatek-${TOPPING_NAMES[key]}`,
             onTap: () => this.choose('topping', this.design.topping === key ? null : key),
             isChosen: () => this.design.topping === key
         }));
@@ -224,10 +221,9 @@ export class BakeryScene extends BaseScene {
         this.buttons = [];
         [creamDefs, toppingDefs].forEach((defs, row) => {
             defs.forEach((def, i) => {
-                const button = PixelUI.createIconButton(this, place(i, defs.length), rowY[row], size, def.draw, def.onTap);
+                const button = PixelUI.createIconButton(this, place(i, defs.length), rowY[row], size, def.icon, def.onTap);
                 // Small heart marks what is on the cupcake now.
-                const mark = this.add.graphics();
-                Icons.heart(mark, S(12), -S(12), S(10));
+                const mark = addImage(this, S(12), -S(12), 'ikony/serce-15');
                 button.add(mark);
                 button.mark = mark;
                 button.isChosen = def.isChosen;
@@ -237,7 +233,7 @@ export class BakeryScene extends BaseScene {
         });
 
         this.doneButton = PixelUI.createIconButton(this, width - S(42), height - S(44), S(44),
-            (g, s) => Icons.heart(g, 0, 0, Math.round(s * 0.8)), () => this.finish());
+            'ikony64/serce-mniejsze', () => this.finish());
         this.refreshButtons();
     }
 
@@ -298,9 +294,8 @@ export class BakeryScene extends BaseScene {
         const slot = this.slots[this.shelf.length];
         const design = { ...this.design };
 
-        const flying = this.add.graphics({ x: this.cupcakePos.x, y: this.cupcakePos.y }).setDepth(20);
-        Icons.cupcake(flying, 0, 0, S(56), design);
-        this.cupcake.clear();
+        const flying = fillCupcake(this, this.add.container(this.cupcakePos.x, this.cupcakePos.y), design, false).setDepth(20);
+        this.cupcake.removeAll(true);
         playFanfare(this);
         this.tweens.add({
             targets: flying,
@@ -345,9 +340,7 @@ export class BakeryScene extends BaseScene {
         saveShelf(this.shelf);
         this.drawShelf();
 
-        const w = Math.min(this.slotW - S(4), S(28));
-        const flying = this.add.graphics({ x: slot.x, y: slot.bottom }).setDepth(20);
-        Icons.cupcake(flying, 0, 0, w, design);
+        const flying = fillCupcake(this, this.add.container(slot.x, slot.bottom), design, true).setDepth(20);
         this.tweens.add({
             targets: flying,
             x: this.mouth.x,

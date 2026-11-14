@@ -4,6 +4,7 @@ import { Settings } from './ui/settings.js';
 import { watchWholePixels } from './ui/wholePixels.js';
 import { loadVersion } from './ui/version.js';
 import { loadPixelFonts } from './ui/pixelFont.js';
+import { loadImages } from './gfx/images.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
 import { TerrariumScene } from './scenes/TerrariumScene.js';
@@ -210,5 +211,6 @@ function startGame() {
     window.game = game;
 }
 
-// The text font's glyph images (Leggie, ui/pixelFont.js) must be ready before the game boots.
-loadPixelFonts().finally(startGame);
+// The text font's glyph images (Leggie, ui/pixelFont.js) and the pictures (gfx/images.js)
+// must be ready before the game boots.
+Promise.all([loadPixelFonts(), loadImages()]).finally(startGame);

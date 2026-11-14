@@ -8,6 +8,7 @@
 //    errors and mistakes in top-level code.
 // 4. Data: characters, cakes and the music list are complete and point at existing files.
 // 5. House rules from CLAUDE.md that are easy to check mechanically.
+// 6. Pictures: docs/assets/gfx/ and its images.json agree, and the code's keys exist.
 //
 // Exits with code 1 and lists the problems if anything is wrong.
 
@@ -158,13 +159,12 @@ for (const file of files) {
 // --- 4. Data ------------------------------------------------------------------------------
 
 const charactersModule = loaded['docs/src/data/characters.js'];
-const iconsModule = loaded['docs/src/gfx/icons.js'];
 const musicModule = loaded['docs/src/data/music.js'];
 const charactersFile = join(SRC, 'data', 'characters.js');
 const musicFile = join(SRC, 'data', 'music.js');
 
 if (charactersModule) {
-    const { CHARACTERS, CHARACTER_SLOTS, CHARACTER_CAKES } = charactersModule;
+    const { CHARACTERS, CHARACTER_SLOTS } = charactersModule;
     const ids = new Set();
     CHARACTERS.forEach((c, i) => {
         const where = `character ${c.id || '#' + i}`;
@@ -181,21 +181,8 @@ if (charactersModule) {
         if (typeof c.species !== 'string') {
             fail(charactersFile, `${where}: species must be a string (may be empty)`);
         }
-        if (!c.colors || typeof c.colors.body !== 'number') {
-            fail(charactersFile, `${where}: missing colors.body`);
-        }
-        if (!c.pixels && (typeof c.colors?.light !== 'number' || typeof c.colors?.pink !== 'number')) {
-            fail(charactersFile, `${where}: a hamster without pixels needs colors.light and colors.pink`);
-        }
-        if (c.pixels) {
-            const allowed = new Set(['.', '#', 'E', 'W', 'O', ...Object.keys(c.palette || {})]);
-            if (c.pixels.length !== 16 || c.pixels.some((row) => row.length !== 16)) {
-                fail(charactersFile, `${where}: pixels must be 16 rows of 16 characters`);
-            }
-            const unknown = new Set([...c.pixels.join('')].filter((ch) => !allowed.has(ch)));
-            if (unknown.size > 0) {
-                fail(charactersFile, `${where}: pixels use letters without a colour: ${[...unknown].join(' ')}`);
-            }
+        if (!existsSync(join(DOCS, 'assets', 'gfx', 'postacie', `${c.id}.png`))) {
+            fail(charactersFile, `${where}: no picture docs/assets/gfx/postacie/${c.id}.png`);
         }
         const sound = c.sound;
         if (!sound || !['sine', 'triangle', 'square', 'sawtooth'].includes(sound.wave)
@@ -207,23 +194,13 @@ if (charactersModule) {
     if (CHARACTERS.length > CHARACTER_SLOTS) {
         fail(charactersFile, `${CHARACTERS.length} characters but only ${CHARACTER_SLOTS} slots (CHARACTER_SLOTS)`);
     }
-    Object.entries(CHARACTER_CAKES).forEach(([id, cake]) => {
-        if (!ids.has(id)) {
-            fail(charactersFile, `CHARACTER_CAKES.${id}: no character with this id`);
-        }
-        if (iconsModule && !iconsModule.CAKE_TOPPINGS[cake.topping]) {
-            fail(charactersFile, `CHARACTER_CAKES.${id}: unknown topping "${cake.topping}" (see CAKE_TOPPINGS in gfx/icons.js)`);
-        }
+    // Every character bakes its own cake in the kitchen (KitchenScene).
+    CHARACTERS.forEach((c) => {
+        [`kuchnia/tort-${c.id}`, `kuchnia/lukier-${c.id}`, `kuchnia/dodatek-${c.id}`, `kuchnia/kawalek-${c.id}`, `ikony64/tort-${c.id}`]
+            .filter((key) => !existsSync(join(DOCS, 'assets', 'gfx', `${key}.png`)))
+            .forEach((key) => fail(charactersFile, `character ${c.id}: no cake picture docs/assets/gfx/${key}.png`));
     });
 }
-
-const bakeryModule = loaded['docs/src/scenes/BakeryScene.js'];
-if (bakeryModule && iconsModule) {
-    bakeryModule.BAKERY_TOPPINGS.filter((key) => !iconsModule.CAKE_TOPPINGS[key]).forEach((key) => {
-        fail(join(SRC, 'scenes', 'BakeryScene.js'), `BAKERY_TOPPINGS: unknown topping "${key}" (see CAKE_TOPPINGS in gfx/icons.js)`);
-    });
-}
-
 const coloringModule = loaded['docs/src/data/coloring.js'];
 if (coloringModule) {
     const coloringFile = join(SRC, 'data', 'coloring.js');
@@ -255,13 +232,9 @@ if (picturesModule) {
         if (!p.word) {
             fail(picturesFile, `${where}: missing word`);
         }
-        if (!p.rows.length || p.rows.length > 16 || p.rows.some((row) => row.length !== 16)) {
-            fail(picturesFile, `${where}: rows must be at most 16 rows of 16 characters`);
-        }
-        const allowed = new Set(['.', 'O', 'E', 'W', ...Object.keys(p.colors || {})]);
-        const unknown = new Set([...p.rows.join('')].filter((ch) => !allowed.has(ch)));
-        if (unknown.size > 0) {
-            fail(picturesFile, `${where}: rows use letters without a colour: ${[...unknown].join(' ')}`);
+        const png = `docs/assets/gfx/${picturesModule.pictureImage(id)}.png`;
+        if (!existsSync(join(ROOT, png))) {
+            fail(picturesFile, `${where}: no picture ${png}`);
         }
     });
 }
@@ -326,21 +299,14 @@ const personalitiesModule = loaded['docs/src/data/personalities.js'];
 const personalitiesFile = join(SRC, 'data', 'personalities.js');
 if (personalitiesModule) {
     const { PERSONALITIES, DEFAULTS } = personalitiesModule;
-    // Records draw calls instead of drawing, to see that every icon can be drawn.
-    const fakeGraphics = new Proxy({}, { get: () => () => {} });
     Object.entries(PERSONALITIES).forEach(([key, p]) => {
         const where = `PERSONALITIES.${key}`;
         if (!p.name) {
             fail(personalitiesFile, `${where}: missing name`);
         }
-        if (typeof p.icon !== 'function') {
-            fail(personalitiesFile, `${where}: icon must be a drawing function (g, cx, cy, size)`);
-        } else {
-            try {
-                p.icon(fakeGraphics, 0, 0, 20);
-            } catch (error) {
-                fail(personalitiesFile, `${where}: icon fails to draw: ${error.message}`);
-            }
+        // The key itself is checked with every other picture key literal.
+        if (typeof p.icon !== 'string' || !p.icon.startsWith('ikony64/')) {
+            fail(personalitiesFile, `${where}: icon must be the key of an ikona 64 ('ikony64/...')`);
         }
         Object.keys(p).filter((k) => !['name', 'icon'].includes(k)).forEach((k) => {
             if (!(k in DEFAULTS)) {
@@ -430,6 +396,57 @@ const html = readFileSync(join(DOCS, 'index.html'), 'utf8');
 for (const m of html.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)) {
     if (!/^https:\/\//.test(m[1]) && m[1] !== 'src/main.js') {
         fail(join(DOCS, 'index.html'), `loads ${m[1]}; game code must be imported from src/main.js instead`);
+    }
+}
+
+// --- 6. Pictures --------------------------------------------------------------------------
+// Every PNG in docs/assets/gfx/ is listed in images.json (gfx/images.js) and the other way
+// round, anchors are two numbers, and every picture key written in the code exists.
+
+const GFX = join(DOCS, 'assets', 'gfx');
+const gfxManifestFile = join(GFX, 'images.json');
+let gfxManifest = {};
+try {
+    gfxManifest = JSON.parse(readFileSync(gfxManifestFile, 'utf8'));
+} catch (e) {
+    fail(gfxManifestFile, `can't be read: ${e.message}`);
+}
+function listPng(dir) {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            return listPng(path);
+        }
+        return entry.name.endsWith('.png') ? [relative(GFX, path).split(sep).join('/').replace(/\.png$/, '')] : [];
+    });
+}
+const pngKeys = new Set(existsSync(GFX) ? listPng(GFX) : []);
+const keySlug = /^[a-z0-9-]+(\/[a-z0-9-]+)+$/;
+for (const [key, info] of Object.entries(gfxManifest)) {
+    if (!keySlug.test(key)) {
+        fail(gfxManifestFile, `${key}: keys are folder/name in lowercase, digits and dashes`);
+    }
+    if (!pngKeys.has(key)) {
+        fail(gfxManifestFile, `${key}: there is no ${key}.png`);
+    }
+    const anchor = info && info.anchor;
+    if (anchor !== undefined && !(Array.isArray(anchor) && anchor.length === 2 && anchor.every((n) => typeof n === 'number'))) {
+        fail(gfxManifestFile, `${key}: anchor must be [x, y]`);
+    }
+}
+pngKeys.forEach((key) => {
+    if (!gfxManifest[key]) {
+        fail(gfxManifestFile, `docs/assets/gfx/${key}.png is not listed`);
+    }
+});
+// Picture keys in the code: string literals starting with a folder of docs/assets/gfx.
+const gfxFolders = new Set([...pngKeys].map((key) => key.split('/')[0]));
+for (const mod of modules.values()) {
+    const source = mod.source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:\\])\/\/.*$/gm, '$1');
+    for (const m of source.matchAll(/'([a-z0-9-]+\/[a-z0-9/-]+)'/g)) {
+        if (gfxFolders.has(m[1].split('/')[0]) && !gfxManifest[m[1]]) {
+            fail(mod.file, `uses the picture '${m[1]}', which is not in docs/assets/gfx/images.json`);
+        }
     }
 }
 

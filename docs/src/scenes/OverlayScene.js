@@ -1,5 +1,5 @@
-import { MAX_RENDER_SCALE, PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, UI_RENDER_SCALE, textStyle } from '../ui/pixel.js';
-import { ICON_COLORS, Icons } from '../gfx/icons.js';
+import { ICON_COLORS, MAX_RENDER_SCALE, PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, UI_RENDER_SCALE, textStyle } from '../ui/pixel.js';
+import { addImage, setImage } from '../gfx/images.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
 import { PlayTime, Settings } from '../ui/settings.js';
@@ -58,7 +58,7 @@ export class OverlayScene extends BaseScene {
         this.createReloadButton(right - size / 2, top + size / 2, size);
         // Settings sit left of the music button (which may be missing), on every screen.
         this.settingsButton = PixelUI.createIconButton(this, right - size * 2.5 - S(8), top + size / 2, size,
-            (g, iconSize) => Icons.gear(g, 0, 0, iconSize),
+            'ikony64/zebatka',
             () => (this.menu ? this.closeMenu() : this.openSettings()));
         // Above the game over screen (depth 90), below open panels (100).
         this.settingsButton.setDepth(95);
@@ -217,11 +217,8 @@ export class OverlayScene extends BaseScene {
         y += titleH;
 
         settings.forEach(({ key, label }) => {
-            const box = this.add.graphics();
-            const drawBox = () => {
-                box.clear();
-                Icons.checkbox(box, -w / 2 + S(12), 0, S(18), Settings.get(key));
-            };
+            const box = addImage(this, -w / 2 + S(12), 0, 'efekty/pole-wyboru');
+            const drawBox = () => setImage(box, Settings.get(key) ? 'efekty/pole-wyboru-zaznaczone' : 'efekty/pole-wyboru');
             drawBox();
             const text = PixelUI.addText(this, -w / 2 + S(28), 0, label,
                 textStyle(S(11), { bold: true, color: TEXT_COLORS.button })).setOrigin(0, 0.5);
@@ -403,12 +400,10 @@ export class OverlayScene extends BaseScene {
 
         const cx = Math.round(width / 2);
         const cy = Math.round(height / 2);
-        const sky = this.add.graphics();
-        Icons.moon(sky, cx, cy - S(70), S(48));
+        screen.add(addImage(this, cx, cy - S(70), 'efekty/koniec-gry-ksiezyc'));
         [[-0.32, -0.3], [0.3, -0.22], [-0.22, 0.28], [0.36, 0.3], [-0.4, 0.05]].forEach(([fx, fy]) => {
-            Icons.star(sky, Math.round(cx + fx * width), Math.round(cy + fy * height), S(5));
+            screen.add(addImage(this, Math.round(cx + fx * width), Math.round(cy + fy * height), 'efekty/koniec-gry-gwiazdka'));
         });
-        screen.add(sky);
 
         // The chosen character, eyes closed.
         const character = getCharacter(this.registry.get('selectedCharacter'));
@@ -454,16 +449,16 @@ export class OverlayScene extends BaseScene {
 
     // Opens the song chooser; the note is crossed out while it's silent.
     createMusicButton(x, y, size) {
-        this.musicButton = PixelUI.createIconButton(this, x, y, size, (g, iconSize) => this.drawMusicIcon(g, iconSize),
+        this.musicButton = PixelUI.createIconButton(this, x, y, size, this.musicIcon(),
             () => (this.menu ? this.closeMenu() : this.openMusicMenu()));
     }
 
-    drawMusicIcon(g, iconSize) {
-        Icons.note(g, 0, 0, iconSize, Music.enabled);
+    musicIcon() {
+        return Music.enabled ? 'ikony64/nutka' : 'ikony64/nutka-wylaczona';
     }
 
     refreshMusicIcon() {
-        this.musicButton.setIcon((g, iconSize) => this.drawMusicIcon(g, iconSize));
+        this.musicButton.setIcon(this.musicIcon());
     }
 
     // One big coloured row per song, plus "Cisza" (silence). Colours and numbers tell
@@ -506,7 +501,7 @@ export class OverlayScene extends BaseScene {
         } else if (song) {
             parts.push(PixelUI.addText(this, badgeX, 1, String(index + 1), textStyle(S(16), { bold: true })).setOrigin(0.5));
         } else {
-            Icons.note(bg, badgeX, 0, Math.round(badge * 0.7), false);
+            parts.push(addImage(this, badgeX, 0, 'efekty/piosenki-cisza'));
         }
 
         const textX = badgeX + badgeW / 2 + S(8);
@@ -519,7 +514,7 @@ export class OverlayScene extends BaseScene {
 
         // Heart marks what is on now.
         if (playing) {
-            Icons.heart(bg, w / 2 - S(14), 0, S(14));
+            parts.push(addImage(this, w / 2 - S(14), 0, 'efekty/piosenki-serce'));
         }
 
         return this.addPanelRow(parts, left, cy, w, h, () => {
@@ -532,10 +527,7 @@ export class OverlayScene extends BaseScene {
     // Reloads the newest files and always starts again on the start screen: the address
     // after # (scenes/routes.js) is dropped first. Reloading in the browser keeps it.
     createReloadButton(x, y, size) {
-        const button = PixelUI.createIconButton(this, x, y, size, (g, iconSize) => {
-            g.fillStyle(PALETTE.buttonBorder, 1);
-            this.drawReloadIcon(g, 0, 1, Math.round(iconSize * 0.4));
-        }, () => {
+        const button = PixelUI.createIconButton(this, x, y, size, 'ikony64/odswiez', () => {
             if (this.reloading) {
                 return;
             }
@@ -545,32 +537,5 @@ export class OverlayScene extends BaseScene {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
             reloadFresh();
         });
-    }
-
-    // Clockwise circular arrow on the pixel grid: a ring with a gap at the top right
-    // and an arrowhead pointing into the gap.
-    drawReloadIcon(g, cx, cy, r) {
-        const thickness = Math.max(2, Math.round(r / 3));
-        const gapStart = -80;
-        const gapEnd = -20;
-
-        for (let dy = -r - 1; dy <= r + 1; dy++) {
-            for (let dx = -r - 1; dx <= r + 1; dx++) {
-                const d = Math.sqrt(dx * dx + dy * dy);
-                const angle = Phaser.Math.RadToDeg(Math.atan2(dy, dx));
-                if (d <= r + 0.5 && d >= r + 0.5 - thickness && (angle < gapStart || angle > gapEnd)) {
-                    g.fillRect(cx + dx, cy + dy, 1, 1);
-                }
-            }
-        }
-
-        // Arrowhead at the end of the ring near the top, pointing right.
-        const mid = r + 0.5 - thickness / 2;
-        const ax = cx + Math.round(Math.cos(Phaser.Math.DegToRad(gapStart)) * mid);
-        const ay = cy + Math.round(Math.sin(Phaser.Math.DegToRad(gapStart)) * mid);
-        const half = thickness + 1;
-        for (let k = 0; k <= half; k++) {
-            g.fillRect(ax + k, ay - (half - k), 1, (half - k) * 2 + 1);
-        }
     }
 }

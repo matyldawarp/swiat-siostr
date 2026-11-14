@@ -55,7 +55,8 @@ Z mapy da się też pójść z powrotem do domu, czyli do terrarium. Zębatka Us
   - `src/scenes/` – ekrany gry (start, postacie, terrarium, mapa, szpital, kuchnia), `terrarium/` – części terrarium
   - `src/ui/`, `src/gfx/`, `src/audio/` – wspólne elementy interfejsu, grafika i dźwięk
   - `src/data/` – postacie i lista muzyki
-  - `assets/icons/` – ikony aplikacji, `assets/music/` – muzyka (tylko lokalnie)
+  - `assets/gfx/` – wszystkie obrazki gry jako pliki PNG (postacie, meble, ikony), z listą i punktami zaczepienia w `images.json` (opis w `notes/wyglad.md`)
+  - `assets/icons/` – ikony aplikacji, `assets/music/` – muzyka
 - `tools/` – serwer deweloperski, generator ikon, `check.mjs` (`npm run check`: szybka kontrola kodu i danych) i `add-song.mjs` (dodawanie piosenki z YouTube)
 - `assets/scans/` – skany rysunków postaci (nie trafiają na stronę)
 - `assets/fonts/leggie/` – czcionka Leggie w formacie BDF. `node tools/make-pixel-font.mjs` robi z niej obrazki liter dla gry w `docs/assets/fonts/`.

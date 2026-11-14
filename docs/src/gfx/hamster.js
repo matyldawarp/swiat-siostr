@@ -1,4 +1,4 @@
-import { PALETTE } from '../ui/pixel.js';
+import { hasImage, imageTexture } from './images.js';
 
 // Every character sprite is 16x16 pixels, drawn around its centre.
 export const SPRITE_SIZE = 16;
@@ -8,150 +8,26 @@ export function spriteHalf(scale) {
     return (SPRITE_SIZE / 2) * scale;
 }
 
-// 16x16 front-facing hamster. O outline, B body, L belly/muzzle, P pink,
-// E eye, W eye shine, '.' transparent.
-const HAMSTER_PIXELS = [
-    '................',
-    '..OO........OO..',
-    '.OPBO......OBPO.',
-    '.OPBBOOOOOOBBPO.',
-    '.OBBBBBBBBBBBBO.',
-    'OBBBBBBBBBBBBBBO',
-    'OBBWEBBBBBBWEBBO',
-    'OBBEEBBBBBBEEBBO',
-    'OBPPLLLPPLLLPPBO',
-    'OBBLLLLOOLLLLBBO',
-    'OBLLLLLLLLLLLLBO',
-    'OBLLLLLLLLLLLLBO',
-    'OBBLLLLLLLLLLBBO',
-    '.OBBPPLLLLPPBBO.',
-    '..OOBBBBBBBBOO..',
-    '....OOOOOOOO....'
-];
-
-// Closed eyes: the two eye rows become body colour with a line for the lid.
-const HAMSTER_BLINK_ROWS = {
-    6: 'OBBBBBBBBBBBBBBO',
-    7: 'OBBOOBBBBBBOOBBO'
-};
-
-// Chewing: open mouth and puffed-out cheeks.
-const HAMSTER_CHEW_ROWS = {
-    8: 'OPPPLLLPPLLLPPPO',
-    9: 'OBBLLLOPPOLLLBBO'
-};
-
-// Sunflower seed: grey shell with a pale stripe. O outline, G shell, W stripe.
-export const SEED_PIXELS = [
-    '..O..',
-    '.OGO.',
-    '.GWG.',
-    'OGWGO',
-    'OGWGO',
-    '.OGO.',
-    '..O..'
-];
-
-const HEART_PIXELS = [
-    '.PP.PP.',
-    'PPPPPPP',
-    'PPPPPPP',
-    '.PPPPP.',
-    '..PPP..',
-    '...P...'
-];
-
-function toCss(color) {
-    return '#' + color.toString(16).padStart(6, '0');
-}
-
-// Canvas texture `key` from rows of letters, each letter a colour in `colors` (others are
-// left transparent). Made once; later calls keep the existing texture.
-export function paintPixels(scene, key, rows, colors) {
-    if (scene.textures.exists(key)) {
-        return;
-    }
-
-    const texture = scene.textures.createCanvas(key, rows[0].length, rows.length);
-    const ctx = texture.getContext();
-
-    rows.forEach((row, y) => {
-        [...row].forEach((ch, x) => {
-            if (colors[ch] !== undefined) {
-                ctx.fillStyle = toCss(colors[ch]);
-                ctx.fillRect(x, y, 1, 1);
-            }
-        });
-    });
-
-    texture.refresh();
-}
-
-// Characters drawn by the girls come as a fill mask: '#' body, 'E' pen detail, 'W' white,
-// 'O' a loose pen line, '.' empty. Body pixels touching empty space become the outline.
-function outlineMask(rows) {
-    const at = (x, y) => (rows[y] && rows[y][x]) || '.';
-    return rows.map((row, y) => [...row].map((ch, x) => {
-        if (ch !== '#') {
-            return ch;
-        }
-        const edge = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].includes('.');
-        return edge ? 'O' : 'B';
-    }).join(''));
-}
-
-// Creates `<id>`, `<id>-blink` and `<id>-chew` textures for a character.
+// The textures `<id>`, `<id>-blink` and `<id>-chew` of a character, from its pictures in
+// docs/assets/gfx/postacie/ (gfx/images.js). Characters drawn by the girls have only one
+// picture, used for all three.
 export function createHamsterTextures(scene, character) {
-    const colors = {
-        O: PALETTE.outline,
-        B: character.colors.body,
-        L: character.colors.light,
-        P: character.colors.pink,
-        E: 0x3d2b3d,
-        W: 0xffffff,
-        // Extra letters a drawn character may use for its own colours.
-        ...(character.palette || {})
-    };
-
-    // Drawn characters have no separate blink or chew frames.
-    if (character.pixels) {
-        const rows = outlineMask(character.pixels);
-        ['', '-blink', '-chew'].forEach((suffix) => paintPixels(scene, character.id + suffix, rows, colors));
-        return;
-    }
-
-    paintPixels(scene, character.id, HAMSTER_PIXELS, colors);
-
-    const blinkRows = HAMSTER_PIXELS.map((row, y) => HAMSTER_BLINK_ROWS[y] || row);
-    paintPixels(scene, `${character.id}-blink`, blinkRows, colors);
-
-    const chewRows = HAMSTER_PIXELS.map((row, y) => HAMSTER_CHEW_ROWS[y] || row);
-    paintPixels(scene, `${character.id}-chew`, chewRows, colors);
+    const own = (suffix) => (hasImage(`postacie/${character.id}${suffix}`) ? suffix : '');
+    ['', '-blink', '-chew'].forEach((suffix) => {
+        imageTexture(scene, `postacie/${character.id}${own(suffix)}`, character.id + suffix);
+    });
 }
 
 export function createHeartTexture(scene) {
-    paintPixels(scene, 'heart', HEART_PIXELS, { P: PALETTE.heart });
+    imageTexture(scene, 'drobne/serce', 'heart');
 }
-
-export const SEED_COLORS = { O: PALETTE.outline, G: 0x8d7f99, W: 0xf3eef8 };
 
 export function createSeedTexture(scene) {
-    paintPixels(scene, 'seed', SEED_PIXELS, SEED_COLORS);
+    imageTexture(scene, 'drobne/ziarenko', 'seed');
 }
 
-// A little heap of three droppings in soft caramel: O outline, B body, L shine.
-const POOP_PIXELS = [
-    '...OOO...',
-    '..OBBLO..',
-    '..OBBBO..',
-    '.OOOOOOO.',
-    'OBBLOBBLO',
-    'OBBBOBBBO',
-    '.OOO.OOO.'
-];
-
 export function createPoopTexture(scene) {
-    paintPixels(scene, 'poop', POOP_PIXELS, { O: PALETTE.outline, B: 0xd8b08c, L: 0xf3dcc4 });
+    imageTexture(scene, 'drobne/kupka', 'poop');
 }
 
 // Sprite scale for characters standing in a room (terrarium, kitchen, hospital).

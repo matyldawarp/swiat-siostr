@@ -1,46 +1,35 @@
 import { PALETTE, PixelUI, S } from '../ui/pixel.js';
-import { getCake } from '../data/characters.js';
 import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
-import { Icons } from '../gfx/icons.js';
+import { addImage, addPattern, setImage } from '../gfx/images.js';
 import { floatHeart } from '../ui/effects.js';
 import { Sweets } from '../ui/sweets.js';
 import { playCharacterSound, playCrunch, playDing, playFanfare, playPlop, playSparkle, playStep, playWhisk } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
+// Pictures of this scene: docs/assets/gfx/kuchnia/ (the character's cake in layers:
+// tort-<id>, lukier-<id>, posypka, dodatek-<id>; -kes-1 and -kes-2 after bites).
+const P = 'kuchnia/';
 const KITCHEN_COLORS = {
     wall: 0xfff1e6,
-    tileA: 0xffffff,
-    tileB: 0xffe1ec,
     counter: 0xf2d0b5,
     counterEdge: 0xe0b89a,
-    cabinet: 0xd4f2e4,
-    cabinetDark: 0xbfe8d6,
-    handle: 0xc3b3ea,
-    oven: 0xf7f9ff,
-    ovenPanel: 0xd9ccf5,
-    ovenWindow: 0xc3b3ea,
-    ovenGlow: 0xffd6b8,
-    bowl: 0xcfe8ff,
-    bowlInside: 0xb9d9f5,
-    batter: 0xfff1c9,
-    batterMixed: 0xffe3a3,
-    progress: 0xf59bbd
+    cabinetDark: 0xbfe8d6
 };
 
-// Ingredient key -> how it looks on its button and the blob it leaves in the bowl.
+// Ingredients: the picture on its button, the one flying into the bowl, the blob it leaves.
 const INGREDIENTS = [
-    { key: 'flour', draw: (g, s) => Icons.flour(g, 0, 0, s), blob: 0xffffff },
-    { key: 'egg', draw: (g, s) => Icons.egg(g, 0, 0, s), blob: 0xffd86b },
-    { key: 'sugar', draw: (g, s) => Icons.sugar(g, 0, 0, s), blob: 0xfff7f0 },
-    { key: 'milk', draw: (g, s) => Icons.milk(g, 0, 0, s), blob: 0xe4f1ff }
+    { key: 'flour', icon: 'ikony64/maka', piece: 'kuchnia/maka', blob: 'kuchnia/kleks-maka' },
+    { key: 'egg', icon: 'ikony64/jajko', piece: 'kuchnia/jajko', blob: 'kuchnia/kleks-jajko' },
+    { key: 'sugar', icon: 'ikony64/cukier', piece: 'kuchnia/cukier', blob: 'kuchnia/kleks-cukier' },
+    { key: 'milk', icon: 'ikony64/mleko', piece: 'kuchnia/mleko', blob: 'kuchnia/kleks-mleko' }
 ];
 
 // Decorations for a character's own cake: icing in its colour, sprinkles and its topping.
-function cakeDecorations(style) {
+function cakeDecorations(character) {
     return [
-        { key: 'icing', draw: (g, s) => Icons.icing(g, 0, 0, s, style.icing) },
-        { key: 'sprinkles', draw: (g, s) => Icons.sprinkles(g, 0, 0, s) },
-        { key: 'topping', draw: (g, s) => Icons.topping(g, style.topping, 0, 0, s) }
+        { key: 'icing', icon: `ikony64/lukier-${character.id}` },
+        { key: 'sprinkles', icon: 'ikony64/posypka' },
+        { key: 'topping', icon: `ikony64/dodatek-${character.id}` }
     ];
 }
 
@@ -54,7 +43,6 @@ export class KitchenScene extends BaseScene {
     init(data) {
         super.init(data);
         this.character = this.selectedCharacter();
-        this.cakeStyle = getCake(this.character);
         this.phase = 'ingredients';
         this.added = [];
         this.mixed = false;
@@ -73,9 +61,8 @@ export class KitchenScene extends BaseScene {
         this.drawCounter(width, height);
         this.createOven(width);
 
-        this.bowl = this.add.graphics();
-        this.drawBowl();
-        this.cake = this.add.graphics();
+        this.createBowl();
+        this.createCake();
 
         this.showIngredientButtons();
     }
@@ -84,43 +71,20 @@ export class KitchenScene extends BaseScene {
 
     // Wall and splashback reach the edges of the whole window (view.bleed), beyond the stage.
     drawWall(width) {
-        const C = KITCHEN_COLORS;
-        const g = this.add.graphics();
         const top = this.counterTop;
         const b = this.view.bleed;
-
-        g.fillStyle(C.wall, 1);
-        g.fillRect(b.x, b.y, b.width, top - b.y);
+        this.add.rectangle(b.x, b.y, b.width, top - b.y, KITCHEN_COLORS.wall).setOrigin(0);
 
         // Tiled splashback above the counter.
-        const tile = S(8);
         const tilesTop = top - S(40);
-        const firstX = Math.floor(b.x / tile) * tile;
-        for (let y = tilesTop; y < top; y += tile) {
-            for (let x = firstX; x < b.x + b.width; x += tile) {
-                const odd = Math.abs(Math.floor(x / tile) + Math.floor((y - tilesTop) / tile)) % 2;
-                g.fillStyle(odd ? C.tileB : C.tileA, 1);
-                g.fillRect(x, y, tile, Math.min(tile, top - y));
-            }
-        }
+        addPattern(this, b.x, tilesTop, b.width, top - tilesTop, P + 'kafelki');
 
-        // Window with sky and a cloud.
+        // Window with sky and a cloud, and a shelf with a heart under it.
         const winW = S(60);
         const winH = S(42);
         const winX = Math.round(width * 0.42 - winW / 2);
         const winY = Math.max(S(10), Math.round(tilesTop * 0.4 - winH / 2));
-        PixelUI.drawBox(g, winX, winY, winW, winH, PALETTE.sky[0], PALETTE.outline);
-        Icons.cloud(g, winX + Math.round(winW * 0.55), winY + Math.round(winH * 0.5), S(26), S(14));
-        g.fillStyle(0xffffff, 1);
-        g.fillRect(winX + Math.round(winW / 2) - 1, winY + 2, 2, winH - 4);
-
-        // Shelf with a heart.
-        const shelfY = winY + winH + S(10);
-        if (shelfY < tilesTop - S(6)) {
-            g.fillStyle(PALETTE.outline, 1);
-            g.fillRect(winX - S(4), shelfY, winW + S(8), 3);
-            Icons.heart(g, winX + Math.round(winW / 2), shelfY - S(6), S(12));
-        }
+        addImage(this, winX, winY, P + 'okno');
     }
 
     // The character stands behind the counter, so the counter is drawn after it.
@@ -143,17 +107,13 @@ export class KitchenScene extends BaseScene {
     // Counter and cabinets, also continued across the whole window (view.bleed).
     drawCounter(width, height) {
         const C = KITCHEN_COLORS;
-        const g = this.add.graphics();
         const top = this.counterTop;
         const slab = S(12);
         const b = this.view.bleed;
 
-        g.fillStyle(PALETTE.outline, 1);
-        g.fillRect(b.x, top, b.width, slab + 1);
-        g.fillStyle(C.counter, 1);
-        g.fillRect(b.x, top + 1, b.width, slab - 2);
-        g.fillStyle(C.counterEdge, 1);
-        g.fillRect(b.x, top + slab - 3, b.width, 2);
+        this.add.rectangle(b.x, top, b.width, slab + 1, PALETTE.outline).setOrigin(0);
+        this.add.rectangle(b.x, top + 1, b.width, slab - 2, C.counter).setOrigin(0);
+        this.add.rectangle(b.x, top + slab - 3, b.width, 2, C.counterEdge).setOrigin(0);
 
         // Cabinets underneath, down to the button row; doors repeat out to the window edges.
         const cabTop = top + slab + 1;
@@ -163,17 +123,13 @@ export class KitchenScene extends BaseScene {
             const step = doorW + S(6);
             const firstX = S(6) - Math.ceil((S(6) - b.x) / step) * step;
             for (let x = firstX; x < b.x + b.width; x += step) {
-                PixelUI.drawBox(g, x, cabTop + S(4), doorW, cabBottom - cabTop - S(4), C.cabinet, PALETTE.outline);
-                g.fillStyle(C.handle, 1);
-                g.fillRect(x + Math.round(doorW / 2) - S(6), cabTop + S(10), S(12), S(3));
+                addImage(this, x, cabTop + S(4), P + 'drzwiczki');
             }
         }
-        g.fillStyle(C.cabinetDark, 1);
-        g.fillRect(b.x, cabBottom, b.width, b.y + b.height - cabBottom);
+        this.add.rectangle(b.x, cabBottom, b.width, b.y + b.height - cabBottom, C.cabinetDark).setOrigin(0);
     }
 
     createOven(width) {
-        const C = KITCHEN_COLORS;
         const w = S(64);
         const h = S(54);
         const cx = width - S(46);
@@ -182,109 +138,67 @@ export class KitchenScene extends BaseScene {
         const top = bottom - h;
         this.ovenPos = { x: cx, top, bottom };
 
+        // Oven anchored on the middle of its base, so the hint pulse grows it from there.
         const container = this.add.container(cx, bottom);
-        const g = this.add.graphics({ x: -cx, y: -bottom });
-        PixelUI.drawBox(g, left, top, w, h, C.oven, PALETTE.outline);
-        g.fillStyle(C.ovenPanel, 1);
-        g.fillRect(left + 2, top + 2, w - 4, S(9));
-        g.fillStyle(PALETTE.outline, 1);
-        PixelUI.fillCircle(g, left + S(10), top + S(6), S(2));
-        PixelUI.fillCircle(g, left + w - S(10), top + S(6), S(2));
-        g.fillRect(left + S(8), top + S(14), w - S(16), 2);
-        container.add(g);
+        container.add(addImage(this, 0, 0, P + 'piekarnik'));
 
-        // Window: redrawn to glow while baking.
+        // Window: shows the tin and glows while baking.
         this.ovenWindow = { x: left + S(8), y: top + S(19), w: w - S(16), h: h - S(25) };
-        this.ovenGlass = this.add.graphics({ x: -cx, y: -bottom });
+        this.ovenGlass = addImage(this, this.ovenWindow.x - cx, this.ovenWindow.y - bottom, P + 'szybka');
         container.add(this.ovenGlass);
-        this.drawOvenGlass(false);
         this.oven = container;
 
         // Progress squares above the oven, filled while baking.
-        this.progress = this.add.graphics();
+        const count = 8;
+        const size = S(5);
+        const gap = 2;
+        const totalW = count * size + (count - 1) * gap;
+        const progressLeft = Math.round(cx - totalW / 2);
+        this.progress = Array.from({ length: count }, (_, i) =>
+            addImage(this, progressLeft + i * (size + gap), top - S(10), P + 'kratka').setVisible(false));
 
         const zone = this.add.zone(cx, top + h / 2, w, h).setInteractive({ useHandCursor: true });
         zone.on('pointerup', () => this.bake());
     }
 
     drawOvenGlass(glowing, withTin = false) {
-        const C = KITCHEN_COLORS;
-        const { x, y, w, h } = this.ovenWindow;
-        const g = this.ovenGlass;
-        g.clear();
-        PixelUI.drawBox(g, x, y, w, h, glowing ? C.ovenGlow : C.ovenWindow, PALETTE.outline);
-        if (withTin) {
-            g.fillStyle(PALETTE.outline, 1);
-            g.fillRect(x + S(6), y + h - S(9), w - S(12), S(6));
-            g.fillStyle(glowing ? 0xf6d098 : C.batterMixed, 1);
-            g.fillRect(x + S(6) + 1, y + h - S(9) + 1, w - S(12) - 2, S(4));
-        }
+        const key = withTin ? (glowing ? 'szybka-z-forma-goraca' : 'szybka-z-forma') : 'szybka';
+        setImage(this.ovenGlass, P + key);
     }
 
     drawProgress(done) {
-        const g = this.progress;
-        const count = 8;
-        const size = S(5);
-        const gap = 2;
-        const totalW = count * size + (count - 1) * gap;
-        const left = Math.round(this.ovenPos.x - totalW / 2);
-        const y = this.ovenPos.top - S(10);
-        g.clear();
-        for (let i = 0; i < count; i++) {
-            g.fillStyle(PALETTE.outline, 1);
-            g.fillRect(left + i * (size + gap) - 1, y - 1, size + 2, size + 2);
-            g.fillStyle(i < done ? KITCHEN_COLORS.progress : 0xffffff, 1);
-            g.fillRect(left + i * (size + gap), y, size, size);
-        }
+        this.progress.forEach((square, i) => setImage(square.setVisible(true), P + (i < done ? 'kratka-pelna' : 'kratka')));
     }
 
     // --- Bowl --------------------------------------------------------------------
 
+    // The bowl, the batter on top of it and a blob for each ingredient that went in.
+    createBowl() {
+        const { x, y } = this.bowlPos;
+        this.bowl = this.add.container(0, 0);
+        this.batter = addImage(this, x, y, P + 'miska-ciasto').setVisible(false);
+        this.bowl.add([addImage(this, x, y, P + 'miska'), this.batter]);
+        this.blobs = [];
+    }
+
     drawBowl() {
-        const C = KITCHEN_COLORS;
-        const g = this.bowl;
         const { x, y } = this.bowlPos;
         const rx = S(30);
-        const depth = S(24);
-        const rimY = y - depth;
-        g.clear();
-
-        // Bowl body: lower half of an ellipse.
-        g.fillStyle(PALETTE.outline, 1);
-        for (let dy = 0; dy <= depth; dy++) {
-            const half = Math.round((rx + 1) * Math.sqrt(1 - (dy / (depth + 1)) ** 2));
-            g.fillRect(x - half, rimY + dy, half * 2 + 1, 1);
-        }
-        g.fillStyle(C.bowl, 1);
-        for (let dy = 1; dy < depth; dy++) {
-            const half = Math.round(rx * Math.sqrt(1 - (dy / depth) ** 2)) - 1;
-            g.fillRect(x - half, rimY + dy, half * 2 + 1, 1);
-        }
-        g.fillStyle(0xffffff, 1);
-        g.fillRect(x - Math.round(rx * 0.6), rimY + S(6), 3, S(5));
-
-        // Opening seen from slightly above.
-        const openRy = S(6);
-        g.fillStyle(PALETTE.outline, 1);
-        Icons.fillEllipse(g, x, rimY, rx + 1, openRy + 1);
+        const rimY = y - S(24);
         const filled = this.added.length > 0;
-        g.fillStyle(filled ? (this.mixed ? C.batterMixed : C.batter) : C.bowlInside, 1);
-        Icons.fillEllipse(g, x, rimY, rx - 1, openRy - 1);
-
+        this.batter.setVisible(filled);
+        if (filled) {
+            setImage(this.batter, P + (this.mixed ? 'miska-ciasto-wymieszane' : 'miska-ciasto'));
+        }
+        this.blobs.forEach((blob) => blob.destroy());
+        this.blobs = [];
         if (filled && !this.mixed) {
-            // A blob for each ingredient that went in.
-            this.added.forEach((key, i) => {
+            this.blobs = this.added.map((key, i) => {
                 const ingredient = INGREDIENTS.find((ing) => ing.key === key);
-                g.fillStyle(ingredient.blob, 1);
                 const bx = x + Math.round((i - 1.5) * rx * 0.4);
-                PixelUI.fillCircle(g, bx, rimY - 1 + (i % 2), S(3));
+                return addImage(this, bx, rimY - 1 + (i % 2), ingredient.blob);
             });
-        } else if (this.mixed) {
-            // Swirl.
-            g.fillStyle(0xf6d098, 1);
-            g.fillRect(x - S(10), rimY, S(8), 1);
-            g.fillRect(x + S(2), rimY - 2, S(9), 1);
-            g.fillRect(x - S(4), rimY + 2, S(10), 1);
+            this.bowl.add(this.blobs);
         }
     }
 
@@ -302,7 +216,7 @@ export class KitchenScene extends BaseScene {
         const centerX = (left + right) / 2;
         defs.forEach((def, i) => {
             const x = Math.round(centerX + (i - (defs.length - 1) / 2) * gap);
-            const button = PixelUI.createIconButton(this, x, y, size, def.draw, () => def.onTap(button));
+            const button = PixelUI.createIconButton(this, x, y, size, def.icon, () => def.onTap(button));
             button.key = def.key;
             this.rowButtons.push(button);
         });
@@ -322,18 +236,16 @@ export class KitchenScene extends BaseScene {
     markDone(button) {
         button.setAlpha(0.45);
         button.done = true;
-        const mark = this.add.graphics();
-        Icons.heart(mark, S(13), -S(13), S(12));
-        button.add(mark);
+        button.add(addImage(this, S(13), -S(13), 'ikony/serce-18'));
     }
 
     showIngredientButtons() {
         const defs = INGREDIENTS.map((ing) => ({
             key: ing.key,
-            draw: ing.draw,
+            icon: ing.icon,
             onTap: (button) => this.addIngredient(ing, button)
         }));
-        defs.push({ key: 'whisk', draw: (g, s) => Icons.whisk(g, 0, 0, s), onTap: (button) => this.mix(button) });
+        defs.push({ key: 'whisk', icon: 'ikony64/trzepaczka', onTap: (button) => this.mix(button) });
         this.setRow(defs);
         this.whiskButton = this.rowButtons[this.rowButtons.length - 1];
         this.whiskButton.setAlpha(0.45);
@@ -349,8 +261,7 @@ export class KitchenScene extends BaseScene {
         this.busy = true;
         this.markDone(button);
 
-        const piece = this.add.graphics({ x: button.x, y: button.y }).setDepth(20);
-        ingredient.draw(piece, S(26));
+        const piece = addImage(this, button.x, button.y, ingredient.piece).setDepth(20);
         this.tweens.add({
             targets: piece,
             x: this.bowlPos.x,
@@ -394,8 +305,7 @@ export class KitchenScene extends BaseScene {
         this.markDone(button);
         this.hint(null);
 
-        const whisk = this.add.graphics({ x: this.bowlPos.x, y: this.bowlPos.y - S(36) }).setDepth(20);
-        Icons.whisk(whisk, 0, 0, S(30));
+        const whisk = addImage(this, this.bowlPos.x, this.bowlPos.y - S(36), P + 'trzepaczka').setDepth(20);
         let strokes = 0;
         this.time.addEvent({
             delay: 160,
@@ -427,11 +337,7 @@ export class KitchenScene extends BaseScene {
         this.hint(null);
 
         // Batter goes into a tin and into the oven.
-        const tin = this.add.graphics({ x: this.bowlPos.x, y: this.bowlPos.y - S(30) }).setDepth(20);
-        tin.fillStyle(PALETTE.outline, 1);
-        tin.fillRect(-S(16), -S(4), S(32), S(8));
-        tin.fillStyle(KITCHEN_COLORS.batterMixed, 1);
-        tin.fillRect(-S(16) + 1, -S(4) + 1, S(32) - 2, S(5));
+        const tin = addImage(this, this.bowlPos.x, this.bowlPos.y - S(30), P + 'forma').setDepth(20);
         this.added = [];
         this.mixed = false;
         this.bowl.setVisible(false);
@@ -472,28 +378,48 @@ export class KitchenScene extends BaseScene {
 
     takeOutCake() {
         this.drawOvenGlass(false);
-        this.progress.clear();
+        this.progress.forEach((square) => square.setVisible(false));
         this.phase = 'decorate';
         this.drawCake();
-        this.cake.setAlpha(0);
+        this.cake.setVisible(true).setAlpha(0);
         this.tweens.add({ targets: this.cake, alpha: 1, duration: 400 });
         this.heartAt(this.bowlPos.x, this.bowlPos.y - S(44));
         this.busy = false;
 
-        const defs = cakeDecorations(this.cakeStyle).map((t) => ({ key: t.key, draw: t.draw, onTap: (button) => this.addTopping(t, button) }));
-        defs.push({ key: 'serve', draw: (g, s) => Icons.heart(g, 0, 0, s), onTap: () => this.serve() });
+        const defs = cakeDecorations(this.character).map((t) => ({ key: t.key, icon: t.icon, onTap: (button) => this.addTopping(t, button) }));
+        defs.push({ key: 'serve', icon: 'ikony64/serce', onTap: () => this.serve() });
         this.setRow(defs);
         this.hint(this.rowButtons[0]);
     }
 
-    drawCake(bite = 0) {
-        this.cake.clear();
-        Icons.characterCake(this.cake, this.character, this.bowlPos.x, this.bowlPos.y, S(56), {
-            icing: Boolean(this.toppings.icing),
-            sprinkles: Boolean(this.toppings.sprinkles),
-            topping: Boolean(this.toppings.topping),
-            bite
-        });
+    // The cake on the plate in layers (sponge, icing, sprinkles, topping), shown once baked.
+    createCake() {
+        const { x, y } = this.bowlPos;
+        const id = this.character.id;
+        this.cakeLayers = {
+            base: addImage(this, x, y, `${P}tort-${id}`),
+            icing: addImage(this, x, y, `${P}lukier-${id}`),
+            sprinkles: addImage(this, x, y, P + 'posypka'),
+            topping: addImage(this, x, y, `${P}dodatek-${id}`)
+        };
+        this.cake = this.add.container(0, 0, Object.values(this.cakeLayers)).setVisible(false);
+    }
+
+    // `bites`: how many of the three bites have been eaten from the right side.
+    drawCake(bites = 0) {
+        const id = this.character.id;
+        const layers = this.cakeLayers;
+        const suffix = bites ? `-kes-${bites}` : '';
+        const eaten = bites >= 3;
+        setImage(layers.base, eaten ? P + 'talerzyk' : `${P}tort-${id}${suffix}`);
+        layers.icing.setVisible(!eaten && Boolean(this.toppings.icing));
+        layers.sprinkles.setVisible(!eaten && Boolean(this.toppings.sprinkles));
+        if (!eaten) {
+            setImage(layers.icing, `${P}lukier-${id}${suffix}`);
+            setImage(layers.sprinkles, `${P}posypka${suffix}`);
+        }
+        // The topping goes with the second bite.
+        layers.topping.setVisible(bites < 2 && Boolean(this.toppings.topping));
     }
 
     addTopping(topping, button) {
@@ -523,15 +449,10 @@ export class KitchenScene extends BaseScene {
     }
 
     biteCake(bite) {
-        const piece = this.add.graphics({ x: this.bowlPos.x + S(16), y: this.bowlPos.y - S(14) }).setDepth(20);
-        piece.fillStyle(PALETTE.outline, 1);
-        piece.fillRect(-S(5) - 1, -S(4) - 1, S(10) + 2, S(8) + 2);
-        piece.fillStyle(this.cakeStyle.sponge, 1);
-        piece.fillRect(-S(5), -S(4), S(10), S(8));
-        piece.fillStyle(this.toppings.icing ? this.cakeStyle.icing : 0xfff7e8, 1);
-        piece.fillRect(-S(5), -S(4), S(10), S(3));
+        const key = `${P}kawalek-${this.character.id}${this.toppings.icing ? '' : '-bez-lukru'}`;
+        const piece = addImage(this, this.bowlPos.x + S(16), this.bowlPos.y - S(14), key).setDepth(20);
 
-        this.drawCake(bite / 3);
+        this.drawCake(bite);
         this.tweens.add({
             targets: piece,
             x: this.mouth.x,
@@ -581,7 +502,7 @@ export class KitchenScene extends BaseScene {
         // Bake again, or go back home (the back button).
         this.setRow([{
             key: 'again',
-            draw: (g, s) => Icons.characterCake(g, this.character, 0, Math.round(s * 0.3), Math.round(s * 0.8)),
+            icon: `ikony64/tort-${this.character.id}`,
             onTap: () => this.scene.restart({ resized: true })
         }]);
         this.hint(this.rowButtons[0]);
