@@ -7,6 +7,9 @@ const STORAGE_KEY = 'swiat-siostr-settings';
 const DEFAULTS = {
     // Shows the window and screen size in a corner, to tune the stage for a device.
     debug: false,
+    // Size of the whole game in the window, in percent of the largest that fits (main.js
+    // fitToWindow). Smaller leaves room around it, e.g. when Safari's toolbars cover an edge.
+    stageScale: 100,
     // Parental time limit in minutes (0 = off) and when it runs out (ms timestamp, 0 = off).
     // See PlayTime below.
     timeLimit: 0,
@@ -41,6 +44,9 @@ export const Settings = {
         }
     }
 };
+
+// The stage scale slider in Settings: its range and step, in percent.
+export const STAGE_SCALE = { min: 50, max: 100, step: 5 };
 
 // Parental time limit: after the chosen minutes the game shows "KONIEC GRY" over
 // everything (OverlayScene). The end is stored as a clock time, so reloading or restarting

@@ -1,5 +1,6 @@
 import { SAFE_AREA, STAGE, fitScale, setRenderScale } from './ui/pixel.js';
 import { Music } from './audio/music.js';
+import { Settings } from './ui/settings.js';
 import { StartScene } from './scenes/StartScene.js';
 import { CharacterScene } from './scenes/CharacterScene.js';
 import { TerrariumScene } from './scenes/TerrariumScene.js';
@@ -64,7 +65,8 @@ function fitToWindow(game) {
     document.documentElement.style.height = `${h}px`;
     document.body.style.height = `${h}px`;
 
-    setRenderScale(fitScale(w, h, dpr));
+    // The stage scale slider in Settings shrinks the whole game below the largest fit.
+    setRenderScale(fitScale(w, h, dpr) * (Settings.get('stageScale') / 100));
 
     // The canvas has one pixel per device pixel; CSS shrinks it back by the DPR.
     game.scale.resize(Math.round(w * dpr), Math.round(h * dpr));

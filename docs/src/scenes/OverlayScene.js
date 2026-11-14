@@ -2,7 +2,7 @@ import { PALETTE, PixelUI, RENDER_SCALE, S, SAFE_AREA, TEXT_COLORS, textStyle } 
 import { ICON_COLORS, Icons } from '../gfx/icons.js';
 import { Music } from '../audio/music.js';
 import { MUSIC } from '../data/music.js';
-import { PlayTime, Settings } from '../ui/settings.js';
+import { PlayTime, STAGE_SCALE, Settings } from '../ui/settings.js';
 import { floatZ } from '../ui/effects.js';
 import { getCharacter } from '../data/characters.js';
 import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
@@ -11,6 +11,10 @@ import { BaseScene } from './BaseScene.js';
 
 // Scenes that show the gear button; elsewhere the girls can't open Settings by accident.
 const SETTINGS_SCENES = ['StartScene', 'CharacterScene'];
+
+// Changing the stage scale rebuilds every scene, this one too; Settings open again after
+// every rebuild until they are closed.
+let reopenSettings = false;
 
 // Always-on-top scene with controls that stay visible on every screen.
 // It is last in the scene list, so it renders above the others and gets input first.
@@ -57,6 +61,12 @@ export class OverlayScene extends BaseScene {
 
         this.debugInfo = null;
         this.refreshDebugInfo();
+
+        // A resize can rebuild the scene more than once; the flag stays until Settings close.
+        this.sliding = false;
+        if (reopenSettings) {
+            this.openSettings();
+        }
     }
 
     // Scenes where the gear (Settings) button is shown.
@@ -126,7 +136,10 @@ export class OverlayScene extends BaseScene {
         backdrop.on('pointerdown', (pointer, x, y, event) => event.stopPropagation());
         backdrop.on('pointerup', (pointer, x, y, event) => {
             event.stopPropagation();
-            this.closeMenu();
+            // A slider dragged off the panel ends there without closing it.
+            if (!this.finishSlide()) {
+                this.closeMenu();
+            }
         });
         this.menu.add(backdrop);
 
@@ -144,13 +157,26 @@ export class OverlayScene extends BaseScene {
         row.on('pointerdown', (pointer, x, y, event) => event.stopPropagation());
         row.on('pointerup', (pointer, x, y, event) => {
             event.stopPropagation();
-            onTap();
+            // Letting go of a slider over a row isn't a tap on it.
+            if (!this.finishSlide()) {
+                onTap();
+            }
         });
         this.menu.add(row);
         return row;
     }
 
+    // Ends a slider drag (addScaleSlider sets this.endSlide); true if one was going on.
+    finishSlide() {
+        if (!this.sliding) {
+            return false;
+        }
+        this.endSlide();
+        return true;
+    }
+
     closeMenu() {
+        reopenSettings = false;
         this.menuTimer?.remove();
         this.menuTimer = null;
         this.timeLeftText = null;
@@ -162,17 +188,18 @@ export class OverlayScene extends BaseScene {
 
     // --- Settings -----------------------------------------------------------------
 
-    // Settings for the grown-ups: checkbox rows, then the play time limit with a button per
-    // choice and how much time is left (the only place that shows it).
+    // Settings for the grown-ups: checkbox rows, the stage scale slider, then the play time
+    // limit with a button per choice and how much time is left (the only place that shows it).
     openSettings() {
         const rowH = S(34);
         const pad = S(10);
         const titleH = S(24);
         const labelH = S(20);
         const chipH = S(26);
+        const sliderH = S(28);
         const panelW = Math.min(this.view.width - S(24), S(300));
         const settings = [{ key: 'debug', label: 'Tryb debug' }];
-        const panelH = pad * 2 + titleH + settings.length * rowH + labelH + chipH + S(6) + labelH;
+        const panelH = pad * 2 + titleH + settings.length * rowH + labelH + sliderH + labelH + chipH + S(6) + labelH;
         const { panelX, panelY } = this.openPanel(panelW, panelH);
         const w = panelW - pad * 2;
         let y = panelY + pad;
@@ -197,6 +224,9 @@ export class OverlayScene extends BaseScene {
             });
             y += rowH;
         });
+
+        this.addScaleSlider(panelX + pad, y, w, labelH, sliderH);
+        y += labelH + sliderH;
 
         // Play time limit: off or one of PlayTime.OPTIONS minutes, counted from the tap.
         this.menu.add(PixelUI.addText(this, panelX + pad, y + labelH / 2, 'Czas gry',
@@ -232,6 +262,72 @@ export class OverlayScene extends BaseScene {
         this.menu.add(this.timeLeftText);
         this.refreshTimeLeft();
         this.menuTimer = this.time.addEvent({ delay: 1000, loop: true, callback: () => this.refreshTimeLeft() });
+    }
+
+    // "Wielkość gry" with its percentage, over a slider from STAGE_SCALE.min to max. The
+    // knob follows the finger; letting go anywhere applies the size (main.js fitToWindow,
+    // through a resize event), which rebuilds every scene and opens Settings again.
+    addScaleSlider(left, top, w, labelH, sliderH) {
+        const { min, max, step } = STAGE_SCALE;
+        let value = Settings.get('stageScale');
+        const label = PixelUI.addText(this, left, top + labelH / 2, '',
+            textStyle(S(11), { bold: true, color: TEXT_COLORS.button })).setOrigin(0, 0.5);
+        const cy = top + labelH + sliderH / 2;
+        const knobR = S(9);
+        const trackLeft = left + knobR;
+        const trackW = w - knobR * 2;
+        const g = this.add.graphics();
+        const draw = () => {
+            label.setText(`Wielkość gry: ${value}%`);
+            g.clear();
+            PixelUI.drawBox(g, trackLeft - S(3), cy - S(4), trackW + S(6), S(8), 0xffffff, PALETTE.buttonBorder);
+            const x = Math.round(trackLeft + ((value - min) / (max - min)) * trackW);
+            g.fillStyle(PALETTE.button, 1);
+            g.fillRect(trackLeft, cy - S(2), x - trackLeft, S(4));
+            g.fillStyle(PALETTE.buttonBorder, 1);
+            PixelUI.fillCircle(g, x, cy, knobR + 1);
+            g.fillStyle(PALETTE.button, 1);
+            PixelUI.fillCircle(g, x, cy, knobR);
+            g.fillStyle(PALETTE.buttonLight, 1);
+            PixelUI.fillCircle(g, x - S(2), cy - S(2), S(3));
+        };
+        const valueAt = (px) => {
+            const f = Phaser.Math.Clamp((px - trackLeft) / trackW, 0, 1);
+            return Math.round((min + f * (max - min)) / step) * step;
+        };
+        draw();
+
+        const zone = this.add.zone(left, cy - sliderH / 2, w, sliderH).setOrigin(0).setInteractive({ useHandCursor: true });
+        const move = (pointer) => {
+            if (this.sliding) {
+                value = valueAt(pointer.worldX);
+                draw();
+            }
+        };
+        // Called once per drag by whatever the finger is lifted over: the slider, the
+        // backdrop or a row (finishSlide), or outside the game.
+        this.endSlide = () => {
+            this.sliding = false;
+            this.input.off('pointermove', move);
+            this.input.off('pointerupoutside', this.endSlide);
+            if (value !== Settings.get('stageScale')) {
+                Settings.set('stageScale', value);
+                reopenSettings = true;
+                window.dispatchEvent(new Event('resize'));
+            }
+        };
+        zone.on('pointerdown', (pointer, x, y, event) => {
+            event.stopPropagation();
+            this.sliding = true;
+            move(pointer);
+            this.input.on('pointermove', move);
+            this.input.on('pointerupoutside', this.endSlide);
+        });
+        zone.on('pointerup', (pointer, x, y, event) => {
+            event.stopPropagation();
+            this.finishSlide();
+        });
+        this.menu.add([label, g, zone]);
     }
 
     // "Zostało: 12 min" under the time limit buttons, while Settings are open.
