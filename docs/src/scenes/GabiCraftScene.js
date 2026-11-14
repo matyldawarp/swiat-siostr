@@ -275,9 +275,10 @@ export class GabiCraftScene extends BaseScene {
                 const bg = this.add.graphics();
                 this.drawBottle(bg, paint);
                 bottle.add(bg);
-                bottle.setSize(S(22), S(34));
-                bottle.setInteractive(new Phaser.Geom.Rectangle(-S(11), -S(34), S(22), S(34)), Phaser.Geom.Rectangle.Contains);
-                bottle.on('pointerup', () => this.pickPaint(paint, bottle));
+                // The whole bottle and its cap, as drawn above the shelf.
+                this.add.zone(bottle.x - S(12), shelfY - S(34), S(24), S(36)).setOrigin(0)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerup', () => this.pickPaint(paint, bottle));
                 this.bottles.push({ paint, bottle });
             }
         });
@@ -362,9 +363,10 @@ export class GabiCraftScene extends BaseScene {
             bg.fillRect(x, -S(11), 1, S(9));
         }
         basket.add(bg);
-        basket.setSize(S(30), S(30));
-        basket.setInteractive(new Phaser.Geom.Rectangle(-S(15), -S(26), S(30), S(26)), Phaser.Geom.Rectangle.Contains);
-        basket.on('pointerup', () => this.newPompom(basket));
+        // The basket and the pompoms on top, as drawn on the table.
+        this.add.zone(bx - S(16), top - S(28), S(32), S(30)).setOrigin(0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerup', () => this.newPompom(basket));
         this.basket = basket;
         PixelUI.pulse(this, basket, 0.06);
     }
