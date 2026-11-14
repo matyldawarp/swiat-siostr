@@ -1,4 +1,4 @@
-import { hasImage, imageTexture } from './images.js';
+import { imageTexture } from './images.js';
 
 // Every character is drawn on 16x16 pixels, around its centre.
 export const SPRITE_SIZE = 16;
@@ -18,14 +18,13 @@ const CHARACTER_FOLDERS = { 2: 'postacie-male', 4: 'postacie' };
 
 // The textures `<key>`, `<key>-blink` and `<key>-chew` of a character at a sprite scale of
 // 2 or 4, from its pictures in docs/assets/gfx/ (gfx/images.js); returns `<key>`: the
-// character's id at the room scale, `<id>-x<scale>` otherwise. Characters drawn by the
-// girls have only one picture, used for all three.
+// character's id at the room scale, `<id>-x<scale>` otherwise. Every character has all three
+// pictures (npm run check makes sure).
 export function createHamsterTextures(scene, character, scale = CHARACTER_SCALE) {
     const folder = CHARACTER_FOLDERS[scale];
     const key = scale === CHARACTER_SCALE ? character.id : `${character.id}-x${scale}`;
-    const own = (suffix) => (hasImage(`${folder}/${character.id}${suffix}`) ? suffix : '');
     ['', '-blink', '-chew'].forEach((suffix) => {
-        imageTexture(scene, `${folder}/${character.id}${own(suffix)}`, key + suffix);
+        imageTexture(scene, `${folder}/${character.id}${suffix}`, key + suffix);
     });
     return key;
 }

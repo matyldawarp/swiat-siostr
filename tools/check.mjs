@@ -181,9 +181,12 @@ if (charactersModule) {
         if (typeof c.species !== 'string') {
             fail(charactersFile, `${where}: species must be a string (may be empty)`);
         }
-        if (!existsSync(join(DOCS, 'assets', 'gfx', 'postacie', `${c.id}.png`))) {
-            fail(charactersFile, `${where}: no picture docs/assets/gfx/postacie/${c.id}.png`);
-        }
+        // Every character in both sizes, with closed eyes (blink) and eating (chew).
+        ['postacie', 'postacie-male'].forEach((folder) => ['', '-blink', '-chew'].forEach((suffix) => {
+            if (!existsSync(join(DOCS, 'assets', 'gfx', folder, `${c.id}${suffix}.png`))) {
+                fail(charactersFile, `${where}: no picture docs/assets/gfx/${folder}/${c.id}${suffix}.png`);
+            }
+        }));
         const sound = c.sound;
         if (!sound || !['sine', 'triangle', 'square', 'sawtooth'].includes(sound.wave)
             || typeof sound.gap !== 'number' || !Array.isArray(sound.chirps) || sound.chirps.length === 0

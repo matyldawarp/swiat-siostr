@@ -323,21 +323,12 @@
     "mapa/szkola": {"anchor":[43,73]},
     "mapa/szpital": {"anchor":[49,82]},
     "mapa/trawa": {"anchor":[0,0]},
-
-
-
-
-
-
-
-
-
-
-
     "postacie-ekran/okienko": {"anchor":[0,0]},
     "postacie-ekran/okienko-wybrane": {"anchor":[0,0]},
     "postacie-ekran/okienko-zamkniete": {"anchor":[0,0]},
     "postacie-male/gabi": {"anchor":[16,16]},
+    "postacie-male/gabi-blink": {"anchor":[16,16]},
+    "postacie-male/gabi-chew": {"anchor":[16,16]},
     "postacie-male/mordka": {"anchor":[16,16]},
     "postacie-male/mordka-blink": {"anchor":[16,16]},
     "postacie-male/mordka-chew": {"anchor":[16,16]},
@@ -345,22 +336,26 @@
     "postacie-male/mysia-blink": {"anchor":[16,16]},
     "postacie-male/mysia-chew": {"anchor":[16,16]},
     "postacie-male/postac1": {"anchor":[16,16]},
+    "postacie-male/postac1-blink": {"anchor":[16,16]},
+    "postacie-male/postac1-chew": {"anchor":[16,16]},
     "postacie-male/postac2": {"anchor":[16,16]},
+    "postacie-male/postac2-blink": {"anchor":[16,16]},
+    "postacie-male/postac2-chew": {"anchor":[16,16]},
     "postacie-male/postac3": {"anchor":[16,16]},
+    "postacie-male/postac3-blink": {"anchor":[16,16]},
+    "postacie-male/postac3-chew": {"anchor":[16,16]},
     "postacie-male/postac4": {"anchor":[16,16]},
+    "postacie-male/postac4-blink": {"anchor":[16,16]},
+    "postacie-male/postac4-chew": {"anchor":[16,16]},
     "postacie-male/postac5": {"anchor":[16,16]},
+    "postacie-male/postac5-blink": {"anchor":[16,16]},
+    "postacie-male/postac5-chew": {"anchor":[16,16]},
     "postacie-male/postac6": {"anchor":[16,16]},
-
-
-
-
-
-
-
-
-
-
+    "postacie-male/postac6-blink": {"anchor":[16,16]},
+    "postacie-male/postac6-chew": {"anchor":[16,16]},
     "postacie/gabi": {"anchor":[32,32]},
+    "postacie/gabi-blink": {"anchor":[32,32]},
+    "postacie/gabi-chew": {"anchor":[32,32]},
     "postacie/mordka": {"anchor":[32,32]},
     "postacie/mordka-blink": {"anchor":[32,32]},
     "postacie/mordka-chew": {"anchor":[32,32]},
@@ -368,11 +363,23 @@
     "postacie/mysia-blink": {"anchor":[32,32]},
     "postacie/mysia-chew": {"anchor":[32,32]},
     "postacie/postac1": {"anchor":[32,32]},
+    "postacie/postac1-blink": {"anchor":[32,32]},
+    "postacie/postac1-chew": {"anchor":[32,32]},
     "postacie/postac2": {"anchor":[32,32]},
+    "postacie/postac2-blink": {"anchor":[32,32]},
+    "postacie/postac2-chew": {"anchor":[32,32]},
     "postacie/postac3": {"anchor":[32,32]},
+    "postacie/postac3-blink": {"anchor":[32,32]},
+    "postacie/postac3-chew": {"anchor":[32,32]},
     "postacie/postac4": {"anchor":[32,32]},
+    "postacie/postac4-blink": {"anchor":[32,32]},
+    "postacie/postac4-chew": {"anchor":[32,32]},
     "postacie/postac5": {"anchor":[32,32]},
+    "postacie/postac5-blink": {"anchor":[32,32]},
+    "postacie/postac5-chew": {"anchor":[32,32]},
     "postacie/postac6": {"anchor":[32,32]},
+    "postacie/postac6-blink": {"anchor":[32,32]},
+    "postacie/postac6-chew": {"anchor":[32,32]},
     "pracownia/farba-fioletowa": {"anchor":[14,48]},
     "pracownia/farba-niebieska": {"anchor":[14,48]},
     "pracownia/farba-pomaranczowa": {"anchor":[14,48]},
@@ -489,6 +496,22 @@
     "terrarium/stojak-kolka": {"anchor":[12,63]},
     "terrarium/wanna": {"anchor":[41,11]},
     "terrarium/wanna-woda": {"anchor":[37,5]},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     "winda/drzwi": {"anchor":[0,0]},
     "winda/winda": {"anchor":[36,182]}
 }
