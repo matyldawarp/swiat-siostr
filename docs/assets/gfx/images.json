@@ -352,19 +352,17 @@
     "postacie-male/postac4": {"anchor":[16,16]},
     "postacie-male/postac5": {"anchor":[16,16]},
     "postacie-male/postac6": {"anchor":[16,16]},
-    "postacie-mini/gabi": {"anchor":[8,8]},
-    "postacie-mini/mordka": {"anchor":[8,8]},
-    "postacie-mini/mordka-blink": {"anchor":[8,8]},
-    "postacie-mini/mordka-chew": {"anchor":[8,8]},
-    "postacie-mini/mysia": {"anchor":[8,8]},
-    "postacie-mini/mysia-blink": {"anchor":[8,8]},
-    "postacie-mini/mysia-chew": {"anchor":[8,8]},
-    "postacie-mini/postac1": {"anchor":[8,8]},
-    "postacie-mini/postac2": {"anchor":[8,8]},
-    "postacie-mini/postac3": {"anchor":[8,8]},
-    "postacie-mini/postac4": {"anchor":[8,8]},
-    "postacie-mini/postac5": {"anchor":[8,8]},
-    "postacie-mini/postac6": {"anchor":[8,8]},
+
+
+
+
+
+
+
+
+
+
+
     "postacie/gabi": {"anchor":[32,32]},
     "postacie/mordka": {"anchor":[32,32]},
     "postacie/mordka-blink": {"anchor":[32,32]},

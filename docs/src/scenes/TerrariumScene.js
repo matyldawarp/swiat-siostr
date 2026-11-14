@@ -203,6 +203,8 @@ export class TerrariumScene extends BaseScene {
         if (this.sickBubble) {
             const top = this.hamster.y + this.hamsterImage.y - 8 * HAMSTER_SCALE;
             this.sickBubble.setPosition(Math.round(this.hamster.x + S(20)), Math.round(top - S(14)));
+            // Hidden with the hamster while it naps in its house.
+            this.sickBubble.setVisible(this.hamsterImage.visible);
         }
     }
 

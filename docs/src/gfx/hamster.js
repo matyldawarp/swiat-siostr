@@ -14,10 +14,10 @@ export const CHARACTER_SCALE = 4;
 
 // Scene pictures are never scaled (the scene's pixel grid, notes/wyglad.md), so every size a
 // character is shown in has its own pictures, drawn at that size in full detail.
-const CHARACTER_FOLDERS = { 1: 'postacie-mini', 2: 'postacie-male', 4: 'postacie', 6: 'postacie-duze' };
+const CHARACTER_FOLDERS = { 2: 'postacie-male', 4: 'postacie', 6: 'postacie-duze' };
 
 // The textures `<key>`, `<key>-blink` and `<key>-chew` of a character at a sprite scale of
-// 1, 2, 4 or 6, from its pictures in docs/assets/gfx/ (gfx/images.js); returns `<key>`: the
+// 2, 4 or 6, from its pictures in docs/assets/gfx/ (gfx/images.js); returns `<key>`: the
 // character's id at the room scale, `<id>-x<scale>` otherwise. Characters drawn by the
 // girls have only one picture, used for all three.
 export function createHamsterTextures(scene, character, scale = CHARACTER_SCALE) {

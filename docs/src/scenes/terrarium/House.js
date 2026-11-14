@@ -2,8 +2,7 @@ import { S } from '../../ui/pixel.js';
 import { floatZ } from '../../ui/effects.js';
 import { playSnore } from '../../audio/sfx.js';
 import { Activity } from './Activity.js';
-import { DEPTH, HAMSTER_SCALE } from './config.js';
-import { createHamsterTextures } from '../../gfx/hamster.js';
+import { DEPTH } from './config.js';
 
 // The little house on the right: the hamster goes in for a nap and "z"s float from the roof.
 // It is drawn by drawTank(); this adds the tap zone and the napping.
@@ -37,28 +36,20 @@ export class House extends Activity {
         return this.doorX;
     }
 
-    // Gets smaller in steps into the doorway, as if walking deeper inside: the pictures of
-    // the character at sprite scales 4, 2 and 1 (scene pictures are never scaled).
+    // Walks up to the door, blinks and slips inside: the hamster is hidden while it naps.
     enter(done) {
         const scene = this.scene;
-        scene.tweens.add({ targets: scene.hamster, x: this.doorX, y: this.doorBottom - 9, duration: 600 });
-        this.resize([2, 1], done);
-    }
-
-    // Shows the hamster at each sprite scale in turn, 200 ms apart, then calls done.
-    resize(scales, done) {
-        const scene = this.scene;
-        scales.forEach((scale, i) => {
-            scene.time.delayedCall(200 * (i + 1), () => {
-                scene.hamsterImage.setTexture(createHamsterTextures(scene, scene.character, scale));
-            });
+        const id = scene.character.id;
+        scene.tweens.add({ targets: scene.hamster, x: this.doorX, duration: 600 });
+        scene.time.delayedCall(300, () => scene.hamsterImage.setTexture(`${id}-blink`));
+        scene.time.delayedCall(600, () => {
+            scene.hamsterImage.setVisible(false).setTexture(id);
+            done();
         });
-        scene.time.delayedCall(200 * (scales.length + 1), done);
     }
 
     start() {
         const scene = this.scene;
-        scene.hamsterImage.setTexture(`${scene.character.id}-x1-blink`);
 
         // One "z" drifting up from the roof at a time.
         let count = 0;
@@ -78,11 +69,14 @@ export class House extends Activity {
         this.timer?.remove();
     }
 
+    // Comes out of the door blinking, then opens its eyes.
     leave(done) {
         const scene = this.scene;
-        scene.hamsterImage.setTexture(`${scene.character.id}-x1`);
-        scene.tweens.add({ targets: scene.hamster, y: scene.hamsterGroundY, duration: 600 });
-        this.resize([2, HAMSTER_SCALE], done);
+        const id = scene.character.id;
+        scene.hamster.y = scene.hamsterGroundY;
+        scene.hamsterImage.setTexture(`${id}-blink`).setVisible(true);
+        scene.time.delayedCall(300, () => scene.hamsterImage.setTexture(id));
+        scene.time.delayedCall(600, done);
     }
 
     // Inside it is asleep: a tap wakes it up. Going in or out, taps do nothing.

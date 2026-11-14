@@ -34,9 +34,9 @@ export const CHARACTERS = [
 ];
 
 // Characters designed by the girls on paper (scanned in assets/scans/postacie-1-5.png),
-// redrawn as 16x16 pixel pictures (postacie-mini) and, from those, in full detail in every
-// larger size. Every character's picture is docs/assets/gfx/postacie/<id>.png (and
-// postacie-male, -duze, -mini); the hamsters also have <id>-blink and <id>-chew.
+// redrawn as 16x16 pixel pictures and, from those, with Scale2x/3x in every size. Every
+// character's picture is docs/assets/gfx/postacie/<id>.png (and postacie-male, -duze); the
+// hamsters also have <id>-blink and <id>-chew.
 CHARACTERS.push(
     {
         id: 'postac1',
