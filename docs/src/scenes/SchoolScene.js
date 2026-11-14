@@ -1,5 +1,5 @@
 import { ICON_COLORS, PALETTE, PixelUI, S, STAGE, TEXT_COLORS, textStyle } from '../ui/pixel.js';
-import { PICTURES, PICTURE_SIZE, pictureImage } from '../gfx/pictures.js';
+import { PICTURES, pictureImage } from '../gfx/pictures.js';
 import { addImage, addPattern, setImage } from '../gfx/images.js';
 import { LESSONS, SAY_BRAVO, SAY_FILL, SEARCH_SIZE, makeRound, rebusAnswer, riddleSpeech, spokenTexts, trapsIn } from '../data/school.js';
 import { floatHeart } from '../ui/effects.js';
@@ -349,7 +349,7 @@ export class SchoolScene extends BaseScene {
             const x = Math.round(width / 2 + (i - 1) * (card + gap));
             const bg = this.add.graphics();
             PixelUI.drawBox(bg, -card / 2, -card / 2, card, card, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
-            const pic = addImage(this, 0, 0, pictureImage(id)).setScale(Math.floor((card - S(10)) / PICTURE_SIZE));
+            const pic = addImage(this, 0, 0, pictureImage(id));
             const c = this.add.container(x, y, [bg, pic]).setSize(card, card).setInteractive({ useHandCursor: true });
             c.on('pointerup', () => {
                 if (this.busy || this.chosen) {
@@ -430,8 +430,7 @@ export class SchoolScene extends BaseScene {
                     }
                     playPlop(this);
                     const filled = this.makeTile(blank.x, y, label, { fontSize: S(18), minW: blank.w, h: box + S(4), fill: SCHOOL_COLORS.done });
-                    filled.setScale(0.5);
-                    this.tweens.add({ targets: filled, scale: 1, duration: 200, ease: 'Back.easeOut' });
+                    PixelUI.popIn(this, filled, { duration: 200 });
                     next++;
                     if (next === blanks.length) {
                         choices.forEach((c) => c.destroy());
@@ -487,7 +486,7 @@ export class SchoolScene extends BaseScene {
             }
             const { pic, drop, swap } = item.part;
             PixelUI.drawBox(g, cx - card / 2, y - card / 2, card, card, ICON_COLORS.white, PALETTE.buttonBorder, 0xffffff);
-            const image = addImage(this, cx, y, pictureImage(pic)).setScale(Math.floor((card - S(10)) / PICTURE_SIZE));
+            const image = addImage(this, cx, y, pictureImage(pic, true));
             image.setInteractive({ useHandCursor: true }).on('pointerup', () => say(this, PICTURES[pic].word));
             if (drop) {
                 // Crossed out above the picture's left corner.
@@ -650,8 +649,8 @@ export class SchoolScene extends BaseScene {
         stars[this.lesson.id] = (stars[this.lesson.id] || 0) + 1;
         saveStars(stars);
 
-        const star = this.add.container(this.width / 2, this.height / 2 - S(10), [addImage(this, 0, 0, P + 'gwiazda-duza')]).setDepth(50).setScale(0);
-        this.tweens.add({ targets: star, scale: 1, duration: 500, ease: 'Back.easeOut' });
+        const star = this.add.container(this.width / 2, this.height / 2 - S(10), [addImage(this, 0, 0, P + 'gwiazda-duza')]).setDepth(50);
+        PixelUI.popIn(this, star, { duration: 500 });
         for (let i = 0; i < 6; i++) {
             floatHeart(this, this.width / 2 + Phaser.Math.Between(-S(60), S(60)), this.height / 2, { delay: i * 150, depth: 60 });
         }

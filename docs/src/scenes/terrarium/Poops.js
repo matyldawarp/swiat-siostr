@@ -2,7 +2,7 @@ import { PALETTE, S } from '../../ui/pixel.js';
 import { floatAway, floatHeart } from '../../ui/effects.js';
 import { createPoopTexture } from '../../gfx/hamster.js';
 import { playFanfare, playPlop, playSparkle } from '../../audio/sfx.js';
-import { DEPTH, MAX_POOPS, POOP_SCALE } from './config.js';
+import { DEPTH, MAX_POOPS } from './config.js';
 
 const REGISTRY_KEY = 'poops';
 
@@ -52,7 +52,6 @@ export class Poops {
         const px = Phaser.Math.Clamp(Math.round(x), minX, maxX);
         const image = scene.add.image(px, this.groundY, 'poop')
             .setOrigin(0.5, 1)
-            .setScale(POOP_SCALE)
             .setDepth(DEPTH.poop);
 
         // Bigger than the drawing so small fingers find it; above the glass so it gets the tap.
@@ -72,8 +71,7 @@ export class Poops {
 
         if (animate) {
             // Drops in with a tiny bounce.
-            image.setScale(POOP_SCALE, 1);
-            scene.tweens.add({ targets: image, scaleY: POOP_SCALE, duration: 220, ease: 'Back.easeOut' });
+            scene.tweens.add({ targets: image, y: { from: this.groundY - S(6), to: this.groundY }, duration: 220, ease: 'Bounce.easeOut' });
         }
         return poop;
     }
@@ -94,7 +92,7 @@ export class Poops {
         floatHeart(scene, poop.x, cy - S(6), { depth: DEPTH.effects });
         scene.tweens.add({
             targets: poop.image,
-            scale: 0,
+            alpha: 0,
             duration: 250,
             ease: 'Stepped',
             easeParams: [3],

@@ -1,5 +1,6 @@
 import { PixelUI, RENDER_SCALE, S, SAFE_AREA } from '../ui/pixel.js';
 import { getCharacter } from '../data/characters.js';
+import { snapTweensToGrid } from '../ui/wholePixels.js';
 import { SCENE_PARENTS, SCENE_ROUTES, setRoute } from './routes.js';
 
 // How much faster tweens, timers and the fade run after the back button is pressed.
@@ -32,6 +33,9 @@ export class BaseScene extends Phaser.Scene {
         this.tweens.timeScale = 1;
         this.time.timeScale = 1;
         this.view = PixelUI.setupView(this, { stage: !this.fillsWindow });
+        if (!this.fillsWindow) {
+            snapTweensToGrid(this);
+        }
         this.backButton = SCENE_PARENTS[this.scene.key] ? this.createBackButton() : null;
         if (this.backButton) {
             this.input.keyboard.on('keydown-ESC', () => this.backPressed());

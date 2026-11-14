@@ -10,6 +10,7 @@ Gra w Phaser 4 z CDN, bez budowania. `npm start` uruchamia serwer; gra musi dzia
 - Kod to moduły ES importowane z `docs/src/main.js`. Nowa scena dziedziczy po `BaseScene` i implementuje `build()`; dopisz ją do listy w `main.js` przed `OverlayScene`, która musi być ostatnia.
 - Narzędzia piszemy w Node (`tools/`), nie w Pythonie.
 - Po zmianie kodu: `npm run check`, podgląd w przeglądarce, potem commit bez pytania.
+- Obrazki sceny trzymają się siatki pikseli sceny (jeden piksel gry): skala 1, bez obrotu, róg na pełnym pikselu; większe piksele są już w PNG (`notes/wyglad.md`).
 - Płótno i ikony 64 nigdy nie mają ułamkowych rozmiarów. Przy każdym uruchomieniu gry sprawdź, że nie ma błędu „Ułamkowe piksele” (`notes/uruchamianie.md`).
 - Link do YouTube = dodaj piosenkę (`notes/muzyka.md`). Muzyka startuje wyłączona.
 

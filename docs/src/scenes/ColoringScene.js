@@ -155,7 +155,8 @@ export class ColoringScene extends BaseScene {
         ctx.drawImage(lines, 0, 0, tw * res, th * res);
         thumb.refresh();
         thumb.setFilter(Phaser.Textures.FilterMode.LINEAR);
-        this.add.image(x + w / 2, y + S(6) + Math.floor((h - titleH - S(10) - th) / 2) + th / 2, key).setDisplaySize(tw, th);
+        // A coloring page is a smooth drawing, not pixel art: shown at any size (wholePixels.js).
+        this.add.image(x + w / 2, y + S(6) + Math.floor((h - titleH - S(10) - th) / 2) + th / 2, key).setDisplaySize(tw, th).freeScale = true;
 
         if (title) {
             PixelUI.addText(this, x + w / 2, y + h - titleH / 2 - S(2), title,
@@ -221,6 +222,7 @@ export class ColoringScene extends BaseScene {
         this.layer.render(this.steps);
 
         const picture = this.add.image(px, py, key).setOrigin(0).setDisplaySize(info.width, info.height);
+        picture.freeScale = true;
         picture.setInteractive({ useHandCursor: true });
         picture.on('pointerdown', (pointer) => {
             const x = pointer.worldX - px;
@@ -236,7 +238,7 @@ export class ColoringScene extends BaseScene {
         this.input.on('pointerup', (pointer) => this.endStroke(pointer));
         this.input.on('pointerupoutside', (pointer) => this.endStroke(pointer));
         // The picture's lines over the paint, smoothly scaled to the page.
-        this.add.image(px, py, lineArt(this, this.page)).setOrigin(0).setDisplaySize(info.width, info.height);
+        this.add.image(px, py, lineArt(this, this.page)).setOrigin(0).setDisplaySize(info.width, info.height).freeScale = true;
 
         // Below the music and reload buttons in the top-right corner (OverlayScene).
         const panelTop = S(34);

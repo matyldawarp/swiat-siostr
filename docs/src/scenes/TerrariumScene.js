@@ -194,14 +194,14 @@ export class TerrariumScene extends BaseScene {
         }
         Illness.sneeze(this, this.hamsterImage, this.hamster, this.character, {
             x: this.hamster.x,
-            y: this.hamster.y + 2 * this.hamsterImage.scaleY
+            y: this.hamster.y + 2 * HAMSTER_SCALE
         }, this.hamsterGroundY);
     }
 
     update() {
         // Keep the sick bubble just above the hamster's head, whatever its size.
         if (this.sickBubble) {
-            const top = this.hamster.y + this.hamsterImage.y - 8 * this.hamsterImage.scaleY;
+            const top = this.hamster.y + this.hamsterImage.y - 8 * HAMSTER_SCALE;
             this.sickBubble.setPosition(Math.round(this.hamster.x + S(20)), Math.round(top - S(14)));
         }
     }
@@ -318,7 +318,7 @@ export class TerrariumScene extends BaseScene {
         const seedX = Phaser.Math.Clamp(Math.round(x), minX, maxX);
         const startY = Math.min(fromY, this.seedGroundY - S(10));
 
-        const seed = this.add.image(seedX, startY, 'seed').setScale(SEED_SCALE).setDepth(DEPTH.seed);
+        const seed = this.add.image(seedX, startY, 'seed').setDepth(DEPTH.seed);
         seed.landed = false;
         this.seeds.push(seed);
 
@@ -387,8 +387,10 @@ export class TerrariumScene extends BaseScene {
                 if (chewing) {
                     playCrunch(this);
                 }
-                // Seed shrinks in steps as it is nibbled.
-                seed.setScale(SEED_SCALE * (1 - bite / bites));
+                // The seed gets shorter as it is nibbled, a whole drawing pixel (SEED_SCALE)
+                // at a time, from the top: its picture is cut, never scaled.
+                const cut = Math.round((seed.height * bite) / bites / SEED_SCALE) * SEED_SCALE;
+                seed.setCrop(0, cut, seed.width, seed.height - cut);
 
                 if (bite === bites) {
                     this.hamsterImage.setTexture(id);

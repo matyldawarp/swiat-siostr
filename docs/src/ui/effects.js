@@ -33,7 +33,7 @@ export function floatAway(scene, target, { dx = 0, dy = 0, duration = 800, steps
 
 // A pixel heart rising from (x, y): the "that was nice" reward after a tap.
 export function floatHeart(scene, x, y, { depth = 20, delay = 0, rise = S(24), duration = 800 } = {}) {
-    const heart = addImage(scene, x, y, 'drobne/serce').setScale(3).setDepth(depth);
+    const heart = addImage(scene, x, y, 'drobne/serce').setDepth(depth);
     floatAway(scene, heart, { dy: -rise, duration, delay });
     return heart;
 }

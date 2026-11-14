@@ -246,7 +246,6 @@ export class BakeryScene extends BaseScene {
     updateHint() {
         if (this.hintTween) {
             this.hintTween.stop();
-            this.hintTween.targets.forEach((t) => t.setScale(1));
             this.hintTween = null;
         }
         if (this.busy) {
@@ -294,14 +293,14 @@ export class BakeryScene extends BaseScene {
         const slot = this.slots[this.shelf.length];
         const design = { ...this.design };
 
-        const flying = fillCupcake(this, this.add.container(this.cupcakePos.x, this.cupcakePos.y), design, false).setDepth(20);
+        // Flies to the case already at the display case's size (pictures are never scaled).
+        const flying = fillCupcake(this, this.add.container(this.cupcakePos.x, this.cupcakePos.y), design, true).setDepth(20);
         this.cupcake.removeAll(true);
         playFanfare(this);
         this.tweens.add({
             targets: flying,
             x: slot.x,
             y: slot.bottom,
-            scale: Math.min(this.slotW - S(4), S(28)) / S(56),
             duration: 650,
             ease: 'Quad.easeInOut',
             onComplete: () => {

@@ -21,7 +21,7 @@ export class CharacterScene extends BaseScene {
 
     build({ width, height }) {
         const cx = Math.round(width / 2);
-        CHARACTERS.forEach((c) => createHamsterTextures(this, c));
+        CHARACTERS.forEach((c) => [2, 6].forEach((scale) => createHamsterTextures(this, c, scale)));
 
         PixelUI.drawSky(this, this.view.bleed);
 
@@ -64,15 +64,16 @@ export class CharacterScene extends BaseScene {
             }
         };
 
-        const centerX = x + size / 2;
-        const centerY = y + size / 2;
+        // Whole pixels, so the character's picture keeps to the scene's grid.
+        const centerX = Math.floor(x + size / 2);
+        const centerY = Math.floor(y + size / 2);
 
         if (!character) {
             PixelUI.addText(this, centerX, centerY + 1, '?', textStyle(S(12), { bold: true, color: '#c3b6d8' })).setOrigin(0.5);
             return { draw };
         }
 
-        this.add.image(centerX, centerY, character.id).setScale(2);
+        this.add.image(centerX, centerY, `${character.id}-x2`);
 
         const zone = this.add.zone(centerX, centerY, size, size).setInteractive({ useHandCursor: true });
         const index = CHARACTERS.indexOf(character);
@@ -88,7 +89,7 @@ export class CharacterScene extends BaseScene {
     }
 
     createPreview(x, y) {
-        this.preview = this.add.image(x, y - S(16), CHARACTERS[0].id).setScale(6);
+        this.preview = this.add.image(x, y - S(16), `${CHARACTERS[0].id}-x6`);
         this.tweens.add({
             targets: this.preview,
             y: y - S(18),
@@ -121,7 +122,7 @@ export class CharacterScene extends BaseScene {
 
         this.slots.forEach((s, i) => s.draw(i === index));
 
-        this.preview.setTexture(character.id);
+        this.preview.setTexture(`${character.id}-x6`);
         this.previewName.setText(character.name);
         const personality = getPersonality(character);
         this.previewBadge.setPersonality(personality);
@@ -134,10 +135,10 @@ export class CharacterScene extends BaseScene {
             if (token !== this.blinkToken || !this.preview.active) {
                 return;
             }
-            this.preview.setTexture(`${character.id}-blink`);
+            this.preview.setTexture(`${character.id}-x6-blink`);
             this.time.delayedCall(140, () => {
                 if (token === this.blinkToken) {
-                    this.preview.setTexture(character.id);
+                    this.preview.setTexture(`${character.id}-x6`);
                 }
             });
             this.time.delayedCall(Phaser.Math.Between(1800, 4200), blink);

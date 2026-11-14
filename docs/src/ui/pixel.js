@@ -347,16 +347,36 @@ export const PixelUI = {
         });
     },
 
-    // Gentle "tap me" pulse; returns the tween so it can be stopped.
+    // Shows a target where it stands: it fades in while dropping into place from a few
+    // pixels above (scene pictures never grow from nothing, as they are never scaled).
+    popIn(scene, target, { duration = 400, delay = 0, onComplete } = {}) {
+        const y = target.y;
+        target.setAlpha(0);
+        target.y = y - S(6);
+        return scene.tweens.add({ targets: target, y, alpha: 1, duration, delay, ease: 'Back.easeOut', onComplete });
+    },
+
+    // Fades a target out in steps, then calls onComplete.
+    popOut(scene, target, { duration = 250, onComplete } = {}) {
+        return scene.tweens.add({ targets: target, alpha: 0, duration, ease: 'Stepped', easeParams: [3], onComplete });
+    },
+
+    // Gentle "tap me" bob: the target jumps up a few whole pixels and back (scene pictures
+    // are never scaled); a bigger amount jumps higher. Returns the tween; stopping it puts
+    // the target back where it was.
     pulse(scene, target, amount = 0.12) {
+        const y = target.y;
         return scene.tweens.add({
             targets: target,
-            scale: 1 + amount,
+            y: y - Math.max(2, Math.round(amount * 25)),
             duration: 450,
             yoyo: true,
             repeat: -1,
             ease: 'Stepped',
-            easeParams: [2]
+            easeParams: [1],
+            onStop: () => {
+                target.y = y;
+            }
         });
     },
 

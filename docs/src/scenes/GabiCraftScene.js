@@ -300,7 +300,7 @@ export class GabiCraftScene extends BaseScene {
     createBox(x) {
         this.boxGroundY = this.floorY + S(26);
         this.box = this.add.container(x, this.boxGroundY).setDepth(20);
-        const image = addImage(this, 0, 0, P + 'tekturzatko').setScale(4).setInteractive({ useHandCursor: true });
+        const image = addImage(this, 0, 0, P + 'tekturzatko').setInteractive({ useHandCursor: true });
         this.box.add(image);
         image.on('pointerup', () => this.happy(this.box, this.boxGroundY, () => {
             playNotes(this, [{ freq: 659, duration: 0.1 }, { freq: 880, duration: 0.1 }, { freq: 659, duration: 0.1 }, { freq: 1047, duration: 0.18 }], 'triangle', 0.1);

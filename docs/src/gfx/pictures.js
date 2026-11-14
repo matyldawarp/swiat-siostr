@@ -19,9 +19,11 @@ export const PICTURES = {
     zaba: { word: 'żaba' }
 };
 
+// Every picture is drawn on 16x16 pixels and saved enlarged, as scene pictures are never
+// scaled: 4 game pixels per pixel (64x64), or 5 for the large one (80x80, rebus cards).
 export const PICTURE_SIZE = 16;
 
-// Picture key (gfx/images.js) of a picture.
-export function pictureImage(id) {
-    return `szkola/obrazki/${id}`;
+// Picture key (gfx/images.js) of a picture, the 64x64 one or the large 80x80 one.
+export function pictureImage(id, large = false) {
+    return `szkola/${large ? 'obrazki-duze' : 'obrazki'}/${id}`;
 }

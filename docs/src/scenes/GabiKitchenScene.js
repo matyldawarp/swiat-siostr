@@ -178,10 +178,12 @@ export class GabiKitchenScene extends BaseScene {
 
         const notes = [1319, 1568, 1760];
         ['patelnia-fioletowa', 'lopatka', 'patelnia-szara'].forEach((name, n) => {
-            const pan = addImage(this, cx + (n - 1) * S(22), y + S(10), P + name);
+            const baseX = cx + (n - 1) * S(22);
+            const pan = addImage(this, baseX, y + S(10), P + name);
             this.tapZone(pan.x - S(10), pan.y, S(20), S(28), () => {
                 playNotes(this, [{ freq: notes[n], duration: 0.35 }], 'sine', 0.1);
-                this.tweens.add({ targets: pan, angle: { from: 18, to: 0 }, duration: 500, ease: 'Bounce.easeOut' });
+                // Swings: a few whole pixels to the side and back (scene pictures never turn).
+                this.tweens.add({ targets: pan, x: { from: baseX + S(3), to: baseX }, duration: 500, ease: 'Bounce.easeOut' });
             });
         });
     }
@@ -303,7 +305,7 @@ export class GabiKitchenScene extends BaseScene {
     createCakey(x) {
         this.cakeyGroundY = this.floorY + S(26);
         this.cakey = this.add.container(x, this.cakeyGroundY).setDepth(20);
-        const image = addImage(this, 0, 0, P + 'lakotek').setScale(4).setInteractive({ useHandCursor: true });
+        const image = addImage(this, 0, 0, P + 'lakotek').setInteractive({ useHandCursor: true });
         this.cakey.add(image);
         image.on('pointerup', () => {
             playNotes(this, [{ freq: 988, duration: 0.08 }, { freq: 1175, duration: 0.08 }, { freq: 1480, duration: 0.14 }], 'triangle', 0.12);

@@ -1,5 +1,5 @@
 import { PixelUI, S, textStyle } from '../ui/pixel.js';
-import { createHamsterTextures, startBlinking } from '../gfx/hamster.js';
+import { addCharacterImage, createHamsterTextures } from '../gfx/hamster.js';
 import { addImage, addPattern } from '../gfx/images.js';
 import { Illness } from '../ui/illness.js';
 import { playStep } from '../audio/sfx.js';
@@ -219,8 +219,7 @@ export class MapScene extends BaseScene {
 
     createHamster() {
         const stand = this.stands[this.location];
-        this.hamster = this.add.image(stand.x, stand.y - S(6), this.character.id).setScale(2).setDepth(10);
-        startBlinking(this, this.hamster, this.character);
+        this.hamster = addCharacterImage(this, stand.x, stand.y - S(6), this.character, 2).setDepth(10);
         this.idleBob = this.tweens.add({
             targets: this.hamster,
             y: this.hamster.y - S(2),

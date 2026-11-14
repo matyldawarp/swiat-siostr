@@ -1,6 +1,6 @@
 import { PALETTE, PixelUI, S } from '../ui/pixel.js';
 import { CHARACTER_SCALE, addCharacter, spriteHalf } from '../gfx/hamster.js';
-import { addImage, addPattern } from '../gfx/images.js';
+import { addImage, addPattern, setImage } from '../gfx/images.js';
 import { floatAway, floatHeart } from '../ui/effects.js';
 import { Sweets } from '../ui/sweets.js';
 import { playBubble, playCharacterSound, playDing, playFanfare, playSparkle, playWhisk } from '../audio/sfx.js';
@@ -124,11 +124,12 @@ export class DentistScene extends BaseScene {
         const bottomH = S(18);
         for (let i = 0; i < teeth; i++) {
             const x = rowLeft + i * tw;
-            this.teeth.push({ x: x + tw / 2, y: gumTop + S(3) + topH / 2 });
-            this.teeth.push({ x: x + tw / 2, y: gumBottom - S(3) - bottomH / 2 });
+            // Whole pixels, so the crumbs keep to the scene's grid.
+            this.teeth.push({ x: Math.round(x + tw / 2), y: Math.round(gumTop + S(3) + topH / 2) });
+            this.teeth.push({ x: Math.round(x + tw / 2), y: Math.round(gumBottom - S(3) - bottomH / 2) });
         }
 
-        this.panel = this.add.container(cx, cy, [picture]).setDepth(10).setScale(0).setVisible(false);
+        this.panel = this.add.container(cx, cy, [picture]).setDepth(10).setVisible(false);
 
         // Brushing: the brush follows the finger over the panel and scrubs what it touches.
         const zone = this.add.zone(cx, cy, w, h).setInteractive().setDepth(11);
@@ -159,13 +160,7 @@ export class DentistScene extends BaseScene {
         spots.forEach((tooth) => this.addCrumb(tooth));
 
         this.panel.setVisible(true);
-        this.tweens.add({
-            targets: this.panel,
-            scale: 1,
-            duration: 350,
-            ease: 'Back.easeOut',
-            onComplete: () => onOpen?.()
-        });
+        PixelUI.popIn(this, this.panel, { duration: 350, onComplete: () => onOpen?.() });
     }
 
     // A little cluster of sweet crumbs on a tooth.
@@ -261,7 +256,7 @@ export class DentistScene extends BaseScene {
     cleanCrumb(crumb) {
         crumb.cleaned = true;
         playSparkle(this);
-        this.tweens.add({ targets: crumb.g, scale: 0, duration: 200, onComplete: () => crumb.g.destroy() });
+        PixelUI.popOut(this, crumb.g, { duration: 200, onComplete: () => crumb.g.destroy() });
         this.sparkleAt(this.panel.x + crumb.g.x, this.panel.y + crumb.g.y);
 
         if (this.crumbs.every((c) => c.cleaned)) {
@@ -307,7 +302,8 @@ export class DentistScene extends BaseScene {
             duration: 450,
             ease: 'Quad.easeOut',
             onComplete: () => {
-                this.tweens.add({ targets: cup, angle: 60, duration: 200 });
+                // Tipped over the teeth: its tilted picture.
+                setImage(cup, P + 'kubek-przechylony');
                 // Drops of water over the teeth, then the foam is gone.
                 for (let i = 0; i < 10; i++) {
                     this.time.delayedCall(i * 70, () => this.waterDrop(r.x + Phaser.Math.Between(S(20), r.w - S(20)), r.y + S(10)));
@@ -346,10 +342,10 @@ export class DentistScene extends BaseScene {
         this.registry.set('stickers', (this.registry.get('stickers') || 0) + 1);
 
         this.charImage.setTexture(this.character.id);
-        this.tweens.add({ targets: this.panel, scale: 0, duration: 300, onComplete: () => this.panel.setVisible(false) });
+        PixelUI.popOut(this, this.panel, { duration: 300, onComplete: () => this.panel.setVisible(false) });
 
-        const star = addImage(this, cx, cy, P + 'naklejka').setDepth(50).setScale(0);
-        this.tweens.add({ targets: star, scale: 1, duration: 500, ease: 'Back.easeOut' });
+        const star = addImage(this, cx, cy, P + 'naklejka').setDepth(50);
+        PixelUI.popIn(this, star, { duration: 500 });
         const label = PixelUI.addTitle(this, cx, cy + S(34), 'Piękny uśmiech!', S(14)).setDepth(50).setAlpha(0);
         this.tweens.add({ targets: label, alpha: 1, delay: 300, duration: 400 });
 
@@ -402,7 +398,6 @@ export class DentistScene extends BaseScene {
     updateHint() {
         if (this.hintTween) {
             this.hintTween.stop();
-            this.hintTween.targets.forEach((t) => t.setScale(1));
             this.hintTween = null;
         }
         if (this.busy) {

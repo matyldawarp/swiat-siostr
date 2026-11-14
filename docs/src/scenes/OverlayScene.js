@@ -6,7 +6,7 @@ import { PlayTime, Settings } from '../ui/settings.js';
 import { loadVersion, versionText } from '../ui/version.js';
 import { floatZ } from '../ui/effects.js';
 import { getCharacter } from '../data/characters.js';
-import { CHARACTER_SCALE, createHamsterTextures } from '../gfx/hamster.js';
+import { createHamsterTextures } from '../gfx/hamster.js';
 import { playLullaby } from '../audio/sfx.js';
 import { BaseScene } from './BaseScene.js';
 
@@ -408,7 +408,7 @@ export class OverlayScene extends BaseScene {
         // The chosen character, eyes closed.
         const character = getCharacter(this.registry.get('selectedCharacter'));
         createHamsterTextures(this, character);
-        screen.add(this.add.image(cx, cy - S(14), `${character.id}-blink`).setScale(CHARACTER_SCALE));
+        screen.add(this.add.image(cx, cy - S(14), `${character.id}-blink`));
 
         const title = PixelUI.addTitle(this, cx, cy + S(30), 'KONIEC GRY.', S(22));
         const line = PixelUI.addText(this, cx, cy + S(56), 'Minął czas i musisz już wyłączyć ekran',

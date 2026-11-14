@@ -52,7 +52,7 @@ export class HospitalScene extends BaseScene {
         if (this.friend) {
             createHamsterTextures(this, this.friend);
             const visit = PixelUI.createIconButton(this, width - S(26), height - S(70), S(36), null, () => this.visit());
-            visit.add(this.add.image(0, 0, this.friend.id).setScale(2));
+            visit.add(this.add.image(0, 0, createHamsterTextures(this, this.friend, 2)));
         }
 
         this.updateHints();
@@ -169,7 +169,6 @@ export class HospitalScene extends BaseScene {
             if (b.pulseTween) {
                 b.pulseTween.stop();
                 b.pulseTween = null;
-                b.setScale(1);
             }
         });
         const next = TREATMENTS.find((k) => !this.done.has(k));
@@ -317,8 +316,8 @@ export class HospitalScene extends BaseScene {
             this.tweens.add({ targets: bubble, alpha: 0, duration: 300, onComplete: () => bubble.destroy() });
         }
 
-        const star = addImage(this, cx, cy, P + 'naklejka').setDepth(30).setScale(0);
-        this.tweens.add({ targets: star, scale: 1, duration: 500, ease: 'Back.easeOut' });
+        const star = addImage(this, cx, cy, P + 'naklejka').setDepth(30);
+        PixelUI.popIn(this, star, { duration: 500 });
 
         const label = PixelUI.addTitle(this, cx, cy + S(36), 'Dzielny pacjent!', S(14)).setDepth(30).setAlpha(0);
         this.tweens.add({ targets: label, alpha: 1, delay: 300, duration: 400 });

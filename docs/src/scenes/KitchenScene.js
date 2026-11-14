@@ -225,7 +225,6 @@ export class KitchenScene extends BaseScene {
     hint(button) {
         if (this.hintTween) {
             this.hintTween.stop();
-            this.hintTween.targets.forEach((t) => t.setScale(1));
             this.hintTween = null;
         }
         if (button) {
