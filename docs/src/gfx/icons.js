@@ -1129,6 +1129,176 @@ export const Icons = {
         });
     },
 
+    // The polygon pushed `by` pixels out from its middle: an outline to fill behind it.
+    grow(points, by) {
+        const mx = points.reduce((sum, p) => sum + p.x, 0) / points.length;
+        const my = points.reduce((sum, p) => sum + p.y, 0) / points.length;
+        return points.map((p) => {
+            const d = Math.hypot(p.x - mx, p.y - my) || 1;
+            return { x: p.x + ((p.x - mx) / d) * by, y: p.y + ((p.y - my) / d) * by };
+        });
+    },
+
+    // Gabi's dollhouse: a pink cat-head roof with round eye windows, a heart nose and
+    // whiskers, over three mint floors of coloured windows and a door under a cat awning.
+    // (cx, bottom) is the middle of its base. Returns where the windows, door, eyes and
+    // nose are, so a scene can light them up.
+    gabiHouse(g, cx, bottom, w, h) {
+        const O = PALETTE.outline;
+        const top = bottom - h;
+        const roofTop = top + Math.round(h * 0.1);
+        const roofBottom = top + Math.round(h * 0.38);
+        const trimH = Math.max(5, Math.round(h * 0.05));
+        const baseH = Math.max(5, Math.round(h * 0.04));
+        const bodyW = Math.round(w * 0.78);
+        const bodyLeft = Math.round(cx - bodyW / 2);
+        const bodyTop = roofBottom + trimH;
+        const bodyBottom = bottom - baseH;
+
+        // Ears behind the roof: a lavender one and a peach one with a pink window.
+        const earY = roofTop + Math.round((roofBottom - roofTop) * 0.35);
+        [-1, 1].forEach((side) => {
+            const ear = [
+                { x: cx + side * w * 0.42, y: earY },
+                { x: cx + side * w * 0.3, y: top },
+                { x: cx + side * w * 0.1, y: roofTop + 1 }
+            ];
+            g.fillStyle(O, 1);
+            Icons.fillPolygon(g, Icons.grow(ear, 1.5));
+            g.fillStyle(side < 0 ? 0xd9bdf5 : 0xffe1d0, 1);
+            Icons.fillPolygon(g, ear);
+        });
+        const paneW = Math.max(2, Math.round(w * 0.06));
+        const paneH = Math.max(3, Math.round(h * 0.08));
+        g.fillStyle(0xf59bd0, 1);
+        g.fillRect(Math.round(cx + w * 0.27 - paneW / 2), top + Math.round(h * 0.05), paneW, paneH);
+        g.fillStyle(0xffe1d0, 1);
+        g.fillRect(Math.round(cx + w * 0.27), top + Math.round(h * 0.05), 1, paneH);
+
+        // Rounded dome of a roof (a squashed superellipse), outlined.
+        const roofH = roofBottom - roofTop;
+        const halfAt = (y, half) => Math.round(half * Math.pow(1 - Math.pow((roofBottom - y) / roofH, 2.5), 0.4));
+        g.fillStyle(O, 1);
+        g.fillRect(cx - halfAt(roofTop + 1, w / 2), roofTop - 1, halfAt(roofTop + 1, w / 2) * 2, 1);
+        for (let y = roofTop; y < roofBottom; y++) {
+            const half = halfAt(y, w / 2);
+            g.fillStyle(O, 1);
+            g.fillRect(cx - half - 1, y, half * 2 + 2, 1);
+            g.fillStyle(y < roofTop + roofH * 0.2 ? 0xf8bfe6 : 0xf2a6dc, 1);
+            g.fillRect(cx - half, y, half * 2, 1);
+        }
+        // Scalloped shingles: a few darker dots in rows.
+        g.fillStyle(0xe892cf, 1);
+        const step = Math.max(4, Math.round(w * 0.08));
+        for (let y = roofTop + step; y < roofBottom - 2; y += Math.round(step * 0.8)) {
+            const half = halfAt(y, w / 2) - 2;
+            const shift = (Math.round((y - roofTop) / step) % 2) * Math.round(step / 2);
+            for (let x = cx - half + shift; x < cx + half; x += step) {
+                g.fillRect(x, y, Math.max(1, Math.round(step / 3)), 1);
+            }
+        }
+
+        // Round blue eye windows with a shine, a heart nose and whiskers.
+        const eyeY = roofTop + Math.round(roofH * 0.55);
+        const eyeR = Math.max(3, Math.round(w * 0.09));
+        const eyes = [-1, 1].map((side) => ({ x: Math.round(cx + side * w * 0.21), y: eyeY, r: eyeR }));
+        eyes.forEach((eye) => {
+            g.fillStyle(O, 1);
+            PixelUI.fillCircle(g, eye.x, eye.y, eye.r + 1);
+            g.fillStyle(0xb8f0ea, 1);
+            PixelUI.fillCircle(g, eye.x, eye.y, eye.r);
+            g.fillStyle(0x7cc8f2, 1);
+            PixelUI.fillCircle(g, eye.x, eye.y, Math.max(2, eye.r - Math.max(1, Math.round(eye.r / 4))));
+            g.fillStyle(ICON_COLORS.white, 1);
+            const shine = Math.max(1, Math.round(eye.r / 3));
+            for (let i = -shine; i <= shine; i++) {
+                g.fillRect(eye.x + Math.round(i / 2), eye.y + i, 1, 1);
+            }
+        });
+        const nose = { x: cx, y: eyeY + Math.round(eyeR * 0.6) };
+        Icons.heart(g, nose.x, nose.y, Math.max(5, Math.round(w * 0.1)));
+        g.fillStyle(ICON_COLORS.lavenderDark, 1);
+        const whisker = Math.max(3, Math.round(w * 0.1));
+        const thick = Math.max(1, Math.round(h / 140));
+        [-1, 1].forEach((side) => {
+            [0, 1].forEach((i) => {
+                const y = eyeY + Math.round(roofH * (0.1 + i * 0.18));
+                const edge = cx + side * halfAt(y, w / 2);
+                g.fillRect(Math.round(edge - whisker / 2), y, whisker, thick);
+            });
+        });
+
+        // Cream trim under the roof, mint walls with three floors, peach base.
+        PixelUI.drawBox(g, Math.round(cx - w * 0.45), roofBottom, Math.round(w * 0.9), trimH, 0xffe1d0, O);
+        PixelUI.drawBox(g, bodyLeft, bodyTop, bodyW, bodyBottom - bodyTop, 0xc4eee2, O);
+        PixelUI.drawBox(g, Math.round(cx - w * 0.42), bodyBottom, Math.round(w * 0.84), baseH, 0xffe1d0, O);
+        const floorH = (bodyBottom - bodyTop) / 3;
+        g.fillStyle(0xffe1d0, 1);
+        [1, 2].forEach((i) => g.fillRect(bodyLeft, Math.round(bodyTop + floorH * i), bodyW, Math.max(1, Math.round(h * 0.015))));
+
+        // Two arch windows on each floor; the ground floor has the door between them.
+        const colors = [0xf7a6c8, 0xa8e6a0, 0x9fe8ec, 0xd8b4f5, 0xfff09a, 0xffc08a];
+        const winW = Math.max(4, Math.round(bodyW * 0.26));
+        const winH = Math.max(4, Math.round(floorH * 0.58));
+        const windows = colors.map((color, i) => {
+            const floor = Math.floor(i / 2);
+            const x = Math.round(cx + (i % 2 ? 1 : -1) * bodyW * 0.27 - winW / 2);
+            const y = Math.round(bodyTop + floorH * floor + (floorH - winH) / 2) + 1;
+            return { x, y, w: winW, h: winH, color };
+        });
+        windows.forEach((win) => Icons.gabiWindow(g, win, win.color));
+
+        // Door with its pink cat-head awning.
+        const doorW = Math.max(4, Math.round(bodyW * 0.2));
+        const doorH = Math.max(5, Math.round(floorH * 0.62));
+        const door = { x: Math.round(cx - doorW / 2), y: bodyBottom - doorH, w: doorW, h: doorH };
+        PixelUI.drawBox(g, door.x, door.y, door.w, door.h, 0x9fd0f5, O);
+        g.fillStyle(O, 1);
+        g.fillRect(cx, door.y + 1, 1, door.h - 1);
+        const awningR = Math.max(3, Math.round(doorW * 0.65));
+        const awningY = door.y - 1;
+        [-1, 1].forEach((side) => {
+            const ear = [
+                { x: cx + side * awningR * 0.9, y: awningY - awningR * 0.4 },
+                { x: cx + side * awningR * 0.75, y: awningY - awningR * 1.2 },
+                { x: cx + side * awningR * 0.2, y: awningY - awningR * 0.7 }
+            ];
+            g.fillStyle(O, 1);
+            Icons.fillPolygon(g, Icons.grow(ear, 1.5));
+            g.fillStyle(0xf59bd0, 1);
+            Icons.fillPolygon(g, ear);
+        });
+        g.fillStyle(O, 1);
+        for (let dy = 0; dy <= awningR + 1; dy++) {
+            const half = Math.round(Math.sqrt(Math.max(0, (awningR + 1) ** 2 - dy * dy)));
+            g.fillRect(cx - half, awningY - dy, half * 2 + 1, 1);
+        }
+        g.fillStyle(0xf59bd0, 1);
+        for (let dy = 0; dy <= awningR; dy++) {
+            const half = Math.round(Math.sqrt(Math.max(0, awningR ** 2 - dy * dy)));
+            g.fillRect(cx - half, awningY - dy, half * 2 + 1, 1);
+        }
+        // Sleepy eyes on the awning.
+        g.fillStyle(O, 1);
+        const lid = Math.max(1, Math.round(awningR / 3));
+        g.fillRect(cx - lid * 2, awningY - Math.round(awningR / 2), lid, 1);
+        g.fillRect(cx + lid, awningY - Math.round(awningR / 2), lid, 1);
+
+        return { windows, door, eyes, nose };
+    },
+
+    // One arch window of Gabi's house: two panes with rounded tops in `color`.
+    gabiWindow(g, { x, y, w, h }, color) {
+        PixelUI.drawBox(g, x, y, w, h, color, PALETTE.outline);
+        const mid = x + Math.floor(w / 2);
+        g.fillStyle(PALETTE.outline, 1);
+        g.fillRect(mid, y + 1, 1, h - 1);
+        // A little light in the top of each pane.
+        g.fillStyle(ICON_COLORS.white, 1);
+        g.fillRect(x + 2, y + 2, 1, Math.max(1, Math.round(h / 4)));
+        g.fillRect(mid + 2, y + 2, 1, Math.max(1, Math.round(h / 4)));
+    },
+
     // Loudspeaker with two sound waves: "listen again".
     speaker(g, cx, cy, size) {
         const s = size / 16;

@@ -10,6 +10,7 @@ import { BakeryScene } from './scenes/BakeryScene.js';
 import { DentistScene } from './scenes/DentistScene.js';
 import { ColoringScene } from './scenes/ColoringScene.js';
 import { SchoolScene } from './scenes/SchoolScene.js';
+import { GabiHouseScene } from './scenes/GabiHouseScene.js';
 import { OverlayScene } from './scenes/OverlayScene.js';
 import { routeFromAddress } from './scenes/routes.js';
 
@@ -29,7 +30,7 @@ const config = {
     },
     // OverlayScene must stay last so it draws on top of every other scene. The first one
     // starts the game (StartScene, or the screen named after # in the address).
-    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, SchoolScene, OverlayScene]
+    scene: [StartScene, CharacterScene, TerrariumScene, MapScene, HospitalScene, KitchenScene, BakeryScene, DentistScene, ColoringScene, SchoolScene, GabiHouseScene, OverlayScene]
 };
 
 // Started from the iPad's home screen (not in a Safari tab).

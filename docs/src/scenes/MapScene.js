@@ -59,6 +59,12 @@ const MAP_PLACES = {
         at: [0.1, 0.41],
         bends: [[0.06, 0.58]],
         draw: (g, x, y) => Icons.school(g, x, y, S(52), S(48))
+    },
+    gabi: {
+        scene: 'GabiHouseScene',
+        at: [0.88, 0.6],
+        bends: [[0.45, 0.8], [0.68, 0.68]],
+        draw: (g, x, y) => Icons.gabiHouse(g, x, y, S(46), S(58))
     }
 };
 

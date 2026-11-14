@@ -13,7 +13,8 @@ export const SCENE_ROUTES = {
     BakeryScene: 'cukiernia',
     DentistScene: 'dentysta',
     ColoringScene: 'kolorowanki',
-    SchoolScene: 'szkola'
+    SchoolScene: 'szkola',
+    GabiHouseScene: 'domek-gabi'
 };
 
 // Scene key -> the screen one level up (the screen tree in README.md), where the back
@@ -29,7 +30,8 @@ export const SCENE_PARENTS = {
     BakeryScene: 'MapScene',
     DentistScene: 'MapScene',
     ColoringScene: 'MapScene',
-    SchoolScene: 'MapScene'
+    SchoolScene: 'MapScene',
+    GabiHouseScene: 'MapScene'
 };
 
 // Shows a route ('kuchnia', 'kolorowanki/wednesday') in the address bar, without adding
